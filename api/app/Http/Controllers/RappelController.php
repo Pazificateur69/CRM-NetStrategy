@@ -2,16 +2,34 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Rappel;
 use Illuminate\Http\Request;
+use App\Models\Client;
+use App\Models\Rappel;
 
 class RappelController extends Controller
 {
-    public function index()
+    /**
+     * 🔹 Lister les rappels
+     * - Admin → tous les rappels
+     * - Autres → seulement les leurs
+     */
+    public function index(Request $request)
     {
-        return response()->json(Rappel::all(), 200);
+        $user = $request->user();
+
+        $rappels = $user->hasRole('admin')
+            ? Rappel::with(['user', 'rappelable'])->latest()->get()
+            : Rappel::with(['user', 'rappelable'])
+                ->where('user_id', $user->id)
+                ->latest()
+                ->get();
+
+        return response()->json(['data' => $rappels]);
     }
 
+    /**
+     * 🔹 Créer un rappel polymorphique (lié à un client par défaut)
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -19,39 +37,58 @@ class RappelController extends Controller
             'description' => 'nullable|string',
             'date_rappel' => 'required|date',
             'fait' => 'boolean',
-            'rappelable_id' => 'required|integer',
-            'rappelable_type' => 'required|string', // Ex: "App\\Models\\Client" ou "App\\Models\\Prospect"
+            'client_id' => 'required|integer|exists:clients,id',
         ]);
 
-        $rappel = Rappel::create($validated);
+        $client = Client::findOrFail($validated['client_id']);
 
-        return response()->json($rappel, 201);
+        $rappel = $client->rappels()->create([
+            'titre' => $validated['titre'],
+            'description' => $validated['description'] ?? null,
+            'date_rappel' => $validated['date_rappel'],
+            'fait' => $validated['fait'] ?? false,
+            'user_id' => $request->user()->id,
+        ]);
+
+        return response()->json(['data' => $rappel->load('user')], 201);
     }
 
-    public function show(Rappel $rappel)
-    {
-        return response()->json($rappel, 200);
-    }
-
+    /**
+     * 🔹 Modifier un rappel
+     */
     public function update(Request $request, Rappel $rappel)
     {
+        $user = $request->user();
+
+        if ($user->id !== $rappel->user_id && !$user->hasRole('admin')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
         $validated = $request->validate([
             'titre' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'date_rappel' => 'sometimes|date',
+            'date_rappel' => 'nullable|date',
             'fait' => 'boolean',
-            'rappelable_id' => 'nullable|integer',
-            'rappelable_type' => 'nullable|string',
         ]);
 
         $rappel->update($validated);
 
-        return response()->json($rappel, 200);
+        return response()->json(['data' => $rappel->load('user')]);
     }
 
-    public function destroy(Rappel $rappel)
+    /**
+     * 🔹 Supprimer un rappel
+     */
+    public function destroy(Request $request, Rappel $rappel)
     {
+        $user = $request->user();
+
+        if ($user->id !== $rappel->user_id && !$user->hasRole('admin')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
         $rappel->delete();
-        return response()->json(null, 204);
+
+        return response()->json(['message' => 'Rappel supprimé avec succès.']);
     }
 }

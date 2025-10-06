@@ -4,20 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('todos', function (Blueprint $table) {
             $table->id();
             $table->string('titre');
             $table->text('description')->nullable();
-            $table->enum('statut', ['en_cours', 'termine', 'retard'])->default('en_cours');
-            $table->date('date_echeance')->nullable();
+            $table->string('statut')->default('en_cours');
+            $table->dateTime('date_echeance')->nullable();
 
-            // Relation polymorphe : todo lié à un client OU prospect
-            $table->nullableMorphs('todoable'); // crée todoable_id (BIGINT) + todoable_type (VARCHAR)
+            // 🔄 Polymorphique
+            $table->morphs('todoable'); // crée automatiquement todoable_id et todoable_type
 
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

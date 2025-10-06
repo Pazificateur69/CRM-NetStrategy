@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Client extends Model
 {
@@ -27,13 +29,25 @@ class Client extends Model
         'date_echeance' => 'datetime',
     ];
 
-    public function todos()
+    // ✅ Relations polymorphiques
+    public function todos(): MorphMany
     {
         return $this->morphMany(Todo::class, 'todoable');
     }
 
-    public function rappels()
+    public function rappels(): MorphMany
     {
         return $this->morphMany(Rappel::class, 'rappelable');
+    }
+
+    public function contenu(): MorphMany
+    {
+        return $this->morphMany(ContenuFiche::class, 'contenuable');
+    }
+
+    // ✅ Relation simple
+    public function prestations(): HasMany
+    {
+        return $this->hasMany(Prestation::class);
     }
 }

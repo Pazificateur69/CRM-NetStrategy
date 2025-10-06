@@ -77,9 +77,6 @@ return [
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
     |--------------------------------------------------------------------------
-    |
-    | The service providers listed here will be automatically loaded.
-    |
     */
     'providers' => [
 
@@ -110,11 +107,16 @@ return [
         Illuminate\View\ViewServiceProvider::class,
 
         /*
-         * Application Service Providers...
+         * Package Service Providers (Ajouté)
+         */
+        \Spatie\Permission\PermissionServiceProvider::class, // ⬅️ FIX CRITIQUE: SPATIE
+
+        /*
+         * Application Service Providers... (Nettoyé)
          */
         App\Providers\AppServiceProvider::class,
-
-        // ✅ Ajoute ton RouteServiceProvider
+        // Nous ajoutons les classes critiques nécessaires pour les features implémentées :
+        App\Providers\AuthServiceProvider::class, 
         App\Providers\RouteServiceProvider::class,
     ],
 

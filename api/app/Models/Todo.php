@@ -4,25 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Todo extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'titre',
-        'description',
-        'statut',
-        'date_echeance',
-        'todoable_id',
-        'todoable_type',
-    ];
+    'titre',
+    'description',
+    'date_echeance',
+    'statut',
+    'user_id',
+    'client_id',
+    'todoable_type',
+    'todoable_id',
+];
 
-    protected $casts = [
-        'date_echeance' => 'date',
-    ];
 
-    public function todoable()
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function todoable(): MorphTo
     {
         return $this->morphTo();
     }

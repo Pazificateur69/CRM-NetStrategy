@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('rappels', function (Blueprint $table) {
@@ -15,9 +14,10 @@ return new class extends Migration
             $table->dateTime('date_rappel');
             $table->boolean('fait')->default(false);
 
-            // Relation polymorphe : rappel lié à un client OU prospect
-            $table->nullableMorphs('rappelable'); // crée rappelable_id + rappelable_type
+            // 🔄 Polymorphique
+            $table->morphs('rappelable'); // crée rappelable_id et rappelable_type
 
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

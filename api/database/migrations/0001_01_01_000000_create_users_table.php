@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['admin', 'rh', 'dev', 'com'])->default('com');
+            // FIX: AJOUT de tous les rôles nécessaires à l'ENUM
+            $table->enum('role', ['admin', 'rh', 'dev', 'com', 'reseaux_sociaux', 'seo', 'comptabilite'])->default('com');
             $table->rememberToken();
             $table->timestamps();
         });
