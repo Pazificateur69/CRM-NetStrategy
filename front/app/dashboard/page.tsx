@@ -2,17 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { getDashboardOverview } from '@/services/data';
-import { getUsers } from '@/services/users'; // ✅ on importe le service users
+import { getUsers } from '@/services/users';
+import { getAdminTasksByPole, Task } from '@/services/tasks';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardVignette from '@/components/DashboardVignette';
 import { DashboardData, DashboardEntity } from '@/types/crm';
-import { logout } from '@/services/auth';
+import { getUserProfile, logout } from '@/services/auth';
 import { RefreshCcw, Users, Shield } from 'lucide-react';
+import { TaskKanbanBoard } from '@/components/TaskKanbanBoard';
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [users, setUsers] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,23 +23,40 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    const userRole = localStorage.getItem('userRole'); // ⬅️ tu le stockes à la connexion
     if (!token) {
       router.replace('/');
       return;
     }
-    if (userRole === 'admin') setIsAdmin(true);
 
     const fetchDashboardData = async () => {
       try {
         setError(null);
+
+        // 🔹 Étape 1 : récupérer l'utilisateur connecté
+        const userProfile = await getUserProfile();
+        if (userProfile) {
+          localStorage.setItem('userRole', userProfile.role || 'user');
+          localStorage.setItem('userPole', userProfile.pole || 'non_defini');
+        }
+
+        // 🔹 Étape 2 : charger les données du tableau de bord
         const overviewData = await getDashboardOverview();
         setData(overviewData);
 
-        // Si admin → on récupère les users
-        if (userRole === 'admin') {
+        const userPole = userProfile?.pole || 'non_defini';
+        if (userPole && userPole !== 'non_defini') {
+          const tasksData = await getAdminTasksByPole(userPole);
+          setTasks([...tasksData]); // ✅ clone pour déclencher re-render
+        } else {
+          console.warn('Aucun pôle défini pour cet utilisateur.');
+          setTasks([]);
+        }
+
+        // 🔹 Étape 3 : si admin → charger les utilisateurs
+        if (userProfile?.role === 'admin') {
           const usersData = await getUsers();
           setUsers(usersData);
+          setIsAdmin(true);
         }
       } catch (error: any) {
         console.error('Erreur de chargement du dashboard:', error);
@@ -44,12 +64,8 @@ export default function DashboardPage() {
           setError('Session expirée. Redirection...');
           logout();
           router.replace('/');
-        } else if (error.response?.status === 500) {
-          setError('Erreur du serveur. Veuillez réessayer plus tard.');
-        } else if (error.code === 'ERR_NETWORK') {
-          setError('Impossible de contacter le serveur. Vérifiez votre connexion.');
         } else {
-          setError('Une erreur inattendue est survenue.');
+          setError('Erreur inattendue.');
         }
       } finally {
         setLoading(false);
@@ -59,12 +75,15 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [router]);
 
-  /** === ÉTATS === */
+  // --- ÉTATS DE RENDU ---
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4" />
-        <p className="text-lg text-gray-700 font-medium">Chargement du tableau de bord...</p>
+        <p className="text-lg text-gray-700 font-medium">
+          Chargement du tableau de bord...
+        </p>
       </div>
     );
   }
@@ -73,21 +92,6 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="max-w-md w-full bg-white shadow-xl rounded-2xl p-8 text-center border border-gray-100">
-          <div className="mb-4">
-            <svg
-              className="mx-auto h-12 w-12 text-red-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01M4.938 19h14.124a1.5 1.5 0 001.299-2.25L13.299 4.75a1.5 1.5 0 00-2.598 0L3.64 16.75A1.5 1.5 0 004.938 19z"
-              />
-            </svg>
-          </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Erreur</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
@@ -104,7 +108,9 @@ export default function DashboardPage() {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center">
-        <p className="text-lg text-gray-600 mb-4">Aucune donnée à afficher pour le moment.</p>
+        <p className="text-lg text-gray-600 mb-4">
+          Aucune donnée à afficher pour le moment.
+        </p>
         <button
           onClick={() => window.location.reload()}
           className="text-indigo-600 hover:text-indigo-800 font-semibold"
@@ -128,7 +134,8 @@ export default function DashboardPage() {
               Tableau de bord <span className="text-indigo-600">Net Strategy</span>
             </h1>
             <p className="text-gray-500 mt-1">
-              Suivez l’activité de vos <span className="font-semibold text-gray-700">clients</span> et{' '}
+              Suivez l’activité de vos{' '}
+              <span className="font-semibold text-gray-700">clients</span> et{' '}
               <span className="font-semibold text-gray-700">prospects</span> en temps réel.
             </p>
           </div>
@@ -154,7 +161,10 @@ export default function DashboardPage() {
           />
         </section>
 
-        {/* === SECTION UTILISATEURS (ADMIN ONLY) === */}
+        <TaskKanbanBoard tasks={tasks} setTasks={setTasks} />
+
+
+        {/* SECTION UTILISATEURS (ADMIN) */}
         {isAdmin && (
           <section className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-6">
@@ -171,9 +181,7 @@ export default function DashboardPage() {
             </div>
 
             {users.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                Aucun utilisateur enregistré dans le système.
-              </p>
+              <p className="text-gray-500 text-center py-8">Aucun utilisateur enregistré.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm text-gray-700 border-t border-gray-100">
@@ -196,9 +204,7 @@ export default function DashboardPage() {
                         <td className="px-4 py-3 flex items-center gap-2">
                           <Shield
                             className={`w-4 h-4 ${
-                              user.role === 'admin'
-                                ? 'text-red-500'
-                                : 'text-gray-400'
+                              user.role === 'admin' ? 'text-red-500' : 'text-gray-400'
                             }`}
                           />
                           <span
@@ -242,9 +248,7 @@ export default function DashboardPage() {
 
           {allEntities.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-              <p className="text-gray-500 text-lg">
-                Aucun client ou prospect n’a encore été enregistré.
-              </p>
+              <p className="text-gray-500 text-lg">Aucun client ou prospect enregistré.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -259,7 +263,7 @@ export default function DashboardPage() {
   );
 }
 
-/** === COMPONENT STATISTIQUE === */
+/** === Composant Statistique === */
 function StatCard({
   title,
   value,

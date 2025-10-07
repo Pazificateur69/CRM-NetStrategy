@@ -21,6 +21,7 @@ export interface Todo {
   date_echeance: string | null;
   statut: 'en_cours' | 'termine' | 'retard';
   user_id?: number;
+  user?: User | null; // Ajouté pour correspondre à l'usage dans page.tsx
   client_id?: number;
   created_at?: string;
   updated_at?: string;
@@ -34,6 +35,7 @@ export interface Rappel {
   date_rappel: string;
   fait: boolean;
   user_id?: number;
+  user?: User | null; // Ajouté pour correspondre à l'usage dans page.tsx
   client_id?: number;
   created_at?: string;
   updated_at?: string;
@@ -64,9 +66,15 @@ export interface Prestation {
     | 'Branding'
     | 'Comptabilite';
   notes: string | null;
+  tarif_ht: number | null; // Ajouté pour correspondre à l'usage dans page.tsx
+  frequence: string | null; // Ajouté pour correspondre à l'usage dans page.tsx
+  engagement_mois: number | null; // Ajouté pour correspondre à l'usage dans page.tsx
+  date_debut: string | null; // Ajouté pour correspondre à l'usage dans page.tsx
+  date_fin: string | null; // Ajouté pour correspondre à l'usage dans page.tsx
   responsable: User | null;
   contenu: ContenuFiche[];
   created_at: string;
+  updated_at?: string; // Ajouté pour correspondre à l'usage dans page.tsx
 }
 
 // --- BASE ENTITY (COMMUNE CLIENT / PROSPECT) ---
@@ -99,8 +107,18 @@ export interface DashboardData {
 // --- FICHE CLIENT DÉTAILLÉE ---
 export interface ClientDetail extends BaseEntity {
   gerant: string;
+  adresse: string | null; // <-- CORRECTION AJOUTÉE
+  ville: string | null; // <-- CORRECTION AJOUTÉE
+  code_postal: string | null; // <-- CORRECTION AJOUTÉE
+  site_web: string | null; // <-- CORRECTION AJOUTÉE
+  description_generale: string | null; // <-- CORRECTION AJOUTÉE
   siret: string | null;
   contrat: string | null;
+  montant_mensuel_total: number | null; // <-- CORRECTION AJOUTÉE
+  frequence_facturation: string | null; // <-- CORRECTION AJOUTÉE
+  mode_paiement: string | null; // <-- CORRECTION AJOUTÉE
+  iban: string | null; // <-- CORRECTION AJOUTÉE
+  notes_comptables: string | null; // <-- CORRECTION AJOUTÉE
   couleur_statut: StatutCouleur;
   prestations: Prestation[];
   todos: Todo[];
