@@ -22,6 +22,7 @@ class RoleAndPermissionSeeder extends Seeder
             'access dev',
             'access seo',
             'access social media',
+            'access branding',
             'access ads',
             'access comptabilite',
         ];
@@ -35,7 +36,14 @@ class RoleAndPermissionSeeder extends Seeder
         $roleAdmin->syncPermissions(Permission::all());
 
         $roleCom = Role::firstOrCreate(['name' => 'com']);
-        $roleCom->syncPermissions(['view prospects', 'manage prospects', 'view clients', 'manage clients']);
+        $roleCom->syncPermissions([
+            'view prospects',
+            'manage prospects',
+            'view clients',
+            'manage clients',
+            'access ads',
+            'access branding',
+        ]);
 
         $roleDev = Role::firstOrCreate(['name' => 'dev']);
         $roleDev->syncPermissions(['view clients', 'access dev']);
@@ -67,8 +75,8 @@ class RoleAndPermissionSeeder extends Seeder
         $louise->syncRoles('com'); 
 
         // Cherif (SEO)
-        $cherif = User::updateOrCreate(['email' => 'cherif@test.com'], ['name' => 'Cherif', 'password' => Hash::make('password123'), 'role' => 'dev']);
-        $cherif->syncRoles('seo'); 
+        $cherif = User::updateOrCreate(['email' => 'cherif@test.com'], ['name' => 'Cherif', 'password' => Hash::make('password123'), 'role' => 'seo']);
+        $cherif->syncRoles('seo');
 
         // Apo (Social Media)
         $apo = User::updateOrCreate(['email' => 'apo@test.com'], ['name' => 'Apo', 'password' => Hash::make('password123'), 'role' => 'reseaux_sociaux']);

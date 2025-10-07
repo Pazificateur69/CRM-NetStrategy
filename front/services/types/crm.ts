@@ -21,6 +21,7 @@ export interface Todo {
   date_echeance: string | null;
   statut: 'en_cours' | 'termine' | 'retard';
   user_id?: number;
+  user?: User | null;
   client_id?: number;
   created_at?: string;
   updated_at?: string;
@@ -34,6 +35,7 @@ export interface Rappel {
   date_rappel: string;
   fait: boolean;
   user_id?: number;
+  user?: User | null;
   client_id?: number;
   created_at?: string;
   updated_at?: string;
@@ -64,9 +66,15 @@ export interface Prestation {
     | 'Branding'
     | 'Comptabilite';
   notes: string | null;
+  tarif_ht: number | null;
+  frequence: string | null;
+  engagement_mois: number | null;
+  date_debut: string | null;
+  date_fin: string | null;
   responsable: User | null;
   contenu: ContenuFiche[];
   created_at: string;
+  updated_at?: string;
 }
 
 // --- BASE ENTITY (COMMUNE CLIENT / PROSPECT) ---
@@ -99,8 +107,18 @@ export interface DashboardData {
 // --- FICHE CLIENT DÉTAILLÉE ---
 export interface ClientDetail extends BaseEntity {
   gerant: string;
+  adresse: string | null;
+  ville: string | null;
+  code_postal: string | null;
+  site_web: string | null;
+  description_generale: string | null;
   siret: string | null;
   contrat: string | null;
+  montant_mensuel_total: number | null;
+  frequence_facturation: string | null;
+  mode_paiement: string | null;
+  iban: string | null;
+  notes_comptables: string | null;
   couleur_statut: StatutCouleur;
   prestations: Prestation[];
   todos: Todo[];

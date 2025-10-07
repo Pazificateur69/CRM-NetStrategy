@@ -25,8 +25,8 @@ class PrestationPolicy
      */
     public function view(User $user, Prestation $prestation): bool
     {
-        $permissionNeeded = 'access ' . strtolower(str_replace(' ', '_', $prestation->type));
-        
+        $permissionNeeded = Prestation::permissionForType($prestation->type);
+
         // 1. L'utilisateur doit avoir la permission d'accès au module (ex: access seo)
         if ($user->can($permissionNeeded)) {
             

@@ -14,12 +14,22 @@ class Client extends Model
     protected $fillable = [
         'societe',
         'gerant',
+        'adresse',
+        'ville',
+        'code_postal',
+        'site_web',
+        'description_generale',
         'siret',
         'emails',
         'telephones',
         'contrat',
         'date_contrat',
         'date_echeance',
+        'montant_mensuel_total',
+        'frequence_facturation',
+        'mode_paiement',
+        'iban',
+        'notes_comptables',
     ];
 
     protected $casts = [
@@ -27,6 +37,7 @@ class Client extends Model
         'telephones' => 'array',
         'date_contrat' => 'datetime',
         'date_echeance' => 'datetime',
+        'montant_mensuel_total' => 'decimal:2',
     ];
 
     // ✅ Relations polymorphiques

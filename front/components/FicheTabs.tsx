@@ -2,14 +2,24 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react'; // ⬅️ FIX: Importer le type LucideIcon (ou Icon)
 
-interface Tab {
+interface TabAccent {
+    border?: string;
+    badge?: string;
+    title?: string;
+}
+
+export interface TabDefinition {
     id: string;
     label: string;
     icon: LucideIcon; // ⬅️ Utiliser le type LucideIcon
+    allowedRoles?: string[];
+    prestationTypes?: string[];
+    accent?: TabAccent;
+    description?: string;
 }
 
 interface FicheTabsProps {
-    tabs: Tab[];
+    tabs: TabDefinition[];
     activeTab: string;
     setActiveTab: (id: string) => void;
 }
@@ -35,4 +45,4 @@ export default function FicheTabs({ tabs, activeTab, setActiveTab }: FicheTabsPr
             ))}
         </nav>
     );
-};
+}

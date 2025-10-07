@@ -21,8 +21,8 @@ export const getClientsList = async (): Promise<ClientDetail[]> => {
 
 // 3. Récupération de la liste des Prospects
 export const getProspectsList = async (): Promise<ProspectDetail[]> => {
-    const response = await api.get<{ data: ProspectDetail[] }>('/prospects'); 
-    return response.data.data;
+    const response = await api.get<{ data: ProspectDetail[] }>('/prospects');
+    return response.data.data.filter((prospect) => prospect.statut !== 'converti');
 };
 
 // 4. Récupération d'une fiche Client détaillée

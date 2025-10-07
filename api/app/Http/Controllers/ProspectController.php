@@ -22,7 +22,12 @@ class ProspectController extends Controller
             throw UnauthorizedException::forPermissions(['view prospects']);
         }
 
-        return ProspectResource::collection(Prospect::all())->response();
+        $query = Prospect::query()->orderByDesc('created_at');
+
+        // On masque automatiquement les prospects déjà convertis en clients
+        $query->where('statut', '!=', 'converti');
+
+        return ProspectResource::collection($query->get())->response();
     }
 
     /**

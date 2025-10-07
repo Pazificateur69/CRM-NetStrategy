@@ -46,6 +46,15 @@ export const addTodo = async (clientId: number, todo: Partial<Todo>): Promise<To
   return response.data.data;
 };
 
+export const updateTodo = async (todoId: number, todo: Partial<Todo>): Promise<Todo> => {
+  const response = await api.put(`/todos/${todoId}`, todo);
+  return response.data.data;
+};
+
+export const deleteTodo = async (todoId: number): Promise<void> => {
+  await api.delete(`/todos/${todoId}`);
+};
+
 // ===============================
 // 🔹 RAPPELS
 // ===============================
@@ -60,6 +69,15 @@ export const addRappel = async (clientId: number, rappel: Partial<Rappel>): Prom
     client_id: clientId,
   });
   return response.data.data;
+};
+
+export const updateRappel = async (rappelId: number, rappel: Partial<Rappel>): Promise<Rappel> => {
+  const response = await api.put(`/rappels/${rappelId}`, rappel);
+  return response.data.data;
+};
+
+export const deleteRappel = async (rappelId: number): Promise<void> => {
+  await api.delete(`/rappels/${rappelId}`);
 };
 
 // ===============================
@@ -91,4 +109,15 @@ export const getProspectById = async (id: number | string): Promise<ProspectDeta
 export const convertProspect = async (id: number): Promise<ConversionResponse> => {
   const response = await api.post(`/prospects/${id}/convert`);
   return response.data;
+};
+
+export const updateClient = async (
+  id: number,
+  client: Partial<ClientDetail> & {
+    emails?: string[];
+    telephones?: string[];
+  }
+): Promise<ClientDetail> => {
+  const response = await api.put(`/clients/${id}`, client);
+  return response.data.data;
 };
