@@ -18,7 +18,8 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'role' => 'nullable|string|in:admin,com,rh,reseaux,user', // selon tes besoins
+            'role' => 'nullable|string|in:admin,com,rh,reseaux,user',
+            'pole' => 'nullable|string|max:255', // ✅ si tu veux attribuer un pôle à l’inscription
         ]);
 
         $user = User::create([
@@ -26,6 +27,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
             'role' => $validated['role'] ?? 'user',
+            'pole' => $validated['pole'] ?? null,
         ]);
 
         return response()->json([
@@ -54,11 +56,19 @@ class AuthController extends Controller
 
         $token = $user->createToken('api_token')->plainTextToken;
 
+        // ✅ On renvoie les infos utiles au front (pôle + rôles Spatie)
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-        ]);
+    'access_token' => $token,
+    'token_type' => 'Bearer',
+    'user' => [
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'role' => $user->role,
+        'pole' => $user->pole, // ✅ ajoute ceci
+    ],
+]);
+
     }
 
     /**

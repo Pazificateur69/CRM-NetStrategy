@@ -3,23 +3,21 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Client;
 use App\Models\Rappel;
+use App\Models\Client;
 
 class RappelController extends Controller
 {
     /**
-     * 🔹 Lister les rappels
-     * - Admin → tous les rappels
-     * - Autres → seulement les leurs
+     * 🔹 Lister tous les rappels
      */
     public function index(Request $request)
     {
         $user = $request->user();
 
         $rappels = $user->hasRole('admin')
-            ? Rappel::with(['user', 'rappelable'])->latest()->get()
-            : Rappel::with(['user', 'rappelable'])
+            ? Rappel::with(['user', 'client'])->latest()->get()
+            : Rappel::with(['user', 'client'])
                 ->where('user_id', $user->id)
                 ->latest()
                 ->get();
@@ -28,52 +26,102 @@ class RappelController extends Controller
     }
 
     /**
-     * 🔹 Créer un rappel polymorphique (lié à un client par défaut)
+     * 🔹 Récupérer les rappels par pôle (Kanban)
+     */
+    public function getByPole(Request $request, string $pole)
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('admin') || $user->pole === 'admin') {
+            $rappels = Rappel::with(['user', 'client'])->latest()->get();
+        } else {
+            $rappels = Rappel::with(['user', 'client'])
+                ->where(function ($query) use ($pole) {
+                    $query->where('pole', $pole)
+                          ->orWhereNull('pole');
+                })
+                ->latest()
+                ->get();
+        }
+
+        return response()->json($rappels);
+    }
+
+    /**
+     * 🔹 Créer un rappel
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'date_rappel' => 'required|date',
-            'fait' => 'boolean',
-            'client_id' => 'required|integer|exists:clients,id',
+            'date_rappel' => 'nullable|date',
+            'statut' => 'nullable|string|in:planifie,en_cours,termine',
+            'client_id' => 'nullable|integer|exists:clients,id',
         ]);
 
-        $client = Client::findOrFail($validated['client_id']);
+        $user = $request->user();
 
-        $rappel = $client->rappels()->create([
+        $rappel = new Rappel();
+        $rappel->fill([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
-            'date_rappel' => $validated['date_rappel'],
-            'fait' => $validated['fait'] ?? false,
-            'user_id' => $request->user()->id,
+            'date_rappel' => $validated['date_rappel'] ?? null,
+            'statut' => $validated['statut'] ?? 'planifie',
+            'user_id' => $user->id,
+            'client_id' => $validated['client_id'] ?? null,
+            'pole' => $user->pole ?? null,
         ]);
 
-        return response()->json(['data' => $rappel->load('user')], 201);
+        $rappel->rappelable_type = Client::class;
+        $rappel->rappelable_id = $validated['client_id'] ?? null;
+
+        $rappel->save();
+
+        return response()->json([
+            'message' => 'Rappel créé avec succès.',
+            'data' => $rappel->load(['user', 'client']),
+        ], 201);
     }
 
     /**
-     * 🔹 Modifier un rappel
+     * 🔹 Modifier un rappel (drag & drop Kanban)
      */
-    public function update(Request $request, Rappel $rappel)
+    public function update(Request $request, $id)
     {
-        $user = $request->user();
+        $rappel = Rappel::find($id);
+        if (!$rappel) {
+            return response()->json(['error' => "Rappel introuvable (id: $id)"], 404);
+        }
 
+        $user = $request->user();
         if ($user->id !== $rappel->user_id && !$user->hasRole('admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
         $validated = $request->validate([
-            'titre' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'date_rappel' => 'nullable|date',
-            'fait' => 'boolean',
+            'status' => 'nullable|string|in:todo,in-progress,done',
+            'statut' => 'nullable|string|in:planifie,en_cours,termine',
         ]);
 
-        $rappel->update($validated);
+        $mapStatus = [
+            'todo' => 'planifie',
+            'in-progress' => 'en_cours',
+            'done' => 'termine',
+        ];
 
-        return response()->json(['data' => $rappel->load('user')]);
+        if (isset($validated['status'])) {
+            $rappel->statut = $mapStatus[$validated['status']] ?? 'planifie';
+        } elseif (isset($validated['statut'])) {
+            $rappel->statut = $validated['statut'];
+        }
+
+        $rappel->save();
+
+        return response()->json([
+            'message' => 'Rappel mis à jour avec succès.',
+            'data' => $rappel->load(['user', 'client']),
+        ]);
     }
 
     /**

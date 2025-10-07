@@ -24,9 +24,10 @@ class Prestation extends Model
     }
 
     public function responsable()
-    {
-        return $this->belongsTo(User::class, 'responsable');
-    }
+{
+    return $this->belongsTo(User::class, 'responsable_id');
+}
+
 
     public function contenu()
     {

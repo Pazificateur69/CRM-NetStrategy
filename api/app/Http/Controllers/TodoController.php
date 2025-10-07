@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Client;
 use App\Models\Todo;
+use App\Models\Client;
 
 class TodoController extends Controller
 {
     /**
-     * 🔹 Lister les ToDos
+     * 🔹 Lister toutes les ToDos
      * - Admin → voit tout
      * - Autres → seulement les leurs
      */
@@ -28,6 +28,30 @@ class TodoController extends Controller
     }
 
     /**
+     * 🔹 Récupérer les tâches par pôle (pour le Kanban du Dashboard)
+     */
+    public function getByPole(Request $request, string $pole)
+    {
+        $user = $request->user();
+
+        // 🧠 Si admin → renvoie toutes les tâches
+        if ($user->hasRole('admin') || $user->pole === 'admin') {
+            $todos = Todo::with(['user', 'client'])->latest()->get();
+        } else {
+            // 🔒 Sinon → tâches de son pôle + globales (sans pôle)
+            $todos = Todo::with(['user', 'client'])
+                ->where(function ($query) use ($pole) {
+                    $query->where('pole', $pole)
+                          ->orWhereNull('pole');
+                })
+                ->latest()
+                ->get();
+        }
+
+        return response()->json($todos);
+    }
+
+    /**
      * 🔹 Créer une ToDo liée à un client
      */
     public function store(Request $request)
@@ -40,52 +64,69 @@ class TodoController extends Controller
             'client_id' => 'required|integer|exists:clients,id',
         ]);
 
-        // ✅ Création complète et cohérente
+        $user = $request->user();
+
         $todo = new Todo();
         $todo->fill([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
             'date_echeance' => $validated['date_echeance'] ?? null,
             'statut' => $validated['statut'] ?? 'en_cours',
-            'user_id' => $request->user()->id,
-            'client_id' => $validated['client_id'], // 👈 obligatoire pour éviter l’erreur SQL
+            'user_id' => $user->id,
+            'client_id' => $validated['client_id'],
+            'pole' => $user->pole ?? null,
         ]);
 
-        // 🔹 Liaison polymorphique (facultative mais cohérente avec ton schéma)
-        $todo->todoable_type = \App\Models\Client::class;
+        $todo->todoable_type = Client::class;
         $todo->todoable_id = $validated['client_id'];
 
         $todo->save();
 
         return response()->json([
             'message' => 'Tâche créée avec succès.',
-            'data' => $todo->load(['user', 'client'])
+            'data' => $todo->load(['user', 'client']),
         ], 201);
     }
 
     /**
-     * 🔹 Modifier une ToDo
+     * 🔹 Modifier une ToDo (drag & drop du Kanban)
      */
-    public function update(Request $request, Todo $todo)
+    public function update(Request $request, $id)
     {
-        $user = $request->user();
+        $todo = Todo::find($id);
+        if (!$todo) {
+            return response()->json(['error' => "Tâche introuvable (id: $id)"], 404);
+        }
 
+        $user = $request->user();
         if ($user->id !== $todo->user_id && !$user->hasRole('admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
-        $validated = $request->validate([
-            'titre' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'date_echeance' => 'nullable|date',
-            'statut' => 'nullable|string|in:en_cours,termine,retard',
-        ]);
+        \Log::info('📥 Payload reçu:', $request->all());
 
-        $todo->update($validated);
+        $mapStatus = [
+            'todo' => 'retard',
+            'in-progress' => 'en_cours',
+            'done' => 'termine',
+        ];
+
+        if ($request->has('status')) {
+            $todo->statut = $mapStatus[$request->input('status')] ?? 'en_cours';
+        } elseif ($request->has('statut')) {
+            $todo->statut = $request->input('statut');
+        }
+
+        $todo->save();
+
+        \Log::info('✅ Tâche mise à jour', [
+            'id' => $todo->id,
+            'nouveau_statut' => $todo->statut,
+        ]);
 
         return response()->json([
             'message' => 'Tâche mise à jour avec succès.',
-            'data' => $todo->load(['user', 'client'])
+            'data' => $todo->load(['user', 'client']),
         ]);
     }
 

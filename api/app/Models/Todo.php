@@ -16,6 +16,7 @@ class Todo extends Model
     'date_echeance',
     'statut',
     'user_id',
+    'pole',
     'client_id',
     'todoable_type',
     'todoable_id',
@@ -31,4 +32,10 @@ class Todo extends Model
     {
         return $this->morphTo();
     }
+
+    public function client()
+{
+    return $this->belongsTo(Client::class);
+}
+
 }

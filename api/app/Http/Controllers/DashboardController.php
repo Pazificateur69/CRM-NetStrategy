@@ -4,37 +4,58 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Prospect;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
-    public function clientOverview(): JsonResponse
+    public function clientOverview(Request $request): JsonResponse
     {
-        $this->authorize('view clients');
+        $user = $request->user();
+        $pole = $user->pole ?? null;
+        $isAdmin = $user->role === 'admin';
 
-        // 🔹 Clients
-        $clients = Client::all()->map(function ($client) {
+        // 🔹 Récupération des clients sans filtrage
+        $clients = Client::with(['todos', 'rappels'])->get()->map(function ($client) use ($pole, $isAdmin) {
+            // 🔸 Si admin → voit toutes les tâches
+            $todos = $isAdmin
+                ? $client->todos
+                : $client->todos->where('pole', $pole);
+
+            $todosEnRetard = $todos
+                ->where('statut', '!=', 'termine')
+                ->where('date_echeance', '<', now())
+                ->count();
+
             return [
                 'id' => $client->id,
-                'societe' => $client->societe,
-                'gerant' => $client->gerant ?? 'N/A',
-                'contact' => $client->gerant ?? 'N/A',
+                'societe' => $client->societe ?? '—',
+                'contact' => $client->contact ?? '—',
                 'type' => 'Client',
-                'couleur_statut' => $client->couleur_statut ?? 'vert',
-                'todos_en_retard' => $client->todos()->where('statut', 'retard')->count(),
+                'couleur_statut' => $todosEnRetard > 0 ? 'rouge' : 'vert',
+                'todos_en_retard' => $todosEnRetard,
                 'url_fiche' => "/clients/{$client->id}",
             ];
         });
 
-        // 🔹 Prospects
-        $prospects = Prospect::all()->map(function ($prospect) {
+        // 🔹 Récupération des prospects sans filtrage
+        $prospects = Prospect::with(['todos', 'rappels'])->get()->map(function ($prospect) use ($pole, $isAdmin) {
+            $todos = $isAdmin
+                ? $prospect->todos
+                : $prospect->todos->where('pole', $pole);
+
+            $todosEnRetard = $todos
+                ->where('statut', '!=', 'termine')
+                ->where('date_echeance', '<', now())
+                ->count();
+
             return [
                 'id' => $prospect->id,
-                'societe' => $prospect->societe,
-                'contact' => $prospect->contact ?? 'N/A',
+                'societe' => $prospect->societe ?? '—',
+                'contact' => $prospect->contact ?? '—',
                 'type' => 'Prospect',
-                'couleur_statut' => $prospect->couleur_statut ?? 'bleu',
-                'todos_en_retard' => $prospect->todos()->where('statut', 'retard')->count(),
+                'couleur_statut' => $todosEnRetard > 0 ? 'rouge' : 'bleu',
+                'todos_en_retard' => $todosEnRetard,
                 'url_fiche' => "/prospects/{$prospect->id}",
             ];
         });

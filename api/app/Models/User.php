@@ -17,6 +17,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'pole',
     ];
 
     protected $hidden = [
@@ -28,7 +30,29 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // Relations personnelles
+    /**
+     * 🔁 Booted : assigne automatiquement un pôle selon le rôle à la création
+     */
+    protected static function boot()
+{
+    parent::boot();
+
+    static::creating(function ($user) {
+        if (empty($user->pole) && !empty($user->role)) {
+            $user->pole = match ($user->role) {
+                'admin' => 'admin',        // ✅ l’admin aura son pôle à lui
+                'com' => 'com',
+                'rh' => 'rh',
+                'reseaux' => 'reseaux',
+                'dev' => 'dev',
+                default => 'general',
+            };
+        }
+    });
+}
+
+
+    // 🔹 Relations
     public function todos()
     {
         return $this->hasMany(Todo::class);

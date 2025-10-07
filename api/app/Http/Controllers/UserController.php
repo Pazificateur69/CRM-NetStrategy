@@ -29,42 +29,47 @@ class UserController extends Controller
 
     // 🧩 Création d’un utilisateur
     public function store(Request $request)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        if (!$user || !$user->hasRole('admin')) {
-            Log::warning('Tentative non autorisée de création utilisateur', [
-                'user_id' => $user?->id,
-                'roles' => $user?->getRoleNames(),
-            ]);
-            return response()->json(['message' => 'Accès refusé'], 403);
-        }
-
-        Log::info('Création utilisateur par admin', [
-            'user_id' => $user->id,
-            'roles' => $user->getRoleNames(),
-        ]);
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'role' => 'required|string|exists:roles,name',
-        ]);
-
-        $newUser = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        $newUser->assignRole($validated['role']);
-
-        return response()->json([
-            'message' => 'Utilisateur créé avec succès',
-            'user' => $newUser->load('roles'),
-        ], 201);
+    if (!$user || !$user->hasRole('admin')) {
+        return response()->json(['message' => 'Accès refusé'], 403);
     }
+
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|string|min:6',
+        'role' => 'required|string|exists:roles,name',
+    ]);
+
+    // ✅ Définir automatiquement le pôle à partir du rôle
+    $pole = match ($validated['role']) {
+        'admin' => 'direction',
+        'com' => 'com',
+        'rh' => 'rh',
+        'reseaux' => 'reseaux',
+        'dev' => 'dev',
+        default => 'general',
+    };
+
+    // ✅ Création de l’utilisateur
+    $newUser = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
+        'role' => $validated['role'],
+        'pole' => $pole, // 🔥 automatique ici
+    ]);
+
+    $newUser->assignRole($validated['role']);
+
+    return response()->json([
+        'message' => 'Utilisateur créé avec succès',
+        'user' => $newUser->load('roles'),
+    ], 201);
+}
+
 
     // 🧩 Mise à jour d’un utilisateur
     public function update(Request $request, User $user)
@@ -111,4 +116,39 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Utilisateur supprimé avec succès']);
     }
+
+    public function register(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'password' => 'required|string|min:6',
+        'role' => 'nullable|string|in:admin,com,rh,reseaux,user',
+    ]);
+
+    // ✅ Définir le pôle automatiquement selon le rôle
+    $role = $validated['role'] ?? 'user';
+    $pole = match ($role) {
+        'admin' => 'direction',
+        'com' => 'com',
+        'rh' => 'rh',
+        'reseaux' => 'reseaux',
+        'dev' => 'dev',
+        default => 'general',
+    };
+
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => bcrypt($validated['password']),
+        'role' => $role,
+        'pole' => $pole, // ✅ automatique
+    ]);
+
+    return response()->json([
+        'message' => 'Utilisateur créé avec succès',
+        'user' => $user,
+    ], 201);
+}
+
 }

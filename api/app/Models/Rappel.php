@@ -15,8 +15,10 @@ class Rappel extends Model
         'titre',
         'description',
         'date_rappel',
-        'fait',
+        'statut',
+        'pole',
         'user_id',
+        'client_id',
         'rappelable_id',
         'rappelable_type',
     ];
@@ -29,5 +31,10 @@ class Rappel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 }
