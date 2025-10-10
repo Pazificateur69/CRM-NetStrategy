@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Client;
+use App\Models\User;
 
 class Rappel extends Model
 {
@@ -15,7 +15,9 @@ class Rappel extends Model
         'titre',
         'description',
         'date_rappel',
+        'fait',
         'statut',
+        'ordre', // ✅ indispensable
         'pole',
         'user_id',
         'client_id',
@@ -23,18 +25,19 @@ class Rappel extends Model
         'rappelable_type',
     ];
 
-    public function rappelable(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function client(): BelongsTo
+    public function rappelable()
     {
-        return $this->belongsTo(Client::class);
+        return $this->morphTo();
     }
+
+    public function assignedUsers()
+{
+    return $this->belongsToMany(User::class, 'rappel_user');
+}
+
 }

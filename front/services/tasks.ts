@@ -1,29 +1,57 @@
-// src/services/tasks.ts
+// front/services/tasks.ts
 import api from './api';
 
+// ===========================================
+// 🔹 Typage principal
+// ===========================================
 export interface Task {
   id: string;
   title: string;
-  client: string;
-  pole: string;
-  dueDate: string | null;
-  responsible: string;
-  type: 'todo' | 'reminder';
   status: 'todo' | 'in-progress' | 'done';
+  type: 'todo' | 'reminder';
+  client?: string;
+  pole?: string;
+  dueDate?: string | null;
+  responsible?: string;
+  ordre?: number;
 }
 
-// ==========================================
+// Types détaillés (utiles pour la cohérence avec crm.ts)
+export interface Todo {
+  id: number;
+  titre: string;
+  description?: string;
+  statut: 'planifie' | 'en_cours' | 'termine' | 'retard';
+  date_echeance?: string;
+  client_id?: number;
+  user_id?: number;
+  pole?: string | null;
+  ordre?: number;
+}
+
+export interface Rappel {
+  id: number;
+  titre: string;
+  description?: string;
+  date_rappel?: string;
+  fait?: boolean;
+  statut?: 'planifie' | 'en_cours' | 'termine';
+  client_id?: number;
+  user_id?: number;
+  pole?: string | null;
+  ordre?: number;
+}
+
+// ===========================================
 // 🧩 Mapping Back <-> Front
-// ==========================================
+// ===========================================
 const mapBackendToFrontendStatus = (statut: string): Task['status'] => {
   switch (statut) {
-    case 'retard':
-    case 'planifie':
-      return 'todo';
     case 'en_cours':
       return 'in-progress';
     case 'termine':
       return 'done';
+    case 'planifie':
     default:
       return 'todo';
   }
@@ -31,52 +59,55 @@ const mapBackendToFrontendStatus = (statut: string): Task['status'] => {
 
 const mapFrontendToBackendStatus = (status: Task['status']): string => {
   switch (status) {
-    case 'todo':
-      return 'planifie';
     case 'in-progress':
       return 'en_cours';
     case 'done':
       return 'termine';
+    case 'todo':
+    default:
+      return 'planifie';
   }
 };
 
-// ==========================================
+// ===========================================
 // 🟢 Récupération des tâches + rappels
-// ==========================================
+// ===========================================
 export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
   const [todosRes, rappelsRes] = await Promise.all([
     api.get(`/todos/pole/${pole}`),
     api.get(`/rappels/pole/${pole}`),
   ]);
 
-  const todos = todosRes.data.map((t: any) => ({
+  const todos: Task[] = todosRes.data.map((t: any) => ({
     id: String(t.id),
     title: t.titre,
     client: t.client?.societe || 'N/A',
-    pole: t.pole || '—',
+    pole: t.pole || pole,
     dueDate: t.date_echeance || null,
     responsible: t.user?.name || '—',
     type: 'todo',
     status: mapBackendToFrontendStatus(t.statut),
+    ordre: t.ordre || 0,
   }));
 
-  const rappels = rappelsRes.data.map((r: any) => ({
+  const rappels: Task[] = rappelsRes.data.map((r: any) => ({
     id: `r-${r.id}`,
     title: r.titre,
     client: r.client?.societe || 'N/A',
-    pole: r.pole || '—',
+    pole: r.pole || pole,
     dueDate: r.date_rappel || null,
     responsible: r.user?.name || '—',
     type: 'reminder',
     status: mapBackendToFrontendStatus(r.statut ?? 'planifie'),
+    ordre: r.ordre || 0,
   }));
 
   return [...todos, ...rappels];
 }
 
-// ==========================================
+// ===========================================
 // 🟣 Mise à jour du statut (Kanban drag & drop)
-// ==========================================
+// ===========================================
 export async function updateTaskStatus(
   taskId: string,
   newStatus: Task['status'],
@@ -86,17 +117,16 @@ export async function updateTaskStatus(
   const endpoint = type === 'todo' ? '/todos' : '/rappels';
   const cleanId = taskId.replace('r-', '');
 
+  const payload =
+    type === 'todo'
+      ? { statut: backendStatus }
+      : { statut: backendStatus, fait: newStatus === 'done' };
+
   try {
-    console.log(`🔄 updateTaskStatus → ${endpoint}/${cleanId} (${backendStatus})`);
+    console.log(`🔄 updateTaskStatus → ${endpoint}/${cleanId}`, payload);
 
-    const response = await api.put(`${endpoint}/${cleanId}`, {
-      status: newStatus,
-      statut: backendStatus,
-    });
-
-    const t = response.data.data;
-
-    console.log('✅ Réponse API:', response.data);
+    const response = await api.put(`${endpoint}/${cleanId}`, payload);
+    const t = response.data.data || response.data;
 
     return {
       id: String(t.id),
@@ -107,6 +137,7 @@ export async function updateTaskStatus(
       responsible: t.user?.name || '—',
       type,
       status: mapBackendToFrontendStatus(t.statut),
+      ordre: t.ordre || 0,
     };
   } catch (error: any) {
     console.error('❌ Erreur updateTaskStatus :', error.response?.status, error.response?.data);

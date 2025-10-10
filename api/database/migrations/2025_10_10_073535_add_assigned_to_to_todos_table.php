@@ -9,11 +9,11 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    // database/migrations/xxxx_add_assigned_to_to_todos_table.php
+public function up()
 {
-    Schema::table('prestations', function (Blueprint $table) {
-        $table->unsignedBigInteger('responsable_id')->nullable()->after('id');
-        $table->foreign('responsable_id')->references('id')->on('users')->onDelete('set null');
+    Schema::table('todos', function (Blueprint $table) {
+        $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
     });
 }
 
@@ -23,7 +23,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('prestations', function (Blueprint $table) {
+        Schema::table('todos', function (Blueprint $table) {
             //
         });
     }

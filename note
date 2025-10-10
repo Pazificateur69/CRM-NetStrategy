@@ -1,160 +1,52 @@
-📄 1. PAGE PRINCIPALE (Dashboard général)
-✅ Fonctionnalités à implémenter
+🧭 1. Dashboard général
 
-Afficher les To-Do et Rappels globaux
+ Ajouter la possibilité de changer la priorité (ordre) des tâches directement.
 
-Liste claire de toutes les tâches à faire (tous pôles confondus).
+ Implémenter un rappel mail quotidien avec la liste des rappels du jour.
 
-Même chose pour les rappels.
+ Ajouter des boutons pour supprimer ou décaler un rappel (ex : +1 jour).
 
-Interface façon Notion
+👤 2. Page client
+🧱 Tâches & rappels
 
-Pouvoir glisser/déplacer les tâches entre différentes priorités :
-Ex. "À faire", "En cours", "Terminé" (drag & drop).
+ Permettre de télécharger les fichiers uploadés (endpoint + bouton).
 
-Permettre de changer la priorité directement dans l’interface.
+💬 Commentaires / Journal
 
-Affichage condensé
+ Créer une page “Journal global” affichant tous les commentaires de tous les pôles.
 
-To-Do et Rappels présentés sous forme de colonnes ou de tableaux dynamiques.
+ Colorer les commentaires selon le pôle (SEO, Com, Dev, Réseaux, Compta).
 
-Chaque carte affiche : titre, client, pôle, échéance, statut, responsable.
+ Ajouter une légende des couleurs (code couleur des pôles).
 
-🧾 2. PAGE CLIENT
-✅ Fonctionnalités à corriger / compléter
-🧱 A. Tâches & rappels
+ Créer un “Historique unifié” dans l’onglet Détails :
 
-Désactiver totalement l’affichage To-Do & Rappel sur la page “Compta”
+ Inclure : To-Do terminées + rappels passés + commentaires récents.
 
-La section doit être absente (pas simplement vide).
+ Trier par date décroissante (timeline).
 
-Corriger le bug d’affichage des To-Do (ceux non reliés à un pôle ne s’affichent pas correctement).
+ Ajouter les infos de facturation du client à la fin.
 
-Assurer le filtrage des To-Do et Rappels par pôle actif.
+ Ajouter un export CSV ou PDF de cet historique.
 
-Ex : onglet “Pôle SEO” → affiche uniquement To-Do et Rappels dont pole = SEO.
+ Afficher les données contractuelles du client en haut (montant, fréquence, échéance, mode de paiement, IBAN).
 
-💬 B. Commentaires
+⚙️ 3. Back-end Laravel
 
-Commentaires globaux :
+ Vérifier les relations :
 
-Afficher tous les commentaires de tous les pôles sur une seule page (“Journal global”).
+ Client → todos(), Client → rappels(), Client → contenu()
 
-Chaque commentaire est coloré selon le pôle :
+ Todo → client(), Rappel → client()
 
-🟩 SEO
+ S’assurer que le champ pole est bien présent dans todos, rappels, contenu.
 
-🟨 Com
+ Vérifier les méthodes update() dans TodoController et RappelController (chargement des relations après update).
 
-🟦 Dev
+ Créer un endpoint /clients/{id}/compta pour récupérer les prestations et montants.
 
-🟪 Réseaux sociaux
+🎨 4. UX / design
 
-🧾 Compta
+ Harmoniser les couleurs et icônes par pôle (SEO vert, Com jaune, Dev bleu, etc.).
 
-Ajouter légende des couleurs.
-
-Historique unifié (dans l’onglet “Détails”) :
-
-Reprendre :
-
-✅ les To-Do terminées,
-
-✅ les rappels passés,
-
-✅ les commentaires récents.
-
-Les classer par date décroissante (timeline).
-
-Ajouter les informations de facturation à la suite (montants, échéances, contrat).
-
-📁 3. DOSSIER NUMÉRIQUE
-✅ Structure à mettre en place
-
-Un dossier numérique général (déjà existant).
-→ contient tous les fichiers communs au client.
-
-Un dossier numérique par pôle :
-
-pôle_com
-
-pôle_seo
-
-pôle_dev
-
-pôle_reseaux
-
-pôle_compta
-→ Chacun avec upload / visualisation / suppression séparés.
-
-Gestion back :
-
-Ajouter un champ pole (nullable) dans la table contenu (fichiers).
-
-Lors de l’upload, associer le fichier soit à un pôle, soit au dossier général.
-
-💼 4. COMPTABILITÉ
-✅ Rendre le tableau fonctionnel
-
-Activer le tableau de compta (prestations + paiements)
-
-Colonnes :
-
-Type de prestation
-
-Référent
-
-Tarif HT
-
-Fréquence
-
-Engagement
-
-Période
-
-Notes
-
-Dernière mise à jour
-
-Si possible : export CSV ou PDF.
-
-Dynamiser les calculs :
-
-Total HT global.
-
-Filtrage par pôle ou période.
-
-Afficher les données contractuelles du client en haut de page :
-
-Montant mensuel, mode de paiement, IBAN, fréquence, date contrat, échéance.
-
-🔧 5. BACK-END (API Laravel)
-✅ Relations & endpoints à vérifier
-
-Dans Todo :
-
-public function client() { return $this->belongsTo(Client::class); }
-
-
-Dans Client :
-
-public function todos() { return $this->hasMany(Todo::class); }
-public function rappels() { return $this->hasMany(Rappel::class); }
-public function contenu() { return $this->hasMany(Contenu::class); }
-
-
-Ajouter un champ pole dans todos, rappels et contenu si ce n’est pas déjà fait.
-
-Vérifier les méthodes update de TodoController et RappelController :
-
-Charger les relations correctement ($todo->load(['client', 'user'])).
-
-Ajouter un endpoint /compta pour récupérer toutes les prestations du client.
-
-🧠 6. UX / COHÉRENCE GLOBALE
-
-Ajouter des icônes distinctes pour chaque pôle.
-
-Harmoniser les couleurs (par pôle).
-
-Prévoir une vue “Historique client” (timeline globale) récapitulative de tous les événements.
+ Créer une vue Timeline globale récapitulative de tout l’historique client (tâches, rappels, commentaires, factures).

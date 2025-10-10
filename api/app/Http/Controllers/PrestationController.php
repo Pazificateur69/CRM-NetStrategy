@@ -4,61 +4,96 @@ namespace App\Http\Controllers;
 
 use App\Models\Prestation;
 use Illuminate\Http\Request;
-use App\Http\Resources\PrestationResource;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\PrestationResource;
 
 class PrestationController extends Controller
 {
+    /**
+     * 📋 Lister toutes les prestations
+     * (réservé aux administrateurs ou utilisateurs autorisés)
+     */
     public function index(): JsonResponse
     {
-        // 🛡️ SÉCURITÉ : L'accès à l'index doit être très limité, ou filtré par client.
-        // Simplification: Seuls les admins voient toutes les prestations.
-        $this->authorize('view clients'); 
+        $this->authorize('view clients');
 
-        // Pour les autres rôles, la liste doit être filtrée par l'ID utilisateur (à implémenter via Scope)
-        $prestations = Prestation::all();
+        $prestations = Prestation::with(['client', 'responsable'])->get();
 
         return PrestationResource::collection($prestations)->response();
     }
 
-    public function store(Request $request): JsonResponse
+    /**
+     * ➕ Créer une nouvelle prestation liée à un client
+     * (Appelée via POST /clients/{client}/prestations)
+     */
+    public function store(Request $request, $clientId): JsonResponse
     {
         $this->authorize('manage clients');
 
         $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
-            'type' => 'required|in:Dev,SEO,Ads,Social Media,Branding,Comptabilite',
-            'assigned_user_id' => 'nullable|exists:users,id',
-            'notes' => 'nullable|string',
+            'type'             => 'required|string|max:100',
+            'tarif_ht'         => 'required|numeric|min:0',
+            'frequence'        => 'required|string|max:100',
+            'engagement_mois'  => 'nullable|integer|min:0',
+            'date_debut'       => 'nullable|date',
+            'date_fin'         => 'nullable|date|after_or_equal:date_debut',
+            'notes'            => 'nullable|string|max:500',
         ]);
 
+        $validated['client_id'] = $clientId;
+        $validated['assigned_user_id'] = $request->input('assigned_user_id') ?? null;
+
         $prestation = Prestation::create($validated);
-        return (new PrestationResource($prestation))->response()->setStatusCode(201);
+
+        return (new PrestationResource($prestation->load(['client', 'responsable'])))
+            ->response()
+            ->setStatusCode(201);
     }
 
+    /**
+     * 👁️ Voir une prestation spécifique
+     */
     public function show(Prestation $prestation): JsonResponse
     {
-        // 🛡️ SÉCURITÉ : La Policy s'applique ici: vérifie si l'utilisateur a le droit de voir CET enregistrement
-        $this->authorize('view', $prestation); 
-        
-        $prestation->load(['contenu', 'responsable']);
+        $this->authorize('view clients');
+
+        $prestation->load(['client', 'responsable']);
 
         return (new PrestationResource($prestation))->response();
     }
 
+    /**
+     * ✏️ Mettre à jour une prestation
+     * (Appelée via PUT /prestations/{id})
+     */
     public function update(Request $request, Prestation $prestation): JsonResponse
     {
-        // 🛡️ SÉCURITÉ : Vérifie si l'utilisateur a le droit de modifier CET enregistrement
-        $this->authorize('update', $prestation);
+        $this->authorize('manage clients');
 
-        $prestation->update($request->all());
-        return (new PrestationResource($prestation))->response();
+        $validated = $request->validate([
+            'type'             => 'sometimes|required|string|max:100',
+            'tarif_ht'         => 'sometimes|required|numeric|min:0',
+            'frequence'        => 'sometimes|required|string|max:100',
+            'engagement_mois'  => 'nullable|integer|min:0',
+            'date_debut'       => 'nullable|date',
+            'date_fin'         => 'nullable|date|after_or_equal:date_debut',
+            'notes'            => 'nullable|string|max:500',
+        ]);
+
+        $prestation->update($validated);
+
+        return (new PrestationResource($prestation->fresh(['client', 'responsable'])))->response();
     }
 
+    /**
+     * ❌ Supprimer une prestation
+     */
     public function destroy(Prestation $prestation): JsonResponse
     {
-        $this->authorize('manage clients'); // Seul un manager peut supprimer une prestation
+        $this->authorize('manage clients');
+
         $prestation->delete();
-        return response()->json(null, 204);
+
+        return response()->json(['message' => 'Prestation supprimée avec succès.'], 204);
     }
 }

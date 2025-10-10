@@ -26,10 +26,9 @@ Route::post('/register', [AuthController::class, 'register']);
 // ===================================================
 Route::middleware('auth:sanctum')->group(function () {
 
-    // --- 🔹 AUTHENTIFICATION ---
-    Route::post('/logout', [AuthController::class, 'logout']);
-
-    // --- 🔹 PROFIL UTILISATEUR CONNECTÉ ---
+    // ===================================================
+    // 👤 UTILISATEUR CONNECTÉ
+    // ===================================================
     Route::get('/user', function (Request $request) {
         $user = $request->user();
 
@@ -46,16 +45,14 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ===================================================
-    // 🧭 DASHBOARD
+    // 🚪 AUTHENTIFICATION
     // ===================================================
-    Route::get('/dashboard/clients-overview', [DashboardController::class, 'clientOverview']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // ===================================================
-    // 👤 UTILISATEURS (ADMIN)
+    // 📊 DASHBOARD
     // ===================================================
-    Route::middleware(['role:admin'])->group(function () {
-        Route::apiResource('users', UserController::class);
-    });
+    Route::get('/dashboard/clients-overview', [DashboardController::class, 'clientOverview']);
 
     // ===================================================
     // 🧱 CLIENTS & PROSPECTS
@@ -66,15 +63,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('prospects', ProspectController::class)
         ->middleware('permission:view prospects|manage prospects');
 
-    // Conversion prospect → client
+    // Conversion d’un prospect en client
     Route::post('/prospects/{prospect}/convert', [ProspectController::class, 'convertToClient'])
         ->middleware('permission:manage prospects');
 
     // ===================================================
     // ✅ TÂCHES (TODOS) & RAPPELS
     // ===================================================
-
-    // ⚠️ Les routes personnalisées AVANT les resources
     Route::get('/todos/pole/{pole}', [TodoController::class, 'getByPole']);
     Route::get('/rappels/pole/{pole}', [RappelController::class, 'getByPole']);
 
@@ -82,7 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('rappels', RappelController::class);
 
     // ===================================================
-    // 📁 CONTENUS / FICHIERS
+    // 📁 CONTENU / FICHIERS CLIENT
     // ===================================================
     Route::post('/contenu', [ContenuFicheController::class, 'store']);
     Route::get('/contenu/client/{client}', [ContenuFicheController::class, 'index']);
@@ -90,10 +85,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/contenu/{id}', [ContenuFicheController::class, 'destroy']);
 
     // ===================================================
-    // ⚙️ PRESTATIONS
+    // ⚙️ PRESTATIONS (LIAISON AVEC COMPTABILITÉ)
     // ===================================================
+    Route::post('/clients/{client}/prestations', [PrestationController::class, 'store'])
+        ->middleware('permission:manage clients');
+
     Route::apiResource('prestations', PrestationController::class)
-        ->only(['index', 'store', 'show', 'update', 'destroy'])
+        ->only(['index', 'show', 'update', 'destroy'])
         ->middleware('permission:view clients');
 
     // ===================================================
@@ -103,4 +101,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('comptabilite', ComptabiliteController::class)
             ->only(['index', 'show']);
     });
+
+    // ===================================================
+    // 👥 UTILISATEURS (ADMIN UNIQUEMENT)
+    // ===================================================
+    Route::middleware(['role:admin'])->group(function () {
+        Route::apiResource('users', UserController::class);
+    });
+
+    // ===================================================
+    // 🧩 NOUVELLE ROUTE : UTILISATEURS PAR PÔLE
+    // ===================================================
+    Route::get('/users/by-pole/{pole}', [UserController::class, 'getByPole']);
 });

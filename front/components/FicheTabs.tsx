@@ -2,7 +2,7 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
-// ✅ Export du type TabDefinition pour correspondre à l'import nommé dans page.tsx
+// ✅ Type partagé pour les onglets
 export type TabDefinition = {
   id: string;
   label: string;
@@ -18,16 +18,24 @@ export type TabDefinition = {
 };
 
 // ✅ Props du composant
-interface FicheTabsProps {
+export interface FicheTabsProps {
   tabs: TabDefinition[];
   activeTab: string;
-  setActiveTab: (id: string) => void;
+  // 🔧 Correction ici : on accepte directement le setter React
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // ✅ Composant principal
-export default function FicheTabs({ tabs, activeTab, setActiveTab }: FicheTabsProps) {
+export default function FicheTabs({
+  tabs,
+  activeTab,
+  setActiveTab,
+}: FicheTabsProps) {
   return (
-    <nav className="flex space-x-4 border-b border-gray-200" aria-label="Tabs">
+    <nav
+      className="flex space-x-4 border-b border-gray-200"
+      aria-label="Tabs"
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}

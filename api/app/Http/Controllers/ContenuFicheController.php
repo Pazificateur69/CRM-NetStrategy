@@ -24,37 +24,39 @@ class ContenuFicheController extends Controller
 
     // ✅ Ajouter un commentaire ou un fichier
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'type' => 'required|string|in:Commentaire,Fichier,NoteCommerciale',
-            'texte' => 'nullable|string',
-            'client_id' => 'required|exists:clients,id',
-            'fichier' => 'nullable|file|max:10240', // 10 MB max
-        ]);
+{
+    $validated = $request->validate([
+        'type' => 'required|string|in:Commentaire,Fichier,NoteCommerciale',
+        'pole' => 'nullable|string', // ✅ nouveau champ
+        'texte' => 'nullable|string',
+        'client_id' => 'required|exists:clients,id',
+        'fichier' => 'nullable|file|max:10240',
+    ]);
 
-        $client = Client::findOrFail($validated['client_id']);
+    $client = Client::findOrFail($validated['client_id']);
 
-        $data = [
-            'type' => $validated['type'],
-            'texte' => $validated['texte'] ?? null,
-            'user_id' => $request->user()->id,
-        ];
+    $data = [
+        'type' => $validated['type'],
+        'pole' => $validated['pole'] ?? null, // ✅ nouveau champ enregistré
+        'texte' => $validated['texte'] ?? null,
+        'user_id' => $request->user()->id,
+    ];
 
-        if ($request->hasFile('fichier')) {
-            $path = $request->file('fichier')->store('contenus', 'public');
-            $data['chemin_fichier'] = $path;
-            $data['nom_original_fichier'] = $request->file('fichier')->getClientOriginalName();
-        }
-
-        // ✅ Création du contenu + chargement de la relation user
-        $contenu = $client->contenu()->create($data);
-        $contenu->load('user:id,name'); // <<==== Correction ici
-
-        return response()->json([
-            'message' => 'Contenu ajouté avec succès.',
-            'data' => $contenu
-        ]);
+    if ($request->hasFile('fichier')) {
+        $path = $request->file('fichier')->store('contenus', 'public');
+        $data['chemin_fichier'] = $path;
+        $data['nom_original_fichier'] = $request->file('fichier')->getClientOriginalName();
     }
+
+    $contenu = $client->contenu()->create($data);
+    $contenu->load('user:id,name');
+
+    return response()->json([
+        'message' => 'Contenu ajouté avec succès.',
+        'data' => $contenu
+    ]);
+}
+
 
     // ✅ Télécharger un fichier
     public function download($id)

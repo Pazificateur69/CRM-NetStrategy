@@ -1,12 +1,11 @@
 // front/services/crm.ts
 import api from './api';
+import { Todo, Rappel } from './tasks';
 import {
   ClientDetail,
   ProspectDetail,
   ConversionResponse,
   ContenuFiche,
-  Todo,
-  Rappel,
 } from '@/services/types/crm';
 
 // ===============================
@@ -14,16 +13,12 @@ import {
 // ===============================
 export const getClientById = async (id: string | number) => {
   const res = await api.get(`/clients/${id}`);
-  // ✅ on renvoie directement les données brutes (compatibles avec ta page.tsx)
   return res.data.data;
 };
 
-export const updateClient = async ( // Fonction manquante ajoutée
+export const updateClient = async (
   id: number,
-  client: Partial<ClientDetail> & {
-    emails?: string[];
-    telephones?: string[];
-  }
+  client: Partial<ClientDetail> & { emails?: string[]; telephones?: string[] }
 ): Promise<ClientDetail> => {
   const response = await api.put(`/clients/${id}`, client);
   return response.data.data;
@@ -57,12 +52,12 @@ export const addTodo = async (clientId: number, todo: Partial<Todo>): Promise<To
   return response.data.data;
 };
 
-export const updateTodo = async (todoId: number, todo: Partial<Todo>): Promise<Todo> => { // Fonction manquante ajoutée
+export const updateTodo = async (todoId: number, todo: Partial<Todo>): Promise<Todo> => {
   const response = await api.put(`/todos/${todoId}`, todo);
   return response.data.data;
 };
 
-export const deleteTodo = async (todoId: number): Promise<void> => { // Fonction manquante ajoutée
+export const deleteTodo = async (todoId: number): Promise<void> => {
   await api.delete(`/todos/${todoId}`);
 };
 
@@ -82,29 +77,39 @@ export const addRappel = async (clientId: number, rappel: Partial<Rappel>): Prom
   return response.data.data;
 };
 
-export const updateRappel = async (rappelId: number, rappel: Partial<Rappel>): Promise<Rappel> => { // Fonction manquante ajoutée
+export const updateRappel = async (rappelId: number, rappel: Partial<Rappel>): Promise<Rappel> => {
   const response = await api.put(`/rappels/${rappelId}`, rappel);
   return response.data.data;
 };
 
-export const deleteRappel = async (rappelId: number): Promise<void> => { // Fonction manquante ajoutée
+export const deleteRappel = async (rappelId: number): Promise<void> => {
   await api.delete(`/rappels/${rappelId}`);
 };
 
 // ===============================
 // 🔹 DOCUMENTS
 // ===============================
-export const uploadDocument = async (clientId: number, file: File): Promise<ContenuFiche> => {
+export const uploadDocument = async (
+  clientId: number,
+  file: File,
+  pole?: string
+): Promise<ContenuFiche> => {
   const formData = new FormData();
   formData.append('type', 'Fichier');
   formData.append('client_id', clientId.toString());
   formData.append('fichier', file);
+
+  // ✅ Ajout du champ "pole" si présent
+  if (pole) {
+    formData.append('pole', pole);
+  }
 
   const response = await api.post(`/contenu`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data.data;
 };
+
 
 // ===============================
 // 🔹 PROSPECTS
@@ -119,5 +124,21 @@ export const getProspectById = async (id: number | string): Promise<ProspectDeta
 // ===============================
 export const convertProspect = async (id: number): Promise<ConversionResponse> => {
   const response = await api.post(`/prospects/${id}/convert`);
+  return response.data;
+};
+
+// === PRESTATIONS ===
+export const addPrestation = async (clientId: number, data: any) => {
+  const response = await api.post(`/clients/${clientId}/prestations`, data);
+  return response.data;
+};
+
+export const updatePrestation = async (prestationId: number, data: any) => {
+  const response = await api.put(`/prestations/${prestationId}`, data);
+  return response.data;
+};
+
+export const deletePrestation = async (prestationId: number) => {
+  const response = await api.delete(`/prestations/${prestationId}`);
   return response.data;
 };

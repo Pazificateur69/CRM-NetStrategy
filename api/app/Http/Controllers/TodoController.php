@@ -5,54 +5,62 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Todo;
 use App\Models\Client;
+use App\Models\User;
 
 class TodoController extends Controller
 {
     /**
-     * 🔹 Lister toutes les ToDos
-     * - Admin → voit tout
-     * - Autres → seulement les leurs
+     * Lister toutes les ToDos
      */
     public function index(Request $request)
     {
         $user = $request->user();
 
         $todos = $user->hasRole('admin')
-            ? Todo::with(['user', 'client'])->latest()->get()
-            : Todo::with(['user', 'client'])
-                ->where('user_id', $user->id)
-                ->latest()
+            ? Todo::with(['user', 'client', 'assignedUser'])
+                ->orderBy('ordre')
+                ->orderBy('created_at', 'asc')
+                ->get()
+            : Todo::with(['user', 'client', 'assignedUser'])
+                ->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                        ->orWhere('assigned_to', $user->id);
+                })
+                ->orderBy('ordre')
+                ->orderBy('created_at', 'asc')
                 ->get();
 
         return response()->json(['data' => $todos]);
     }
 
     /**
-     * 🔹 Récupérer les tâches par pôle (pour le Kanban du Dashboard)
+     * Récupérer les tâches par pôle
      */
     public function getByPole(Request $request, string $pole)
     {
         $user = $request->user();
 
-        // 🧠 Si admin → renvoie toutes les tâches
-        if ($user->hasRole('admin') || $user->pole === 'admin') {
-            $todos = Todo::with(['user', 'client'])->latest()->get();
-        } else {
-            // 🔒 Sinon → tâches de son pôle + globales (sans pôle)
-            $todos = Todo::with(['user', 'client'])
-                ->where(function ($query) use ($pole) {
-                    $query->where('pole', $pole)
-                          ->orWhereNull('pole');
+        $todos = ($user->hasRole('admin') || $user->pole === 'admin')
+            ? Todo::with(['user', 'client', 'assignedUser'])
+                ->where('pole', $pole)
+                ->orderBy('ordre', 'asc')
+                ->orderBy('created_at', 'asc')
+                ->get()
+            : Todo::with(['user', 'client', 'assignedUser'])
+                ->where('pole', $pole)
+                ->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                        ->orWhere('assigned_to', $user->id);
                 })
-                ->latest()
+                ->orderBy('ordre', 'asc')
+                ->orderBy('created_at', 'asc')
                 ->get();
-        }
 
         return response()->json($todos);
     }
 
     /**
-     * 🔹 Créer une ToDo liée à un client
+     * Créer une ToDo
      */
     public function store(Request $request)
     {
@@ -60,39 +68,44 @@ class TodoController extends Controller
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
             'date_echeance' => 'nullable|date',
-            'statut' => 'nullable|string|in:en_cours,termine,retard',
+            'statut' => 'nullable|string|in:planifie,en_cours,termine,retard',
             'client_id' => 'required|integer|exists:clients,id',
+            'pole' => 'nullable|string|max:100',
+            'assigned_to' => 'nullable|integer|exists:users,id',
         ]);
 
         $user = $request->user();
+        $maxOrdre = Todo::where('user_id', $user->id)->max('ordre') ?? 0;
 
-        $todo = new Todo();
-        $todo->fill([
+        $todo = new Todo([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
             'date_echeance' => $validated['date_echeance'] ?? null,
-            'statut' => $validated['statut'] ?? 'en_cours',
+            'statut' => $validated['statut'] ?? 'planifie',
+            'ordre' => $maxOrdre + 1,
             'user_id' => $user->id,
             'client_id' => $validated['client_id'],
-            'pole' => $user->pole ?? null,
+            'pole' => $validated['pole'] ?? $user->pole ?? null,
+            'assigned_to' => $validated['assigned_to'] ?? null,
+            'todoable_type' => Client::class,
+            'todoable_id' => $validated['client_id'],
         ]);
-
-        $todo->todoable_type = Client::class;
-        $todo->todoable_id = $validated['client_id'];
 
         $todo->save();
 
         return response()->json([
             'message' => 'Tâche créée avec succès.',
-            'data' => $todo->load(['user', 'client']),
+            'data' => $todo->load(['user', 'client', 'assignedUser']),
         ], 201);
     }
 
     /**
-     * 🔹 Modifier une ToDo (drag & drop du Kanban)
+     * Modifier une ToDo
      */
     public function update(Request $request, $id)
     {
+        \Log::info('📥 Todo update payload:', $request->all());
+
         $todo = Todo::find($id);
         if (!$todo) {
             return response()->json(['error' => "Tâche introuvable (id: $id)"], 404);
@@ -103,35 +116,32 @@ class TodoController extends Controller
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
-        \Log::info('📥 Payload reçu:', $request->all());
-
-        $mapStatus = [
-            'todo' => 'retard',
-            'in-progress' => 'en_cours',
-            'done' => 'termine',
-        ];
-
-        if ($request->has('status')) {
-            $todo->statut = $mapStatus[$request->input('status')] ?? 'en_cours';
-        } elseif ($request->has('statut')) {
-            $todo->statut = $request->input('statut');
-        }
-
-        $todo->save();
-
-        \Log::info('✅ Tâche mise à jour', [
-            'id' => $todo->id,
-            'nouveau_statut' => $todo->statut,
+        $validated = $request->validate([
+            'titre' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'statut' => 'nullable|string|in:planifie,en_cours,termine,retard',
+            'date_echeance' => 'nullable|date',
+            'ordre' => 'nullable|integer',
+            'assigned_to' => 'nullable|integer|exists:users,id',
         ]);
+
+        $todo->update(array_filter([
+            'titre' => $validated['titre'] ?? $todo->titre,
+            'description' => $validated['description'] ?? $todo->description,
+            'statut' => $validated['statut'] ?? $todo->statut,
+            'date_echeance' => $validated['date_echeance'] ?? $todo->date_echeance,
+            'ordre' => $validated['ordre'] ?? $todo->ordre,
+            'assigned_to' => $validated['assigned_to'] ?? $todo->assigned_to,
+        ]));
 
         return response()->json([
             'message' => 'Tâche mise à jour avec succès.',
-            'data' => $todo->load(['user', 'client']),
+            'data' => $todo->load(['user', 'client', 'assignedUser']),
         ]);
     }
 
     /**
-     * 🔹 Supprimer une ToDo
+     * Supprimer une ToDo
      */
     public function destroy(Request $request, Todo $todo)
     {

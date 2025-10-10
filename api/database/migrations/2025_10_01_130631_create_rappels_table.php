@@ -11,13 +11,21 @@ return new class extends Migration {
             $table->id();
             $table->string('titre');
             $table->text('description')->nullable();
-            $table->dateTime('date_rappel');
+            $table->dateTime('date_rappel')->nullable();
+
+            // ✅ Nouveaux champs essentiels
             $table->boolean('fait')->default(false);
+            $table->string('statut')->default('planifie'); // planifie | en_cours | termine
+            $table->integer('ordre')->default(0);          // position dans la colonne Kanban
+            $table->string('pole')->nullable();            // pôle utilisateur (com, dev, etc.)
 
-            // 🔄 Polymorphique
-            $table->morphs('rappelable'); // crée rappelable_id et rappelable_type
+            // 🔄 Polymorphique (client, prospect, etc.)
+            $table->morphs('rappelable');
 
+            // 🔗 Relations
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('client_id')->nullable()->constrained()->nullOnDelete();
+
             $table->timestamps();
         });
     }
