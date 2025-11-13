@@ -1,10 +1,12 @@
 import api from './api';
-import { 
-    DashboardData, 
-    ClientDetail, 
-    ProspectDetail, 
-    // Assurez-vous que ce type est bien défini dans types/crm.ts
-    ConversionResponse 
+import {
+    DashboardData,
+    ClientDetail,
+    ProspectDetail,
+    ConversionResponse,
+    CreateClientInput,
+    CreateProspectInput,
+    CreateUserInput,
 } from './types/crm'; 
 
 // 1. Récupération des données du Dashboard
@@ -45,19 +47,18 @@ export const convertProspectToClient = async (prospectId: number): Promise<Conve
     return response.data;
 }
 
-export const createClient = async (clientData: any) => {
-    // 🚨 Endpoint: POST /api/clients
-    const response = await api.post('/clients', clientData);
-    return response.data.data; 
+export const createClient = async (clientData: CreateClientInput): Promise<ClientDetail> => {
+    const response = await api.post<{ data: ClientDetail }>('/clients', clientData);
+    return response.data.data;
 };
 
-export const createUser = async (userData: any) => {
+export const createUser = async (userData: CreateUserInput) => {
     const response = await api.post('/users', userData);
-    return response.data.data; 
+    return response.data.data;
 };
 
 // 9. Création d'un nouveau Prospect
-export const createProspect = async (prospectData: any) => {
-    const response = await api.post('/prospects', prospectData);
-    return response.data.data; 
+export const createProspect = async (prospectData: CreateProspectInput): Promise<ProspectDetail> => {
+    const response = await api.post<{ data: ProspectDetail }>('/prospects', prospectData);
+    return response.data.data;
 };

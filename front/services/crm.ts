@@ -1,11 +1,14 @@
 // front/services/crm.ts
 import api from './api';
-import { Todo, Rappel } from './tasks';
 import {
+  Todo,
+  Rappel,
   ClientDetail,
   ProspectDetail,
   ConversionResponse,
   ContenuFiche,
+  PrestationInput,
+  Prestation,
 } from '@/services/types/crm';
 
 // ===============================
@@ -128,17 +131,16 @@ export const convertProspect = async (id: number): Promise<ConversionResponse> =
 };
 
 // === PRESTATIONS ===
-export const addPrestation = async (clientId: number, data: any) => {
-  const response = await api.post(`/clients/${clientId}/prestations`, data);
-  return response.data;
+export const addPrestation = async (clientId: number, data: PrestationInput): Promise<Prestation> => {
+  const response = await api.post<{ data: Prestation }>(`/clients/${clientId}/prestations`, data);
+  return response.data.data;
 };
 
-export const updatePrestation = async (prestationId: number, data: any) => {
-  const response = await api.put(`/prestations/${prestationId}`, data);
-  return response.data;
+export const updatePrestation = async (prestationId: number, data: Partial<PrestationInput>): Promise<Prestation> => {
+  const response = await api.put<{ data: Prestation }>(`/prestations/${prestationId}`, data);
+  return response.data.data;
 };
 
-export const deletePrestation = async (prestationId: number) => {
-  const response = await api.delete(`/prestations/${prestationId}`);
-  return response.data;
+export const deletePrestation = async (prestationId: number): Promise<void> => {
+  await api.delete(`/prestations/${prestationId}`);
 };

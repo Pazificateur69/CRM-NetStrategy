@@ -157,3 +157,63 @@ export interface ConversionResponse {
   client_id: number;
   client_societe: string;
 }
+
+// --- INPUTS DE CRÉATION / MISE À JOUR ---
+export interface CreateClientInput {
+  societe: string;
+  gerant: string;
+  emails: string[];
+  telephones: string[];
+  adresse?: string | null;
+  ville?: string | null;
+  code_postal?: string | null;
+  site_web?: string | null;
+  description_generale?: string | null;
+  siret?: string | null;
+  contrat?: string | null;
+  date_contrat?: string | null;
+  date_echeance?: string | null;
+  montant_mensuel_total?: number | null;
+  frequence_facturation?: string | null;
+  mode_paiement?: string | null;
+  iban?: string | null;
+  notes_comptables?: string | null;
+  couleur_statut?: StatutCouleur;
+}
+
+export interface CreateProspectInput {
+  societe: string;
+  contact: string;
+  emails: string[];
+  telephones: string[];
+  statut?: 'en_attente' | 'relance' | 'signé' | 'converti';
+  date_contrat?: string | null;
+  date_echeance?: string | null;
+  couleur_statut?: StatutCouleur;
+}
+
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  pole?: string;
+}
+
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+  password?: string;
+  role?: string;
+  pole?: string;
+}
+
+export interface PrestationInput {
+  type: 'Dev' | 'SEO' | 'Ads' | 'Social Media' | 'Branding' | 'Comptabilite';
+  notes?: string | null;
+  tarif_ht?: number | null;
+  frequence?: string | null;
+  engagement_mois?: number | null;
+  date_debut?: string | null;
+  date_fin?: string | null;
+}
