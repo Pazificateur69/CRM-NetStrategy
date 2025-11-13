@@ -17,6 +17,7 @@ class Todo extends Model
         'date_echeance',
         'statut',
         'ordre', // ✅ indispensable
+        'priorite', // ✅ haute, moyenne, basse
         'pole',
         'user_id',
         'client_id',

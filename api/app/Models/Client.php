@@ -20,6 +20,7 @@ class Client extends Model
         'contrat',
         'date_contrat',
         'date_echeance',
+        'lien_externe',
     ];
 
     protected $casts = [

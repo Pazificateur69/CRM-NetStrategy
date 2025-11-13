@@ -57,6 +57,7 @@ class RappelController extends Controller
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
             'date_rappel' => 'nullable|date',
+            'priorite' => 'nullable|string|in:basse,moyenne,haute',
             'client_id' => 'nullable|integer|exists:clients,id',
             'pole' => 'nullable|string|max:100',
             'assigned_users' => 'nullable|array',
@@ -70,6 +71,7 @@ class RappelController extends Controller
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
             'date_rappel' => $validated['date_rappel'] ?? null,
+            'priorite' => $validated['priorite'] ?? 'moyenne',
             'fait' => false,
             'statut' => 'planifie',
             'ordre' => $maxOrdre + 1,
@@ -112,6 +114,7 @@ class RappelController extends Controller
             'titre' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'statut' => 'nullable|string|in:planifie,en_cours,termine',
+            'priorite' => 'nullable|string|in:basse,moyenne,haute',
             'fait' => 'nullable|boolean',
             'date_rappel' => 'nullable|date',
             'ordre' => 'nullable|integer',
@@ -123,6 +126,7 @@ class RappelController extends Controller
             'titre' => $validated['titre'] ?? $rappel->titre,
             'description' => $validated['description'] ?? $rappel->description,
             'statut' => $validated['statut'] ?? $rappel->statut,
+            'priorite' => $validated['priorite'] ?? $rappel->priorite,
             'fait' => $validated['fait'] ?? $rappel->fait,
             'date_rappel' => $validated['date_rappel'] ?? $rappel->date_rappel,
             'ordre' => $validated['ordre'] ?? $rappel->ordre,
@@ -150,5 +154,34 @@ class RappelController extends Controller
         $rappel->delete();
 
         return response()->json(['message' => 'Rappel supprimé avec succès.']);
+    }
+
+    /**
+     * Décaler un rappel de X jours
+     */
+    public function decaler(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'jours' => 'required|integer|min:1|max:365',
+        ]);
+
+        $rappel = Rappel::findOrFail($id);
+
+        $user = $request->user();
+        if ($user->id !== $rappel->user_id && !$user->hasRole('admin')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        // Décaler la date du rappel
+        if ($rappel->date_rappel) {
+            $newDate = \Carbon\Carbon::parse($rappel->date_rappel)->addDays($validated['jours']);
+            $rappel->date_rappel = $newDate;
+            $rappel->save();
+        }
+
+        return response()->json([
+            'message' => "Rappel décalé de {$validated['jours']} jour(s) avec succès.",
+            'data' => $rappel->load(['user', 'rappelable', 'assignedUsers']),
+        ]);
     }
 }
