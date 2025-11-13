@@ -23,6 +23,7 @@ class Todo extends Model
         'client_id',
         'todoable_id',
         'todoable_type',
+        'assigned_to', // ✅ utilisateur assigné à la tâche
     ];
 
     public function user()
