@@ -60,10 +60,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('clients', ClientController::class)
         ->middleware('permission:view clients|manage clients');
 
+    // Route spéciale pour récupérer les infos comptables d'un client
+    Route::get('/clients/{id}/compta', [ClientController::class, 'getCompta'])
+        ->middleware('permission:view clients|manage clients');
+
     Route::apiResource('prospects', ProspectController::class)
         ->middleware('permission:view prospects|manage prospects');
 
-    // Conversion d’un prospect en client
+    // Conversion d'un prospect en client
     Route::post('/prospects/{prospect}/convert', [ProspectController::class, 'convertToClient'])
         ->middleware('permission:manage prospects');
 
@@ -72,6 +76,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     Route::get('/todos/pole/{pole}', [TodoController::class, 'getByPole']);
     Route::get('/rappels/pole/{pole}', [RappelController::class, 'getByPole']);
+
+    // Décaler un rappel de X jours
+    Route::post('/rappels/{id}/decaler', [RappelController::class, 'decaler']);
 
     Route::apiResource('todos', TodoController::class);
     Route::apiResource('rappels', RappelController::class);

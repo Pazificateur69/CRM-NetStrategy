@@ -9,6 +9,7 @@ export interface Task {
   title: string;
   status: 'todo' | 'in-progress' | 'done';
   type: 'todo' | 'reminder';
+  priorite?: 'basse' | 'moyenne' | 'haute';
   client?: string;
   pole?: string;
   dueDate?: string | null;
@@ -22,6 +23,7 @@ export interface Todo {
   titre: string;
   description?: string;
   statut: 'planifie' | 'en_cours' | 'termine' | 'retard';
+  priorite?: 'basse' | 'moyenne' | 'haute';
   date_echeance?: string;
   client_id?: number;
   user_id?: number;
@@ -36,6 +38,7 @@ export interface Rappel {
   date_rappel?: string;
   fait?: boolean;
   statut?: 'planifie' | 'en_cours' | 'termine';
+  priorite?: 'basse' | 'moyenne' | 'haute';
   client_id?: number;
   user_id?: number;
   pole?: string | null;
@@ -87,6 +90,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     responsible: t.user?.name || '—',
     type: 'todo',
     status: mapBackendToFrontendStatus(t.statut),
+    priorite: t.priorite || 'moyenne',
     ordre: t.ordre || 0,
   }));
 
@@ -99,6 +103,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     responsible: r.user?.name || '—',
     type: 'reminder',
     status: mapBackendToFrontendStatus(r.statut ?? 'planifie'),
+    priorite: r.priorite || 'moyenne',
     ordre: r.ordre || 0,
   }));
 
@@ -137,6 +142,7 @@ export async function updateTaskStatus(
       responsible: t.user?.name || '—',
       type,
       status: mapBackendToFrontendStatus(t.statut),
+      priorite: t.priorite || 'moyenne',
       ordre: t.ordre || 0,
     };
   } catch (error: any) {
