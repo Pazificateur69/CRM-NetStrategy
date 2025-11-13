@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('rappels', function (Blueprint $table) {
-            $table->string('priorite')->default('moyenne')->after('statut'); // basse, moyenne, haute
+            if (!Schema::hasColumn('rappels', 'priorite')) {
+                $table->string('priorite')->default('moyenne')->after('statut'); // basse, moyenne, haute
+            }
         });
     }
 
