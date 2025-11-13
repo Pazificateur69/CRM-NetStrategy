@@ -46,10 +46,11 @@ export default function ProspectsIndexPage() {
             <div className="p-8 space-y-8">
                 <header className="flex justify-between items-center border-b pb-4">
                     <h1 className="text-4xl font-extrabold text-gray-900">Gestion des Prospects</h1>
-                    <Link href="/prospects/create" passHref legacyBehavior>
-                        <button className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-150">
-                            <PlusCircle className="w-5 h-5 mr-2" /> Nouveau Prospect
-                        </button>
+                    <Link
+                        href="/prospects/create"
+                        className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition duration-150"
+                    >
+                        <PlusCircle className="w-5 h-5 mr-2" /> Nouveau Prospect
                     </Link>
                 </header>
 
