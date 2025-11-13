@@ -8,7 +8,9 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->string('pole')->nullable()->after('user_id'); // ✅ nouveau champ
+            if (!Schema::hasColumn('todos', 'pole')) {
+                $table->string('pole')->nullable()->after('user_id'); // ✅ nouveau champ
+            }
         });
     }
 
