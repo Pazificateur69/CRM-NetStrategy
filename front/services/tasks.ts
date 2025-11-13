@@ -1,8 +1,9 @@
 // front/services/tasks.ts
 import api from './api';
+import { Todo, Rappel } from '@/services/types/crm';
 
 // ===========================================
-// 🔹 Typage principal
+// 🔹 Typage principal pour le Kanban
 // ===========================================
 export interface Task {
   id: string;
@@ -17,33 +18,8 @@ export interface Task {
   ordre?: number;
 }
 
-// Types détaillés (utiles pour la cohérence avec crm.ts)
-export interface Todo {
-  id: number;
-  titre: string;
-  description?: string;
-  statut: 'planifie' | 'en_cours' | 'termine' | 'retard';
-  priorite?: 'basse' | 'moyenne' | 'haute';
-  date_echeance?: string;
-  client_id?: number;
-  user_id?: number;
-  pole?: string | null;
-  ordre?: number;
-}
-
-export interface Rappel {
-  id: number;
-  titre: string;
-  description?: string;
-  date_rappel?: string;
-  fait?: boolean;
-  statut?: 'planifie' | 'en_cours' | 'termine';
-  priorite?: 'basse' | 'moyenne' | 'haute';
-  client_id?: number;
-  user_id?: number;
-  pole?: string | null;
-  ordre?: number;
-}
+// ✅ Todo et Rappel sont maintenant importés depuis types/crm.ts pour éviter les duplications
+export type { Todo, Rappel };
 
 // ===========================================
 // 🧩 Mapping Back <-> Front

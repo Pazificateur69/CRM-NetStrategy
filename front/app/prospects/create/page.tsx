@@ -67,7 +67,7 @@ export default function CreateProspectPage() {
         contact: formData.contact,
         emails: formData.emails.filter((e) => e.trim() !== ''),
         telephones: formData.telephones.filter((t) => t.trim() !== ''),
-        statut: 'en_attente', // requis par Laravel
+        statut: 'en_attente' as const, // requis par Laravel
       };
 
       const newProspect = await createProspect(payload);
