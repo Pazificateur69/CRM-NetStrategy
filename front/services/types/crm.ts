@@ -19,10 +19,17 @@ export interface Todo {
   titre: string;
   description: string;
   date_echeance: string | null;
-  statut: 'en_cours' | 'termine' | 'retard';
+  statut: 'planifie' | 'en_cours' | 'termine' | 'retard';
+  ordre?: number;
+  priorite?: 'basse' | 'moyenne' | 'haute';
+  pole?: string;
   user_id?: number;
   user?: User | null; // Ajouté pour correspondre à l'usage dans page.tsx
   client_id?: number;
+  assigned_to?: number;
+  assignedUser?: User | null;
+  todoable_id?: number;
+  todoable_type?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -34,9 +41,17 @@ export interface Rappel {
   description: string;
   date_rappel: string;
   fait: boolean;
+  statut?: 'planifie' | 'en_cours' | 'termine';
+  ordre?: number;
+  priorite?: 'basse' | 'moyenne' | 'haute';
+  pole?: string;
   user_id?: number;
   user?: User | null; // Ajouté pour correspondre à l'usage dans page.tsx
   client_id?: number;
+  assigned_users?: number[];
+  assignedUsers?: User[];
+  rappelable_id?: number;
+  rappelable_type?: string;
   created_at?: string;
   updated_at?: string;
 }
