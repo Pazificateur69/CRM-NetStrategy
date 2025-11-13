@@ -12,11 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->foreignId('client_id')->nullable()->after('user_id')->constrained()->nullOnDelete();
-            $table->integer('ordre')->default(0)->after('statut');
-            $table->string('priorite')->default('moyenne')->after('ordre'); // basse, moyenne, haute
-            $table->string('pole')->nullable()->after('priorite');
-            $table->foreignId('assigned_to')->nullable()->after('pole')->constrained('users')->nullOnDelete();
+            // Only add client_id if it doesn't exist
+            if (!Schema::hasColumn('todos', 'client_id')) {
+                $table->foreignId('client_id')->nullable()->after('user_id')->constrained()->nullOnDelete();
+            }
+
+            if (!Schema::hasColumn('todos', 'ordre')) {
+                $table->integer('ordre')->default(0)->after('statut');
+            }
+
+            if (!Schema::hasColumn('todos', 'priorite')) {
+                $table->string('priorite')->default('moyenne')->after('ordre'); // basse, moyenne, haute
+            }
+
+            if (!Schema::hasColumn('todos', 'pole')) {
+                $table->string('pole')->nullable()->after('priorite');
+            }
+
+            if (!Schema::hasColumn('todos', 'assigned_to')) {
+                $table->foreignId('assigned_to')->nullable()->after('pole')->constrained('users')->nullOnDelete();
+            }
         });
     }
 
