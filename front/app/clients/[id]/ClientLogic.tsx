@@ -305,10 +305,10 @@ export function useClientLogic(): UseClientLogicReturn {
             // OU si nous sommes sur un onglet de pôle spécifique, la valeur est déduite.
             const pole = newTodo.pole || getCurrentPole();
 
-            await addTodo(Number(client.id), { 
-                ...newTodo, 
-                statut: 'en_cours', 
-                pole 
+            await addTodo(Number(client.id), {
+                ...newTodo,
+                statut: 'en_cours',
+                pole: pole || undefined
             });
 
             // Réinitialisation incluant le champ pole
@@ -338,7 +338,7 @@ export function useClientLogic(): UseClientLogicReturn {
             // OU si nous sommes sur un onglet de pôle spécifique, la valeur est déduite.
             const pole = newRappel.pole || getCurrentPole(); // Utilise le pole du state ou celui déduit
             
-            await addRappel(Number(client.id), { ...newRappel, fait: false, pole });
+            await addRappel(Number(client.id), { ...newRappel, fait: false, pole: pole || undefined });
             
             // Réinitialisation incluant le champ pole
             setNewRappel({ titre: '', description: '', date_rappel: '', pole: '' }); // ⬅️ MODIFIÉ

@@ -1,38 +1,34 @@
 // services/users.ts
-import api from './api'; // Ton instance Axios commune
+import api from './api';
+import { User, UpdateUserInput, CreateUserInput } from './types/crm';
 
 /** === 1. Récupérer tous les utilisateurs (Admin uniquement) === */
-export const getUsers = async () => {
-  const response = await api.get('/users');
+export const getUsers = async (): Promise<User[]> => {
+  const response = await api.get<any>('/users');
   // Laravel renvoie un tableau direct ou un JSON Resource → on s'adapte
-  return response.data?.data ?? response.data;
+  return (response.data?.data ?? response.data) as User[];
 };
 
 /** === 2. Créer un utilisateur === */
-export const createUser = async (userData: {
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-}) => {
-  const response = await api.post('/users', userData);
-  return response.data?.user ?? response.data;
+export const createUser = async (userData: CreateUserInput): Promise<User> => {
+  const response = await api.post<any>('/users', userData);
+  return (response.data?.user ?? response.data) as User;
 };
 
 /** === 3. Mettre à jour un utilisateur === */
-export const updateUser = async (id: number, userData: any) => {
-  const response = await api.put(`/users/${id}`, userData);
-  return response.data?.user ?? response.data;
+export const updateUser = async (id: number, userData: UpdateUserInput): Promise<User> => {
+  const response = await api.put<any>(`/users/${id}`, userData);
+  return (response.data?.user ?? response.data) as User;
 };
 
 /** === 4. Supprimer un utilisateur === */
-export const deleteUser = async (id: number) => {
-  const response = await api.delete(`/users/${id}`);
+export const deleteUser = async (id: number): Promise<string> => {
+  const response = await api.delete<{ message?: string }>(`/users/${id}`);
   return response.data?.message ?? 'Utilisateur supprimé';
 };
 
-/** === 5. Mettre à jour uniquement le rôle d’un utilisateur === */
-export const updateUserRole = async (id: number, role: string) => {
-  const response = await api.put(`/users/${id}`, { role });
-  return response.data?.user ?? response.data;
+/** === 5. Mettre à jour uniquement le rôle d'un utilisateur === */
+export const updateUserRole = async (id: number, role: string): Promise<User> => {
+  const response = await api.put<any>(`/users/${id}`, { role });
+  return (response.data?.user ?? response.data) as User;
 };
