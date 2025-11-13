@@ -21,7 +21,7 @@ class ContenuFiche extends Model
 ];
 
 
-    public function contennuable(): MorphTo
+    public function contenuable(): MorphTo
     {
         return $this->morphTo();
     }
