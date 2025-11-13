@@ -139,7 +139,7 @@ export function useClientLogic(): UseClientLogicReturn {
     const [savingClient, setSavingClient] = useState(false);
     const [clientForm, setClientForm] = useState<ClientFormState>({
         societe: '', gerant: '', adresse: '', ville: '', code_postal: '', site_web: '',
-        description_generale: '', emails: '', telephones: '', siret: '', contrat: '',
+        description_generale: '', lien_externe: '', emails: '', telephones: '', siret: '', contrat: '',
         date_contrat: '', date_echeance: '', montant_mensuel_total: '', frequence_facturation: '',
         mode_paiement: '', iban: '', notes_comptables: '',
     });
@@ -164,6 +164,7 @@ export function useClientLogic(): UseClientLogicReturn {
             code_postal: details.code_postal ?? '',
             site_web: details.site_web ?? '',
             description_generale: details.description_generale ?? '',
+            lien_externe: details.lien_externe ?? '',
             emails: (details.emails ?? []).join(', '),
             telephones: (details.telephones ?? []).join(', '),
             siret: details.siret ?? '',
