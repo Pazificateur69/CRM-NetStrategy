@@ -14,7 +14,36 @@ const TASK_STATUSES: { id: Task['status']; title: string; color: string }[] = [
 ];
 
 // ===========================================
-// 🧩 COMPOSANT - Carte individuelle
+// 🎨 COULEURS DE PRIORITÉ
+// ===========================================
+const getPriorityColor = (priorite: string) => {
+  switch (priorite) {
+    case 'haute':
+      return 'border-l-red-500 bg-red-50';
+    case 'moyenne':
+      return 'border-l-yellow-500 bg-yellow-50';
+    case 'basse':
+      return 'border-l-green-500 bg-green-50';
+    default:
+      return 'border-l-gray-500 bg-gray-50';
+  }
+};
+
+const getPriorityBadge = (priorite: string) => {
+  switch (priorite) {
+    case 'haute':
+      return 'bg-red-100 text-red-700';
+    case 'moyenne':
+      return 'bg-yellow-100 text-yellow-700';
+    case 'basse':
+      return 'bg-green-100 text-green-700';
+    default:
+      return 'bg-gray-100 text-gray-700';
+  }
+};
+
+// ===========================================
+// 🧩 COMPOSANT - Carte individuelle (compacte)
 // ===========================================
 interface TaskCardProps {
   task: Task;
@@ -33,65 +62,130 @@ interface TaskCardProps {
   ) => void;
 }
 
-const getTaskColor = (type: 'todo' | 'reminder') =>
-  type === 'reminder'
-    ? 'border-yellow-500 bg-yellow-50'
-    : 'border-indigo-500 bg-indigo-50';
-
 const TaskCard: React.FC<TaskCardProps> = ({
   task,
   index,
   onDragStart,
   onDragEnter,
 }) => {
-  const cardColor = getTaskColor(task.type);
+  const priorityColor = getPriorityColor(task.priorite || 'moyenne');
+  const priorityBadge = getPriorityBadge(task.priorite || 'moyenne');
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
-  const dueDateDisplay = task.dueDate
-    ? new Date(task.dueDate).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: 'short',
-      })
-    : '—';
 
   return (
     <div
-      className={`bg-white p-4 rounded-xl shadow-md cursor-grab transition-shadow hover:shadow-lg border-l-4 ${cardColor}`}
+      className={`bg-white p-2 rounded-lg shadow-sm cursor-grab transition-shadow hover:shadow-md border-l-4 ${priorityColor}`}
       draggable
       onDragStart={(e) => onDragStart(e, task.id, task.status, index, task.type)}
       onDragEnter={(e) => onDragEnter(e, index, task.status)}
     >
-      <div className="flex justify-between items-start mb-2">
-        <h4 className="text-sm font-bold text-gray-800 leading-snug">{task.title}</h4>
+      <div className="flex justify-between items-start mb-1">
+        <h4 className="text-xs font-bold text-gray-800 leading-tight truncate flex-1">
+          {task.title}
+        </h4>
         <span
-          className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-            task.type === 'todo'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'bg-yellow-100 text-yellow-700'
-          }`}
+          className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ml-1 ${priorityBadge}`}
         >
-          {task.type === 'todo' ? 'Tâche' : 'Rappel'}
+          {task.priorite || 'moyenne'}
         </span>
       </div>
 
-      <p className="text-xs text-gray-500 mb-2">
-        Client :{' '}
+      <p className="text-[10px] text-gray-500 truncate">
         <span className="font-medium text-gray-700">{task.client || 'N/A'}</span>
       </p>
 
-      <div className="text-xs text-gray-600 space-y-1 mt-3 pt-3 border-t border-gray-100">
-        <p className="flex items-center justify-between">
-          <span className="font-medium">Pôle :</span> {task.pole || '—'}
-        </p>
-        <p className="flex items-center justify-between">
-          <span className="font-medium">Échéance :</span>
-          <span className={`${isOverdue ? 'text-red-500 font-bold' : 'text-gray-700'}`}>
-            {dueDateDisplay}
-          </span>
-        </p>
-        <p className="flex items-center justify-between">
-          <span className="font-medium">Responsable :</span> {task.responsible || '—'}
-        </p>
+      {isOverdue && (
+        <p className="text-[10px] text-red-500 font-bold mt-1">⚠️ En retard</p>
+      )}
+    </div>
+  );
+};
+
+// ===========================================
+// 🧩 COMPOSANT - Section TODO ou RAPPEL
+// ===========================================
+interface TaskSectionProps {
+  title: string;
+  tasks: Task[];
+  type: 'todo' | 'reminder';
+  bgColor: string;
+  onDragStart: (
+    e: React.DragEvent<HTMLDivElement>,
+    taskId: string,
+    fromStatus: Task['status'],
+    index: number,
+    type: 'todo' | 'reminder'
+  ) => void;
+  onDragEnter: (
+    e: React.DragEvent<HTMLDivElement>,
+    targetIndex: number,
+    columnStatus: Task['status']
+  ) => void;
+  onDrop: (
+    e: React.DragEvent<HTMLDivElement>,
+    newStatus: Task['status']
+  ) => void;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+}
+
+const TaskSection: React.FC<TaskSectionProps> = ({
+  title,
+  tasks,
+  type,
+  bgColor,
+  onDragStart,
+  onDragEnter,
+  onDrop,
+  onDragOver,
+}) => {
+  const tasksByStatus = useMemo(() => {
+    return TASK_STATUSES.reduce((acc, status) => {
+      acc[status.id] = tasks
+        .filter((t) => t.status === status.id && t.type === type)
+        .sort((a, b) => {
+          const diff = (a.ordre ?? 0) - (b.ordre ?? 0);
+          if (diff !== 0) return diff;
+          return a.id.localeCompare(b.id);
+        });
+      return acc;
+    }, {} as Record<Task['status'], Task[]>);
+  }, [tasks, type]);
+
+  return (
+    <div className={`${bgColor} p-4 rounded-xl border border-gray-200 mb-4`}>
+      <h3 className="text-sm font-bold text-gray-800 mb-3">{title}</h3>
+
+      <div className="flex gap-4">
+        {TASK_STATUSES.map((status) => (
+          <div
+            key={status.id}
+            className="flex-1 min-w-[200px] bg-gray-50 rounded-lg p-2"
+            onDrop={(e) => onDrop(e, status.id)}
+            onDragOver={onDragOver}
+          >
+            <div className={`mb-2 px-2 py-1 rounded-md text-xs font-bold ${status.color}`}>
+              {status.title} ({tasksByStatus[status.id]?.length || 0})
+            </div>
+
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {tasksByStatus[status.id]?.slice(0, 10).map((task, index) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  index={index}
+                  onDragStart={onDragStart}
+                  onDragEnter={onDragEnter}
+                />
+              ))}
+              {tasksByStatus[status.id]?.length > 10 && (
+                <p className="text-xs text-gray-500 text-center italic">
+                  +{tasksByStatus[status.id].length - 10} autre(s)...
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -109,7 +203,6 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
   tasks,
   setTasks,
 }) => {
-  // Le dragItem doit connaître le type et le statut
   const dragItem = React.useRef<{
     id: string;
     fromStatus: Task['status'];
@@ -159,7 +252,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
     const dragged = updated[draggedIndex];
     if (!dragged) return;
 
-    // Supprimer l’élément de son ancienne position
+    // Supprimer l'élément de son ancienne position
     updated.splice(draggedIndex, 1);
 
     // 🔹 CAS 1 : même colonne → réordonnancement local
@@ -177,7 +270,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
       if (insertAt >= 0) updated.splice(insertAt, 0, dragged);
       else updated.push({ ...dragged, status: newStatus });
 
-      // 🔁 Recalcul local de l’ordre
+      // 🔁 Recalcul local de l'ordre
       const reordered = updated
         .filter((t) => t.status === newStatus)
         .map((t, i) => ({ ...t, ordre: i + 1 }));
@@ -189,7 +282,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
         })
       );
 
-      // 🔥 Envoie au back chaque update d’ordre
+      // 🔥 Envoie au back chaque update d'ordre
       for (const r of reordered) {
         try {
           const payload = { ordre: r.ordre };
@@ -224,23 +317,6 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   // ---------------------------------
-  // 🔢 Organisation et tri par statut
-  // ---------------------------------
-  const tasksByStatus = useMemo(() => {
-    return TASK_STATUSES.reduce((acc, status) => {
-      acc[status.id] = tasks
-        .filter((t) => t.status === status.id)
-        .sort((a, b) => {
-          const diff = (a.ordre ?? 0) - (b.ordre ?? 0);
-          if (diff !== 0) return diff;
-          if (a.type !== b.type) return a.type === 'todo' ? -1 : 1;
-          return a.id.localeCompare(b.id);
-        });
-      return acc;
-    }, {} as Record<Task['status'], Task[]>);
-  }, [tasks]);
-
-  // ---------------------------------
   // 🖼️ Rendu
   // ---------------------------------
   return (
@@ -249,32 +325,29 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
         To-Do & Rappels (Kanban + Priorités)
       </h2>
 
-      <div className="flex gap-6 overflow-x-auto pb-4 transition-all">
-        {TASK_STATUSES.map((status) => (
-          <div
-            key={status.id}
-            className="flex-1 min-w-[300px] p-4 bg-gray-50 rounded-xl border border-gray-200 transition-all"
-            onDrop={(e) => handleDrop(e, status.id)}
-            onDragOver={handleDragOver}
-          >
-            <div className={`mb-4 px-3 py-1 rounded-lg text-sm font-bold ${status.color}`}>
-              {status.title} ({tasksByStatus[status.id]?.length || 0})
-            </div>
+      {/* SECTION TÂCHES */}
+      <TaskSection
+        title="📋 Tâches (Todos)"
+        tasks={tasks}
+        type="todo"
+        bgColor="bg-indigo-50"
+        onDragStart={handleDragStart}
+        onDragEnter={handleDragEnter}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+      />
 
-            <div className="space-y-4 min-h-[50px]">
-              {tasksByStatus[status.id]?.map((task, index) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  index={index}
-                  onDragStart={handleDragStart}
-                  onDragEnter={handleDragEnter}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* SECTION RAPPELS */}
+      <TaskSection
+        title="🔔 Rappels"
+        tasks={tasks}
+        type="reminder"
+        bgColor="bg-yellow-50"
+        onDragStart={handleDragStart}
+        onDragEnter={handleDragEnter}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+      />
     </section>
   );
 };

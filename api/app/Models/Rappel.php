@@ -18,6 +18,7 @@ class Rappel extends Model
         'fait',
         'statut',
         'ordre', // ✅ indispensable
+        'priorite', // ✅ haute, moyenne, basse
         'pole',
         'user_id',
         'client_id',
