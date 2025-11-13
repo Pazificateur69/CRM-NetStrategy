@@ -99,7 +99,7 @@ class ClientController extends Controller
     }
 
     /**
-     * Suppression d’un client
+     * Suppression d'un client
      */
     public function destroy(Client $client): JsonResponse
     {
@@ -108,5 +108,37 @@ class ClientController extends Controller
         $client->delete();
 
         return response()->json(['message' => 'Client supprimé avec succès.'], 200);
+    }
+
+    /**
+     * Récupérer les informations comptables d'un client
+     */
+    public function getCompta($id): JsonResponse
+    {
+        $this->authorize('view clients');
+
+        $client = Client::with(['prestations'])->findOrFail($id);
+
+        return response()->json([
+            'message' => 'Informations comptables récupérées avec succès.',
+            'data' => [
+                'client_id' => $client->id,
+                'societe' => $client->societe,
+                'montant_mensuel_total' => $client->montant_mensuel_total ?? 0,
+                'frequence_facturation' => $client->frequence_facturation ?? 'Mensuel',
+                'mode_paiement' => $client->mode_paiement ?? 'Virement',
+                'iban' => $client->iban ?? '',
+                'date_contrat' => $client->date_contrat,
+                'date_echeance' => $client->date_echeance,
+                'prestations' => $client->prestations->map(function ($prestation) {
+                    return [
+                        'id' => $prestation->id,
+                        'type' => $prestation->type,
+                        'montant' => $prestation->montant ?? 0,
+                        'notes' => $prestation->notes,
+                    ];
+                }),
+            ]
+        ]);
     }
 }

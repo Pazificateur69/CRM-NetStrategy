@@ -102,7 +102,8 @@ export interface UseClientLogicReturn {
 // ==========================================================
 export const tabDefinitions: TabDefinition[] = [
     { id: 'informations', label: 'Détails', icon: FileText },
-    { id: 'pole-com', label: 'Pôle Communication', icon: Megaphone, allowedRoles: ['admin', 'com'], prestationTypes: ['Ads', 'Branding'], accent: { border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', title: 'text-amber-700' } },
+    { id: 'pole-branding', label: 'Pôle Branding', icon: Megaphone, allowedRoles: ['admin', 'branding'], prestationTypes: ['Branding'], accent: { border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', title: 'text-amber-700' } },
+    { id: 'pole-ads', label: 'Pôle Ads', icon: Megaphone, allowedRoles: ['admin', 'ads'], prestationTypes: ['Ads'], accent: { border: 'border-orange-200', badge: 'bg-orange-100 text-orange-700', title: 'text-orange-700' } },
     { id: 'pole-seo', label: 'Pôle SEO', icon: Search, allowedRoles: ['admin', 'seo'], prestationTypes: ['SEO'], accent: { border: 'border-emerald-200', badge: 'bg-emerald-100 text-emerald-700', title: 'text-emerald-700' } },
     { id: 'pole-dev', label: 'Pôle Dev', icon: Code, allowedRoles: ['admin', 'dev'], prestationTypes: ['Dev'], accent: { border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700', title: 'text-blue-700' } },
     { id: 'pole-reseaux', label: 'Pôle Réseaux Sociaux', icon: Share2, allowedRoles: ['admin', 'reseaux_sociaux'], prestationTypes: ['Social Media'], accent: { border: 'border-fuchsia-200', badge: 'bg-fuchsia-100 text-fuchsia-700', title: 'text-fuchsia-700' } },
@@ -138,7 +139,7 @@ export function useClientLogic(): UseClientLogicReturn {
     const [savingClient, setSavingClient] = useState(false);
     const [clientForm, setClientForm] = useState<ClientFormState>({
         societe: '', gerant: '', adresse: '', ville: '', code_postal: '', site_web: '',
-        description_generale: '', emails: '', telephones: '', siret: '', contrat: '',
+        description_generale: '', lien_externe: '', emails: '', telephones: '', siret: '', contrat: '',
         date_contrat: '', date_echeance: '', montant_mensuel_total: '', frequence_facturation: '',
         mode_paiement: '', iban: '', notes_comptables: '',
     });
@@ -163,6 +164,7 @@ export function useClientLogic(): UseClientLogicReturn {
             code_postal: details.code_postal ?? '',
             site_web: details.site_web ?? '',
             description_generale: details.description_generale ?? '',
+            lien_externe: details.lien_externe ?? '',
             emails: (details.emails ?? []).join(', '),
             telephones: (details.telephones ?? []).join(', '),
             siret: details.siret ?? '',
@@ -248,7 +250,7 @@ export function useClientLogic(): UseClientLogicReturn {
 
     // L'EFFECT qui chargeait usersInPole a été supprimé
 
-    const canEdit = ['admin', 'com', 'dev', 'comptabilite'].includes(userRole);
+    const canEdit = ['admin', 'branding', 'ads', 'dev', 'comptabilite'].includes(userRole);
     const canSeeDocs = ['admin', 'comptabilite', 'dev'].includes(userRole);
 
     const accessibleTabs = useMemo(() => 

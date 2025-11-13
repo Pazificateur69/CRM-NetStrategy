@@ -29,6 +29,7 @@ export interface ClientFormState {
   code_postal: string;
   site_web: string;
   description_generale: string;
+  lien_externe: string;
   emails: string;
   telephones: string;
   siret: string;
