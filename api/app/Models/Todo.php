@@ -38,6 +38,7 @@ class Todo extends Model
     {
         return $this->morphTo();
     }
+    
     public function assignedUser()
 {
     return $this->belongsTo(User::class, 'assigned_to');
