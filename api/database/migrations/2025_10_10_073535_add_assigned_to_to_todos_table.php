@@ -13,7 +13,9 @@ return new class extends Migration
 public function up()
 {
     Schema::table('todos', function (Blueprint $table) {
-        $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
+        if (!Schema::hasColumn('todos', 'assigned_to')) {
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
+        }
     });
 }
 
