@@ -16,13 +16,14 @@ import {
   Circle,
   Plus,
 } from 'lucide-react';
-import { 
-  formatDate, 
-  formatDateTime, 
-  TodoFormState, 
+import {
+  formatDate,
+  formatDateTime,
+  TodoFormState,
   RappelFormState,
   POLE_OPTIONS // ✅ NOUVEAU : Import des options centralisées
-} from '../ClientUtils'; 
+} from '../ClientUtils';
+import UserSelector from './UserSelector'; 
 
 interface NewTodoState {
   titre: string;

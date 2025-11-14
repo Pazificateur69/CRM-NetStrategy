@@ -5,11 +5,14 @@
 import React, { ElementType } from 'react';
 import { Download, FileText, PlusCircle } from 'lucide-react';
 import ClientActivityStream from './ClientActivityStream';
+import ClientExternalLinks from './ClientExternalLinks';
 import { formatDateTime } from '../ClientUtils';
+import { updateClient } from '@/services/crm';
 
 interface ClientPoleTabProps {
   client: any;
   canEdit: boolean;
+  reloadClient: () => Promise<void>;
   tab: any;
   filteredTodos: any[];
   filteredRappels: any[];
@@ -45,6 +48,7 @@ interface ClientPoleTabProps {
 export default function ClientPoleTab({
   client,
   canEdit,
+  reloadClient,
   tab,
   filteredTodos,
   filteredRappels,
@@ -74,6 +78,17 @@ export default function ClientPoleTab({
     ...activityHandlers,
   };
 
+  // Gestion des liens externes
+  const handleUpdateLinks = async (liens: any[]) => {
+    try {
+      await updateClient(Number(client.id), { liens_externes: liens });
+      await reloadClient();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des liens externes:', error);
+      throw error;
+    }
+  };
+
   return (
     <section
       className={`bg-white p-8 rounded-2xl shadow-xl border ${tab.accent.border}`}
@@ -83,6 +98,16 @@ export default function ClientPoleTab({
         <IconComponent className="w-6 h-6 mr-3" /> {tab.label}
       </h3>
       <p className="text-sm text-gray-500 mb-6">{tab.description}</p>
+
+      {/* === Liens externes === */}
+      <div className="mb-6">
+        <ClientExternalLinks
+          liens={client.liens_externes || []}
+          pole={tab.id}
+          onUpdate={handleUpdateLinks}
+          canEdit={canEdit}
+        />
+      </div>
 
       {/* === Dossier numérique par pôle === */}
       <div className="mt-6 mb-8">
