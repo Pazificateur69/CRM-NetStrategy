@@ -14,11 +14,12 @@ import {
     addRappel,
     updateRappel,
     deleteRappel,
-    uploadDocument, 
+    uploadDocument,
     updateClient,
     addPrestation,
     updatePrestation,
-    deletePrestation
+    deletePrestation,
+    validatePrestation
 } from '@/services/crm';
 import api from '@/services/api';
 import { TabDefinition } from '@/components/FicheTabs';
@@ -93,7 +94,8 @@ export interface UseClientLogicReturn {
   handleAddPrestation: (data: any) => Promise<void>;
   handleUpdatePrestation: (id: number, data: any) => Promise<void>;
   handleDeletePrestation: (id: number) => Promise<void>;
-  
+  handleValidatePrestation: (id: number) => Promise<void>;
+
   showEditModal: boolean;
   setShowEditModal: (v: boolean) => void;
   clientForm: ClientFormState;
@@ -479,14 +481,23 @@ export function useClientLogic(): UseClientLogicReturn {
                 alert('Erreur lors de la mise à jour de la prestation.');
             }
         },
-        handleDeletePrestation: async (id: number) => { 
+        handleDeletePrestation: async (id: number) => {
             const confirmation = window.confirm('Êtes-vous sûr de vouloir supprimer cette prestation ?');
             if (confirmation) {
-                await deletePrestation(id); 
-                await reloadClient(); 
+                await deletePrestation(id);
+                await reloadClient();
             }
-        }, 
-        
+        },
+        handleValidatePrestation: async (id: number) => {
+            try {
+                await validatePrestation(id);
+                await reloadClient();
+            } catch (error) {
+                console.error('Erreur lors de la validation de la prestation:', error);
+                alert('Erreur lors de la validation de la prestation.');
+            }
+        },
+
         // Modale Client
         showEditModal, setShowEditModal, clientForm,
         handleClientFieldChange: (f: keyof ClientFormState, v: string) => setClientForm(prev => ({ ...prev, [f]: v })),

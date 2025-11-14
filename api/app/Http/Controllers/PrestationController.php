@@ -96,4 +96,17 @@ class PrestationController extends Controller
 
         return response()->json(['message' => 'Prestation supprimée avec succès.'], 204);
     }
+
+    /**
+     * ✅ Valider une prestation
+     * Change le statut de 'en_attente' à 'validee'
+     */
+    public function validate(Prestation $prestation): JsonResponse
+    {
+        $this->authorize('manage clients');
+
+        $prestation->update(['statut' => 'validee']);
+
+        return (new PrestationResource($prestation->fresh(['client', 'responsable'])))->response();
+    }
 }
