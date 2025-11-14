@@ -13,7 +13,9 @@ class ContenuFicheController extends Controller
     public function index($clientId)
     {
         $client = Client::findOrFail($clientId);
-        $contenus = $client->contenu()->with('user:id,name')->latest()->get();
+        $contenus = $client->contenu()->with(['user' => function($query) {
+            $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+        }])->latest()->get();
 
         return response()->json([
             'message' => 'Contenus récupérés avec succès.',
@@ -48,7 +50,9 @@ class ContenuFicheController extends Controller
         }
 
         $contenu = $client->contenu()->create($data);
-        $contenu->load('user:id,name');
+        $contenu->load(['user' => function($query) {
+            $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+        }]);
 
         return response()->json([
             'message' => 'Contenu ajouté avec succès.',
@@ -76,7 +80,9 @@ class ContenuFicheController extends Controller
             'texte' => $validated['texte'],
         ]);
 
-        $contenu->load('user:id,name');
+        $contenu->load(['user' => function($query) {
+            $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+        }]);
 
         return response()->json([
             'message' => 'Commentaire modifié avec succès.',
