@@ -64,11 +64,11 @@ export interface UseClientLogicReturn {
   handleDeleteComment: (id: number) => Promise<void>;
   savingComment: boolean;
 
-  newTodo: { titre: string; description: string; pole: string };
-  setNewTodo: Dispatch<SetStateAction<{ titre: string; description: string; pole: string }>>;
+  newTodo: { titre: string; description: string; pole: string; assigned_to: number | undefined };
+  setNewTodo: Dispatch<SetStateAction<{ titre: string; description: string; pole: string; assigned_to: number | undefined }>>;
   handleAddTodo: () => Promise<void>;
   startEditTodo: (todo: any) => void;
-  cancelEditTodo: () => void; 
+  cancelEditTodo: () => void;
   editingTodoId: number | null;
   todoForm: TodoFormState;
   setTodoForm: Dispatch<SetStateAction<TodoFormState>>;
@@ -76,8 +76,8 @@ export interface UseClientLogicReturn {
   handleDeleteTodo: (id: number) => Promise<void>;
   savingTodo: boolean;
 
-  newRappel: { titre: string; description: string; date_rappel: string; pole: string };
-  setNewRappel: Dispatch<SetStateAction<{ titre: string; description: string; date_rappel: string; pole: string }>>;
+  newRappel: { titre: string; description: string; date_rappel: string; pole: string; assigned_users: number[] };
+  setNewRappel: Dispatch<SetStateAction<{ titre: string; description: string; date_rappel: string; pole: string; assigned_users: number[] }>>;
   handleAddRappel: () => Promise<void>;
   startEditRappel: (rappel: any) => void;
   cancelEditRappel: () => void;
@@ -133,8 +133,8 @@ export function useClientLogic(): UseClientLogicReturn {
     const [commentForm, setCommentForm] = useState({ texte: '' });
     const [savingComment, setSavingComment] = useState(false);
     
-    const [newTodo, setNewTodo] = useState({ titre: '', description: '', pole: '' });
-    const [newRappel, setNewRappel] = useState({ titre: '', description: '', date_rappel: '', pole: '' });
+    const [newTodo, setNewTodo] = useState({ titre: '', description: '', pole: '', assigned_to: undefined as number | undefined });
+    const [newRappel, setNewRappel] = useState({ titre: '', description: '', date_rappel: '', pole: '', assigned_users: [] as number[] });
     const [file, setFile] = useState<File | null>(null);
 
     const [editingTodoId, setEditingTodoId] = useState<number | null>(null);

@@ -4,14 +4,16 @@ import React from 'react';
 import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles } from 'lucide-react';
 import { InfoCard } from '../ClientUtils';
 import ClientActivityStream from './ClientActivityStream';
+import ClientContacts from './ClientContacts';
 
 interface ClientInfoDetailsProps {
   client: any;
   canEdit: boolean;
+  reloadClient: () => Promise<void>;
   newComment: string;
   setNewComment: React.Dispatch<React.SetStateAction<string>>;
   handleAddComment: () => Promise<void>;
-  
+
   editingCommentId: number | null;
   commentForm: { texte: string };
   startEditComment: (comment: any) => void;
@@ -68,6 +70,7 @@ const ModernInfoCard = ({ icon: Icon, label, value }: { icon: any; label: string
 export default function ClientInfoDetails({
   client,
   canEdit,
+  reloadClient,
   newComment,
   setNewComment,
   handleAddComment,
@@ -462,6 +465,9 @@ export default function ClientInfoDetails({
           )}
         </div>
       </section>
+
+      {/* Section Interlocuteurs */}
+      <ClientContacts client={client} canEdit={canEdit} onUpdate={reloadClient} />
     </div>
   );
 }

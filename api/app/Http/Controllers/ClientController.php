@@ -24,7 +24,8 @@ class ClientController extends Controller
             'todos.assignedUser:id,name,email',
             'rappels.user:id,name,email',
             'rappels.assignedUsers:id,name,email',
-            'contenu.user:id,name'
+            'contenu.user:id,name',
+            'contacts'
         ])->orderBy('created_at', 'desc')->get();
 
         return ClientResource::collection($clients)->response();
@@ -87,6 +88,7 @@ class ClientController extends Controller
             'rappels.user:id,name,email',
             'rappels.assignedUsers:id,name,email',
             'contenu.user:id,name',
+            'contacts',
         ])->findOrFail($id);
 
         return response()->json([

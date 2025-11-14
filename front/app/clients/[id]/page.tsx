@@ -21,6 +21,7 @@ export default function ClientDetailPage() {
     activeTab,
     setActiveTab,
     userRole,
+    users,
     accessibleTabs,
     filteredTodos,
     filteredRappels,
@@ -127,6 +128,7 @@ export default function ClientDetailPage() {
     filteredRappels,
     canEdit,
     getCurrentPole,
+    users,
     newTodo,
     setNewTodo,
     handleAddTodo,
@@ -188,6 +190,7 @@ export default function ClientDetailPage() {
         {activeTab === 'informations' && (
           <ClientInfoDetails
             client={client}
+            reloadClient={reloadClient}
             newComment={newComment}
             setNewComment={setNewComment}
             handleAddComment={handleAddComment}

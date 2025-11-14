@@ -28,6 +28,7 @@ interface NewTodoState {
   titre: string;
   description: string;
   pole?: string;
+  assigned_to?: number;
 }
 
 interface NewRappelState {
@@ -35,14 +36,16 @@ interface NewRappelState {
   description: string;
   date_rappel: string;
   pole?: string;
+  assigned_users?: number[];
 }
 
 export interface ClientActivityStreamProps {
   filteredTodos: any[];
   filteredRappels: any[];
   canEdit: boolean;
-  activePoleLabel: string; 
-  userRole: string; 
+  activePoleLabel: string;
+  userRole: string;
+  users?: any[]; 
 
   newTodo: NewTodoState;
   setNewTodo: React.Dispatch<React.SetStateAction<NewTodoState>>;
@@ -74,7 +77,8 @@ export default function ClientActivityStream({
   filteredRappels,
   canEdit,
   activePoleLabel,
-  userRole, 
+  userRole,
+  users = [],
 
   newTodo,
   setNewTodo,
@@ -256,10 +260,16 @@ export default function ClientActivityStream({
                                 {formatDate(t.date_echeance)}
                               </span>
                             )}
+                            {t.assignedUser?.name && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <User className="w-3 h-3 mr-1" />
+                                Assigné: {t.assignedUser.name}
+                              </span>
+                            )}
                             {t.user?.name && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
                                 <User className="w-3 h-3 mr-1" />
-                                {t.user.name}
+                                Créé par: {t.user.name}
                               </span>
                             )}
                           </div>
@@ -321,12 +331,28 @@ export default function ClientActivityStream({
                     </select>
                   </div>
                 )}
-                
-                <input 
-                  placeholder="Titre de la tâche" 
-                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  value={newTodo.titre} 
-                  onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })} 
+
+                {users.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Assigner à</label>
+                    <select
+                      value={newTodo.assigned_to || ''}
+                      onChange={(e) => setNewTodo({ ...newTodo, assigned_to: e.target.value ? Number(e.target.value) : undefined })}
+                      className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Non assigné</option>
+                      {users.map(user => (
+                        <option key={user.id} value={user.id}>{user.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <input
+                  placeholder="Titre de la tâche"
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newTodo.titre}
+                  onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })}
                 />
                 <textarea 
                   placeholder="Description (optionnel)" 
@@ -467,10 +493,16 @@ export default function ClientActivityStream({
                               <Calendar className="w-3 h-3 mr-1" />
                               {formatDateTime(r.date_rappel)}
                             </span>
+                            {r.assignedUsers && r.assignedUsers.length > 0 && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                                <User className="w-3 h-3 mr-1" />
+                                Assigné: {r.assignedUsers.map((u: any) => u.name).join(', ')}
+                              </span>
+                            )}
                             {r.user?.name && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
                                 <User className="w-3 h-3 mr-1" />
-                                {r.user.name}
+                                Créé par: {r.user.name}
                               </span>
                             )}
                           </div>
@@ -532,12 +564,33 @@ export default function ClientActivityStream({
                     </select>
                   </div>
                 )}
-                
-                <input 
-                  placeholder="Titre du rappel" 
-                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                  value={newRappel.titre} 
-                  onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })} 
+
+                {users.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Assigner à (multi-sélection)</label>
+                    <select
+                      multiple
+                      value={newRappel.assigned_users || []}
+                      onChange={(e) => {
+                        const selected = Array.from(e.target.selectedOptions, option => Number(option.value));
+                        setNewRappel({ ...newRappel, assigned_users: selected });
+                      }}
+                      className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      size={Math.min(users.length, 4)}
+                    >
+                      {users.map(user => (
+                        <option key={user.id} value={user.id}>{user.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Maintenez Ctrl/Cmd pour sélectionner plusieurs utilisateurs</p>
+                  </div>
+                )}
+
+                <input
+                  placeholder="Titre du rappel"
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  value={newRappel.titre}
+                  onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })}
                 />
                 <textarea 
                   placeholder="Description (optionnel)" 

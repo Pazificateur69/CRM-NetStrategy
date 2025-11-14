@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
     AuthController,
     ClientController,
+    ClientContactController,
     ProspectController,
     RappelController,
     TodoController,
@@ -63,6 +64,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route spéciale pour récupérer les infos comptables d'un client
     Route::get('/clients/{id}/compta', [ClientController::class, 'getCompta'])
         ->middleware('permission:view clients|manage clients');
+
+    // ===================================================
+    // 👥 CONTACTS CLIENT
+    // ===================================================
+    Route::get('/clients/{clientId}/contacts', [ClientContactController::class, 'index'])
+        ->middleware('permission:view clients|manage clients');
+    Route::post('/contacts', [ClientContactController::class, 'store'])
+        ->middleware('permission:manage clients');
+    Route::get('/contacts/{id}', [ClientContactController::class, 'show'])
+        ->middleware('permission:view clients|manage clients');
+    Route::put('/contacts/{id}', [ClientContactController::class, 'update'])
+        ->middleware('permission:manage clients');
+    Route::delete('/contacts/{id}', [ClientContactController::class, 'destroy'])
+        ->middleware('permission:manage clients');
 
     Route::apiResource('prospects', ProspectController::class)
         ->middleware('permission:view prospects|manage prospects');
