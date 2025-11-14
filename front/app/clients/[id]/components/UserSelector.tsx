@@ -1,0 +1,130 @@
+// app/clients/[id]/components/UserSelector.tsx
+
+import React, { useEffect, useState } from 'react';
+import { User, Users } from 'lucide-react';
+import api from '@/services/api';
+
+interface UserOption {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  pole?: string;
+}
+
+interface UserSelectorProps {
+  value?: number | number[];
+  onChange: (value: number | number[]) => void;
+  multiple?: boolean;
+  label?: string;
+  placeholder?: string;
+  className?: string;
+  pole?: string;
+}
+
+export default function UserSelector({
+  value,
+  onChange,
+  multiple = false,
+  label = 'Assigné à',
+  placeholder = 'Sélectionner un utilisateur',
+  className = '',
+  pole,
+}: UserSelectorProps) {
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const endpoint = pole ? `/users/by-pole/${pole}` : '/users';
+        const response = await api.get(endpoint);
+        setUsers(response.data || []);
+      } catch (error) {
+        console.error('Erreur lors du chargement des utilisateurs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [pole]);
+
+  if (loading) {
+    return (
+      <div className={className}>
+        {label && <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>}
+        <div className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500">
+          Chargement...
+        </div>
+      </div>
+    );
+  }
+
+  if (multiple) {
+    return (
+      <div className={className}>
+        {label && (
+          <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            {label}
+          </label>
+        )}
+        <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-white">
+          {users.map((user) => {
+            const isSelected = Array.isArray(value) && value.includes(user.id);
+            return (
+              <label key={user.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => {
+                    const currentValue = (value as number[]) || [];
+                    if (e.target.checked) {
+                      onChange([...currentValue, user.id]);
+                    } else {
+                      onChange(currentValue.filter(id => id !== user.id));
+                    }
+                  }}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 flex-1">{user.name}</span>
+                {user.pole && (
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                    {user.pole}
+                  </span>
+                )}
+              </label>
+            );
+          })}
+          {users.length === 0 && (
+            <p className="text-sm text-gray-500 text-center py-2">Aucun utilisateur disponible</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {label && (
+        <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+          <User className="w-4 h-4" />
+          {label}
+        </label>
+      )}
+      <select
+        value={value as number || ''}
+        onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+      >
+        <option value="">{placeholder}</option>
+        {users.map((user) => (
+          <option key={user.id} value={user.id}>
+            {user.name} {user.pole ? `(${user.pole})` : ''}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
