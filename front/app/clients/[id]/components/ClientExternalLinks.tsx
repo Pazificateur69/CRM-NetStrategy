@@ -1,7 +1,12 @@
 // app/clients/[id]/components/ClientExternalLinks.tsx
 
 import React, { useState } from 'react';
-import { ExternalLink, Globe, BarChart, Search as SearchIcon, Facebook, Instagram, Linkedin, Twitter, Edit, Save, X, Youtube, Plus, Trash2 } from 'lucide-react';
+import {
+  ExternalLink, Globe, BarChart, Search as SearchIcon,
+  Facebook, Instagram, Linkedin, Twitter, Edit, Save, X, Youtube,
+  Plus, Trash2, FileText, HardDrive, TrendingUp, Image, Palette,
+  BarChart3, MapPin, Video
+} from 'lucide-react';
 
 interface ExternalLink {
   type: string;
@@ -20,18 +25,22 @@ interface ClientExternalLinksProps {
 // Icônes disponibles par type de lien
 const ICONS_MAP: Record<string, any> = {
   'site_web': Globe,
-  'analytics': BarChart,
+  'analytics': BarChart3,
   'search_console': SearchIcon,
   'facebook': Facebook,
   'instagram': Instagram,
   'linkedin': Linkedin,
   'twitter': Twitter,
   'youtube': Youtube,
-  'tiktok': Globe,
-  'notion': Globe,
-  'google_maps': Globe,
-  'google_ads': SearchIcon,
+  'tiktok': Video,
+  'notion': FileText,
+  'google_maps': MapPin,
+  'google_ads': TrendingUp,
   'meta_ads': Facebook,
+  'drive': HardDrive,
+  'drive_logo': HardDrive,
+  'kit_graphique': Image,
+  'rapport_seo': FileText,
 };
 
 // Liens prédéfinis par pôle
@@ -45,7 +54,8 @@ const LIENS_PAR_POLE: Record<string, { type: string; label: string; icon: string
     { type: 'site_web', label: 'Site Internet', icon: 'site_web' },
     { type: 'analytics', label: 'Google Analytics', icon: 'analytics' },
     { type: 'search_console', label: 'Search Console', icon: 'search_console' },
-    { type: 'rapport_seo', label: 'Rapport SEO (Notion)', icon: 'notion' },
+    { type: 'rapport_seo', label: 'Rapport SEO (Notion)', icon: 'rapport_seo' },
+    { type: 'google_maps', label: 'Google Maps / GMB', icon: 'google_maps' },
   ],
   'ads': [
     { type: 'google_ads', label: 'Google Ads', icon: 'google_ads' },
@@ -58,11 +68,13 @@ const LIENS_PAR_POLE: Record<string, { type: string; label: string; icon: string
     { type: 'linkedin', label: 'LinkedIn', icon: 'linkedin' },
     { type: 'tiktok', label: 'TikTok', icon: 'tiktok' },
     { type: 'youtube', label: 'YouTube', icon: 'youtube' },
+    { type: 'twitter', label: 'X (Twitter)', icon: 'twitter' },
   ],
   'branding': [
     { type: 'site_web', label: 'Site Internet', icon: 'site_web' },
-    { type: 'drive_logo', label: 'Drive Logo', icon: 'notion' },
-    { type: 'kit_graphique', label: 'Kit Graphique', icon: 'notion' },
+    { type: 'drive_logo', label: 'Drive Logo', icon: 'drive_logo' },
+    { type: 'kit_graphique', label: 'Kit Graphique', icon: 'kit_graphique' },
+    { type: 'notion', label: 'Notion', icon: 'notion' },
   ],
 };
 
