@@ -77,6 +77,7 @@ class RappelController extends Controller
             'ordre' => $maxOrdre + 1,
             'user_id' => $user->id,
             'pole' => $validated['pole'] ?? $user->pole ?? null,
+            'client_id' => $validated['client_id'] ?? null,
         ]);
 
         if (!empty($validated['client_id'])) {
