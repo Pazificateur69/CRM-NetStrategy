@@ -86,6 +86,7 @@ export interface Prestation {
   engagement_mois: number | null; // Ajouté pour correspondre à l'usage dans page.tsx
   date_debut: string | null; // Ajouté pour correspondre à l'usage dans page.tsx
   date_fin: string | null; // Ajouté pour correspondre à l'usage dans page.tsx
+  statut: 'en_attente' | 'validee'; // Statut de validation de la prestation
   responsable: User | null;
   contenu: ContenuFiche[];
   created_at: string;
@@ -218,4 +219,5 @@ export interface PrestationInput {
   engagement_mois?: number | null;
   date_debut?: string | null;
   date_fin?: string | null;
+  statut?: 'en_attente' | 'validee';
 }

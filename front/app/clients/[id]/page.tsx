@@ -52,6 +52,7 @@ export default function ClientDetailPage() {
     handleUpdatePrestation,
     handleDeletePrestation,
     handleAddPrestation,
+    handleValidatePrestation,
 
     // Tâches et rappels
     newTodo,
@@ -233,6 +234,7 @@ export default function ClientDetailPage() {
             handleUpdatePrestation={handleUpdatePrestation}
             handleDeletePrestation={handleDeletePrestation}
             handleAddPrestation={handleAddPrestation}
+            handleValidatePrestation={handleValidatePrestation}
             reloadClient={reloadClient}
           />
         )}
