@@ -17,11 +17,11 @@ class TodoController extends Controller
         $user = $request->user();
 
         $todos = $user->hasRole('admin')
-            ? Todo::with(['user', 'client', 'assignedUser'])
+            ? Todo::with(['user.roles', 'client', 'assignedUser.roles'])
                 ->orderBy('ordre')
                 ->orderBy('created_at', 'asc')
                 ->get()
-            : Todo::with(['user', 'client', 'assignedUser'])
+            : Todo::with(['user.roles', 'client', 'assignedUser.roles'])
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
                         ->orWhere('assigned_to', $user->id);
@@ -41,12 +41,12 @@ class TodoController extends Controller
         $user = $request->user();
 
         $todos = ($user->hasRole('admin') || $user->pole === 'admin')
-            ? Todo::with(['user', 'client', 'assignedUser'])
+            ? Todo::with(['user.roles', 'client', 'assignedUser.roles'])
                 ->where('pole', $pole)
                 ->orderBy('ordre', 'asc')
                 ->orderBy('created_at', 'asc')
                 ->get()
-            : Todo::with(['user', 'client', 'assignedUser'])
+            : Todo::with(['user.roles', 'client', 'assignedUser.roles'])
                 ->where('pole', $pole)
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
@@ -97,7 +97,7 @@ class TodoController extends Controller
 
         return response()->json([
             'message' => 'Tâche créée avec succès.',
-            'data' => $todo->load(['user', 'client', 'assignedUser']),
+            'data' => $todo->load(['user.roles', 'client', 'assignedUser.roles']),
         ], 201);
     }
 
@@ -140,7 +140,7 @@ class TodoController extends Controller
 
         return response()->json([
             'message' => 'Tâche mise à jour avec succès.',
-            'data' => $todo->load(['user', 'client', 'assignedUser']),
+            'data' => $todo->load(['user.roles', 'client', 'assignedUser.roles']),
         ]);
     }
 

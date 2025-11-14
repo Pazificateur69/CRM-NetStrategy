@@ -196,7 +196,8 @@ class UserController extends Controller
             return response()->json(['message' => 'Non authentifié'], 401);
         }
 
-        $users = User::where('pole', $pole)
+        $users = User::with('roles')
+            ->where('pole', $pole)
             ->select('id', 'name', 'email', 'role', 'pole')
             ->orderBy('name')
             ->get();
