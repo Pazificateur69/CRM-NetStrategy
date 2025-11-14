@@ -1,15 +1,15 @@
 // app/clients/[id]/components/ClientEditModal.tsx
 import React from 'react';
-import { 
-  Loader2, 
-  Save, 
-  X, 
-  Building2, 
-  User, 
-  MapPin, 
-  Mail, 
-  Phone, 
-  Globe, 
+import {
+  Loader2,
+  Save,
+  X,
+  Building2,
+  User,
+  MapPin,
+  Mail,
+  Phone,
+  Globe,
   Hash,
   FileText,
   CreditCard,
@@ -18,9 +18,13 @@ import {
   Repeat,
   Wallet,
   Building,
-  Sparkles
+  Sparkles,
+  Users,
+  Plus,
+  Trash2,
+  Briefcase
 } from 'lucide-react';
-import { ClientFormState } from '../ClientUtils';
+import { ClientFormState, Interlocuteur } from '../ClientUtils';
 
 interface ClientEditModalProps {
   open: boolean;
@@ -29,6 +33,7 @@ interface ClientEditModalProps {
   onChange: (field: keyof ClientFormState, value: string) => void;
   onSubmit: () => void;
   saving: boolean;
+  onInterlocuteursChange: (interlocuteurs: Interlocuteur[]) => void;
 }
 
 // Composant Input modernisé avec icône
@@ -89,6 +94,15 @@ const Section = ({ icon: Icon, title, children }: any) => (
   </div>
 );
 
+// Postes prédéfinis pour les interlocuteurs
+const POSTES_PREDEFINIS = [
+  { value: 'gerant', label: 'Gérant' },
+  { value: 'resp_comm', label: 'Responsable Communication' },
+  { value: 'comptable', label: 'Comptable' },
+  { value: 'administratif', label: 'Administratif' },
+  { value: 'autre', label: 'Autre' },
+];
+
 export default function ClientEditModal({
   open,
   onClose,
@@ -96,6 +110,7 @@ export default function ClientEditModal({
   onChange,
   onSubmit,
   saving,
+  onInterlocuteursChange,
 }: ClientEditModalProps) {
   // ✅ 1. TOUS LES HOOKS EN PREMIER (avant tout return conditionnel)
   
@@ -138,6 +153,31 @@ export default function ClientEditModal({
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
+
+  // Fonctions de gestion des interlocuteurs
+  const handleAddInterlocuteur = () => {
+    const newInterlocuteur: Interlocuteur = {
+      id: Date.now().toString(),
+      poste: '',
+      nom: '',
+      telephone: '',
+      email: '',
+      notes: '',
+    };
+    onInterlocuteursChange([...form.interlocuteurs, newInterlocuteur]);
+  };
+
+  const handleRemoveInterlocuteur = (id: string) => {
+    onInterlocuteursChange(form.interlocuteurs.filter(i => i.id !== id));
+  };
+
+  const handleChangeInterlocuteur = (id: string, field: keyof Interlocuteur, value: string) => {
+    onInterlocuteursChange(
+      form.interlocuteurs.map(i =>
+        i.id === id ? { ...i, [field]: value } : i
+      )
+    );
+  };
 
   // ✅ 2. RETURN CONDITIONNEL EN DERNIER (après tous les hooks)
   if (!open) {
@@ -328,7 +368,120 @@ export default function ClientEditModal({
               </div>
             </Section>
 
-            {/* Section 4: Descriptions */}
+            {/* Section 4: Interlocuteurs */}
+            <Section icon={Users} title="Interlocuteurs">
+              <div className="space-y-4">
+                {form.interlocuteurs.length === 0 ? (
+                  <div className="flex items-center gap-3 text-gray-500 italic text-sm bg-gray-50 rounded-xl p-4">
+                    <div className="w-1 h-12 bg-gray-300 rounded-full" />
+                    <p>Aucun interlocuteur n'a encore été ajouté.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {form.interlocuteurs.map((interlocuteur) => (
+                      <div
+                        key={interlocuteur.id}
+                        className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-5 border-2 border-purple-100"
+                      >
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                <Briefcase className="w-3.5 h-3.5 text-purple-500" />
+                                Poste *
+                              </label>
+                              <select
+                                value={interlocuteur.poste}
+                                onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'poste', e.target.value)}
+                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                              >
+                                <option value="">Sélectionner un poste</option>
+                                {POSTES_PREDEFINIS.map(p => (
+                                  <option key={p.value} value={p.value}>{p.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                <User className="w-3.5 h-3.5 text-purple-500" />
+                                Nom *
+                              </label>
+                              <input
+                                type="text"
+                                value={interlocuteur.nom}
+                                onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'nom', e.target.value)}
+                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                                placeholder="Nom complet"
+                              />
+                            </div>
+                            <div>
+                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                <Phone className="w-3.5 h-3.5 text-purple-500" />
+                                Téléphone
+                              </label>
+                              <input
+                                type="tel"
+                                value={interlocuteur.telephone || ''}
+                                onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'telephone', e.target.value)}
+                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                                placeholder="06 XX XX XX XX"
+                              />
+                            </div>
+                            <div>
+                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                <Mail className="w-3.5 h-3.5 text-purple-500" />
+                                Email
+                              </label>
+                              <input
+                                type="email"
+                                value={interlocuteur.email || ''}
+                                onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'email', e.target.value)}
+                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                                placeholder="email@exemple.fr"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                              <FileText className="w-3.5 h-3.5 text-purple-500" />
+                              Notes
+                            </label>
+                            <textarea
+                              value={interlocuteur.notes || ''}
+                              onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'notes', e.target.value)}
+                              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                              rows={2}
+                              placeholder="Notes complémentaires..."
+                            />
+                          </div>
+                          <div className="flex justify-end pt-2">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveInterlocuteur(interlocuteur.id!)}
+                              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Supprimer cet interlocuteur
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleAddInterlocuteur}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition-colors text-sm font-semibold border-2 border-dashed border-purple-300 hover:border-purple-400"
+                >
+                  <Plus className="w-5 h-5" />
+                  Ajouter un interlocuteur
+                </button>
+              </div>
+            </Section>
+
+            {/* Section 5: Descriptions */}
             <Section icon={FileText} title="Descriptions & Notes">
               <div className="space-y-5">
                 <InputField

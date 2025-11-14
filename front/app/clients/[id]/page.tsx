@@ -39,11 +39,12 @@ export default function ClientDetailPage() {
     handleUpdateComment,
     handleDeleteComment,
     savingComment,
-    
+
     showEditModal,
     setShowEditModal,
     clientForm,
     handleClientFieldChange,
+    handleInterlocuteursChange,
     handleCloseModal,
     handleSaveClient,
     savingClient,
@@ -244,6 +245,7 @@ export default function ClientDetailPage() {
         form={clientForm}
         onClose={handleCloseModal}
         onChange={handleClientFieldChange}
+        onInterlocuteursChange={handleInterlocuteursChange}
         onSubmit={handleSaveClient}
         saving={savingClient}
       />
