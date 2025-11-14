@@ -8,24 +8,33 @@ import {
   Save,
   Trash2,
   X,
+  Clock,
+  User,
+  Layers,
+  AlertCircle,
+  CheckCircle2,
+  Circle,
+  Plus,
 } from 'lucide-react';
-// IMPORT CORRIGÉ : utilise les exports du nouveau fichier ClientUtils
-import { formatDate, formatDateTime, TodoFormState, RappelFormState } from '../ClientUtils'; 
+import { 
+  formatDate, 
+  formatDateTime, 
+  TodoFormState, 
+  RappelFormState,
+  POLE_OPTIONS // ✅ NOUVEAU : Import des options centralisées
+} from '../ClientUtils'; 
 
-// === Mise à jour des types : Suppression des champs d'assignation ===
 interface NewTodoState {
   titre: string;
   description: string;
-  pole?: string; // Ajout du pôle optionnel pour la vue globale
-  // assigned_user_id?: string; // ❌ SUPPRIMÉ
+  pole?: string;
 }
 
 interface NewRappelState {
   titre: string;
   description: string;
   date_rappel: string;
-  pole?: string; // Ajout du pôle optionnel pour la vue globale
-  // assigned_user_ids?: string[]; // ❌ SUPPRIMÉ
+  pole?: string;
 }
 
 export interface ClientActivityStreamProps {
@@ -33,12 +42,10 @@ export interface ClientActivityStreamProps {
   filteredRappels: any[];
   canEdit: boolean;
   activePoleLabel: string; 
-  // usersInPole: any[]; // ❌ SUPPRIMÉ de l'interface car non utilisé
   userRole: string; 
 
-  // Handlers et States pour Todos
-  newTodo: NewTodoState; // Utilisation du nouveau type
-  setNewTodo: React.Dispatch<React.SetStateAction<NewTodoState>>; // Utilisation du nouveau type
+  newTodo: NewTodoState;
+  setNewTodo: React.Dispatch<React.SetStateAction<NewTodoState>>;
   handleAddTodo: () => Promise<void>;
   startEditTodo: (todo: any) => void;
   editingTodoId: number | null;
@@ -49,9 +56,8 @@ export interface ClientActivityStreamProps {
   handleDeleteTodo: (todoId: number) => Promise<void>;
   savingTodo: boolean;
 
-  // Handlers et States pour Rappels
-  newRappel: NewRappelState; // Utilisation du nouveau type
-  setNewRappel: React.Dispatch<React.SetStateAction<NewRappelState>>; // Utilisation du nouveau type
+  newRappel: NewRappelState;
+  setNewRappel: React.Dispatch<React.SetStateAction<NewRappelState>>;
   handleAddRappel: () => Promise<void>;
   startEditRappel: (rappel: any) => void;
   editingRappelId: number | null;
@@ -68,7 +74,6 @@ export default function ClientActivityStream({
   filteredRappels,
   canEdit,
   activePoleLabel,
-  // usersInPole, // ❌ SUPPRIMÉ de la déstructuration
   userRole, 
 
   newTodo,
@@ -96,326 +101,468 @@ export default function ClientActivityStream({
   savingRappel,
 }: ClientActivityStreamProps) {
   
-  // ⚙️ Correction de la détection de la vue globale
   const activeLabelLower = activePoleLabel.toLowerCase();
   const isGlobalView = activeLabelLower.includes('détail') || activeLabelLower.includes('global'); 
   
   const isAdmin = userRole === 'admin';
   const showPoleSelection = isGlobalView && isAdmin;
 
-  // Types explicites pour 'prev' corrigent les erreurs 7006
   const updateTodoForm = (key: keyof TodoFormState, value: any) =>
     setTodoForm((prev: TodoFormState) => ({ ...prev, [key]: value }));
 
-  // Types explicites pour 'prev' corrigent les erreurs 7006
   const updateRappelForm = (key: keyof RappelFormState, value: any) =>
     setRappelForm((prev: RappelFormState) => ({ ...prev, [key]: value }));
 
-  // ⚙️ Homogénéité du naming des pôles
-  // ✅ MODIFIÉ : Utilisation des VALEURS en MAJUSCULES (standard BDD/API)
-  const poleOptions = [
-    { value: 'COM', label: 'Communication' }, // ⬅️ MODIFIÉ
-    { value: 'SEO', label: 'SEO' }, // ⬅️ MODIFIÉ
-    { value: 'DEV', label: 'Développement' }, // ⬅️ MODIFIÉ
-    { value: 'RESEAUX_SOCIAUX', label: 'Réseaux Sociaux' }, // ⬅️ MODIFIÉ (Ajusté pour correspondre à une convention BDD)
-    { value: 'COMPTABILITE', label: 'Comptabilité' }, // ⬅️ MODIFIÉ
-  ];
+  // ✅ SUPPRIMÉ : Ancienne définition locale de poleOptions
+  // On utilise maintenant POLE_OPTIONS importé depuis ClientUtils
+
+  // Helper pour obtenir l'icône de statut
+  const getStatusIcon = (statut: string) => {
+    switch(statut) {
+      case 'termine': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case 'en_cours': return <Clock className="w-4 h-4 text-blue-500" />;
+      case 'retard': return <AlertCircle className="w-4 h-4 text-red-500" />;
+      default: return <Circle className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  // Helper pour le badge de statut
+  const getStatusBadge = (statut: string) => {
+    const badges = {
+      'termine': 'bg-green-50 text-green-700 border-green-200',
+      'en_cours': 'bg-blue-50 text-blue-700 border-blue-200',
+      'retard': 'bg-red-50 text-red-700 border-red-200',
+    };
+    return badges[statut as keyof typeof badges] || 'bg-gray-50 text-gray-700 border-gray-200';
+  };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      {/* TODOS */}
-      <section className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-        <h3 className="font-bold text-2xl mb-4 flex items-center text-sky-700">
-          <CheckSquare className="w-6 h-6 mr-3 text-sky-500" />
-          Liste des Tâches ({isGlobalView ? 'Vue Globale' : activePoleLabel})
-        </h3>
-        <p className="text-sm text-gray-500 mb-6">
-          {filteredTodos.length || 0} tâche{filteredTodos.length > 1 ? 's' : ''} au total
-        </p>
-
-        {filteredTodos.length ? (
-          <div className="space-y-4">
-            {filteredTodos.map((t: any) => (
-              <div key={t.id} className="border-l-4 border-sky-400 bg-sky-50 p-4 rounded-lg">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="font-semibold text-lg text-sky-800">{t.titre}</p>
-                    <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                      {t.description?.length ? t.description : 'Aucune description fournie.'}
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                      <span className="px-2 py-1 rounded-full bg-white shadow-sm border border-sky-200 text-sky-700 font-semibold">
-                        Statut : {t.statut?.replace('_', ' ') ?? 'en cours'}
-                      </span>
-                      <span>
-                        Échéance : {t.date_echeance ? formatDate(t.date_echeance) : '—'}
-                      </span>
-                      {/* Affichage du pôle : s'assurer que si 't.pole' est 'RESEAUX_SOCIAUX', on affiche 'Réseaux Sociaux' */}
-                      <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600 font-semibold">
-                        Pôle : {poleOptions.find(p => p.value === t.pole)?.label || t.pole || 'Global'}
-                      </span>
-                      {t.user?.name && <span>Assignée à : {t.user.name}</span>}
-                    </div>
-                  </div>
-                  {canEdit && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEditTodo(t)}
-                        className="inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg border border-sky-300 text-sky-700 hover:bg-white"
-                      >
-                        <Edit className="w-3 h-3 mr-1" /> Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTodo(t.id)}
-                        className="inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" /> Supprimer
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {editingTodoId === t.id && (
-                  <div className="mt-4 pt-4 border-t border-sky-100 space-y-3">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Titre</label>
-                        <input value={todoForm.titre} onChange={(e) => updateTodoForm('titre', e.target.value)} className="mt-1 w-full border border-sky-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Statut</label>
-                        <select
-                          value={todoForm.statut}
-                          onChange={(e) => updateTodoForm('statut', e.target.value as 'en_cours' | 'termine' | 'retard')}
-                          className="mt-1 w-full border border-sky-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"
-                        >
-                          <option value="en_cours">En cours</option>
-                          <option value="termine">Terminé</option>
-                          <option value="retard">En retard</option>
-                        </select>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Description</label>
-                        <textarea value={todoForm.description} onChange={(e) => updateTodoForm('description', e.target.value)} className="mt-1 w-full border border-sky-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400" rows={3} />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Échéance</label>
-                        <input type="date" value={todoForm.date_echeance} onChange={(e) => updateTodoForm('date_echeance', e.target.value)} className="mt-1 w-full border border-sky-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400" />
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <button onClick={() => handleUpdateTodo(t.id, todoForm)} disabled={savingTodo} className="inline-flex items-center px-4 py-2 bg-sky-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-sky-700 disabled:opacity-50">
-                        {savingTodo ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                        Enregistrer
-                      </button>
-                      <button onClick={cancelEditTodo} className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300">
-                        <X className="w-4 h-4 mr-2" /> Annuler
-                      </button>
-                    </div>
-                  </div>
-                )}
+    <div className="grid lg:grid-cols-2 gap-6">
+      {/* ========== TODOS ========== */}
+      <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-5 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <CheckSquare className="w-5 h-5 text-white" />
               </div>
-            ))}
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">Tâches</h3>
+                <p className="text-sm text-gray-600">
+                  {filteredTodos.length} tâche{filteredTodos.length > 1 ? 's' : ''} · {isGlobalView ? 'Vue Globale' : activePoleLabel}
+                </p>
+              </div>
+            </div>
           </div>
-        ) : (
-          <p className="text-gray-400 italic text-sm">Aucune tâche enregistrée pour ce client sur ce pôle.</p>
-        )}
+        </div>
 
-        {canEdit && (
-          <div className="mt-6 pt-4 border-t">
-            <h4 className="font-medium text-gray-700 mb-3">Nouvelle Tâche (Pôle: {isGlobalView ? 'Global' : activePoleLabel}) :</h4>
-            
-            {/* ✅ LOGIQUE À METTRE À JOUR : Affichage du select pour l'admin en vue globale */}
-            {showPoleSelection && (
-              <div className="mb-3">
-                <label className="text-xs font-semibold text-gray-500 uppercase">Pôle concerné</label>
-                <select
-                  value={newTodo.pole || ''}
-                  onChange={(e) => setNewTodo({ ...newTodo, pole: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-sky-500 focus:border-sky-500"
+        {/* Content */}
+        <div className="p-6">
+          {filteredTodos.length ? (
+            <div className="space-y-3">
+              {filteredTodos.map((t: any) => (
+                <div 
+                  key={t.id} 
+                  className="group relative bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200"
                 >
-                  <option value="">Sélectionner un pôle</option>
-                  {poleOptions.map(option => (
-                    // On utilise les VALEURS en MAJUSCULES ici
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            
-            {/* ❌ SUPPRIMÉS : Assignation utilisateur et mention de chargement */}
-
-            <input 
-              placeholder="Titre de la tâche" 
-              className="border border-gray-300 p-3 rounded-lg w-full mb-3 focus:ring-sky-500 focus:border-sky-500" 
-              value={newTodo.titre} 
-              onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })} 
-            />
-            <textarea 
-              placeholder="Détails (description)" 
-              className="border border-gray-300 p-3 rounded-lg w-full mb-3 focus:ring-sky-500 focus:border-sky-500" 
-              rows={2} 
-              value={newTodo.description} 
-              onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })} 
-            />
-            <button onClick={handleAddTodo} className="bg-sky-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-sky-700">
-              Ajouter cette Tâche
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* RAPPELS */}
-      <section className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-        <h3 className="font-bold text-2xl mb-4 flex items-center text-fuchsia-700">
-          <Calendar className="w-6 h-6 mr-3 text-fuchsia-500" />
-          Rappels et Échéances ({isGlobalView ? 'Vue Globale' : activePoleLabel})
-        </h3>
-        <p className="text-sm text-gray-500 mb-6">
-          {filteredRappels.length || 0} rappel{filteredRappels.length > 1 ? 's' : ''} planifié{filteredRappels.length > 1 ? 's' : ''}
-        </p>
-
-        {filteredRappels.length ? (
-          <div className="space-y-4">
-            {filteredRappels.map((r: any) => (
-              <div key={r.id} className="border-l-4 border-fuchsia-400 bg-fuchsia-50 p-4 rounded-lg">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="font-semibold text-lg text-fuchsia-800">{r.titre}</p>
-                    <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                      {r.description?.length ? r.description : 'Aucune description précisée.'}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-3 text-xs text-fuchsia-700">
-                      <span className="px-2 py-1 rounded-full bg-white border border-fuchsia-200 font-semibold">
-                        {r.fait ? '✅ Rappel effectué' : '⏰ Rappel à venir'}
-                      </span>
-                      <span>Échéance : {formatDateTime(r.date_rappel)}</span>
-                      {/* Affichage du pôle */}
-                      <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600 font-semibold">
-                        Pôle : {poleOptions.find(p => p.value === r.pole)?.label || r.pole || 'Global'}
-                      </span>
-                      {r.user?.name && <span>Assigné à : {r.user.name}</span>}
-                    </div>
-                  </div>
-                  {canEdit && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEditRappel(r)}
-                        className="inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg border border-fuchsia-300 text-fuchsia-700 hover:bg-white"
-                      >
-                        <Edit className="w-3 h-3 mr-1" /> Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRappel(r.id)}
-                        className="inline-flex items-center px-3 py-2 text-xs font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" /> Supprimer
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {editingRappelId === r.id && (
-                  <div className="mt-4 pt-4 border-t border-fuchsia-100 space-y-3">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Titre</label>
-                        <input value={rappelForm.titre} onChange={(e) => updateRappelForm('titre', e.target.value)} className="mt-1 w-full border border-fuchsia-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fuchsia-400" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Statut</label>
-                        <div className="mt-1 flex items-center gap-2">
-                          <input
-                            id={`rappel-fait-${r.id}`}
-                            type="checkbox"
-                            checked={rappelForm.fait}
-                            onChange={(e) => updateRappelForm('fait', e.target.checked)}
-                            className="h-4 w-4 text-fuchsia-600 border-fuchsia-300 rounded focus:ring-fuchsia-500"
+                  {editingTodoId === t.id ? (
+                    // Mode édition
+                    <div className="space-y-4">
+                      <div className="grid gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Titre</label>
+                          <input 
+                            value={todoForm.titre} 
+                            onChange={(e) => updateTodoForm('titre', e.target.value)} 
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                           />
-                          <label htmlFor={`rappel-fait-${r.id}`} className="text-sm text-gray-600">
-                            Marquer comme effectué
-                          </label>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                          <textarea 
+                            value={todoForm.description} 
+                            onChange={(e) => updateTodoForm('description', e.target.value)} 
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                            rows={2} 
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Statut</label>
+                            <select
+                              value={todoForm.statut}
+                              onChange={(e) => updateTodoForm('statut', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="en_cours">En cours</option>
+                              <option value="termine">Terminé</option>
+                              <option value="retard">En retard</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Échéance</label>
+                            <input 
+                              type="date" 
+                              value={todoForm.date_echeance} 
+                              onChange={(e) => updateTodoForm('date_echeance', e.target.value)} 
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                            />
+                          </div>
                         </div>
                       </div>
-                      <div className="md:col-span-2">
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Description</label>
-                        <textarea value={rappelForm.description} onChange={(e) => updateRappelForm('description', e.target.value)} className="mt-1 w-full border border-fuchsia-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fuchsia-400" rows={3} />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase">Date & heure</label>
-                        <input type="datetime-local" value={rappelForm.date_rappel} onChange={(e) => updateRappelForm('date_rappel', e.target.value)} className="mt-1 w-full border border-fuchsia-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fuchsia-400" />
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleUpdateTodo(t.id, todoForm)} 
+                          disabled={savingTodo}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        >
+                          {savingTodo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          Enregistrer
+                        </button>
+                        <button 
+                          onClick={cancelEditTodo}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          <X className="w-4 h-4" /> Annuler
+                        </button>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-3">
-                      <button onClick={() => handleUpdateRappel(r.id, rappelForm)} disabled={savingRappel} className="inline-flex items-center px-4 py-2 bg-fuchsia-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-fuchsia-700 disabled:opacity-50">
-                        {savingRappel ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Save className="w-4 h-4 mr-2" />
+                  ) : (
+                    // Mode affichage
+                    <>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            {getStatusIcon(t.statut)}
+                            <h4 className="font-semibold text-gray-900 truncate">{t.titre}</h4>
+                          </div>
+                          {t.description && (
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{t.description}</p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${getStatusBadge(t.statut)}`}>
+                              {t.statut?.replace('_', ' ') || 'En cours'}
+                            </span>
+                            {t.pole && (
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${POLE_OPTIONS.find(p => p.value === t.pole)?.color || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                <Layers className="w-3 h-3 mr-1" />
+                                {POLE_OPTIONS.find(p => p.value === t.pole)?.label || t.pole}
+                              </span>
+                            )}
+                            {t.date_echeance && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {formatDate(t.date_echeance)}
+                              </span>
+                            )}
+                            {t.user?.name && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                <User className="w-3 h-3 mr-1" />
+                                {t.user.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {canEdit && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => startEditTodo(t)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Modifier"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTodo(t.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         )}
-                        Enregistrer
-                      </button>
-                      <button onClick={cancelEditRappel} className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300">
-                        <X className="w-4 h-4 mr-2" /> Annuler
-                      </button>
-                    </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <CheckSquare className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-sm">Aucune tâche pour le moment</p>
+            </div>
+          )}
+
+          {/* Nouveau Todo */}
+          {canEdit && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 text-sm flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Nouvelle tâche
+                </h4>
+                
+                {showPoleSelection && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                    <select
+                      value={newTodo.pole || ''}
+                      onChange={(e) => setNewTodo({ ...newTodo, pole: e.target.value })}
+                      className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Sélectionner un pôle</option>
+                      {POLE_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-400 italic text-sm">Aucun rappel prévu pour ce client sur ce pôle.</p>
-        )}
-
-        {canEdit && (
-          <div className="mt-6 pt-4 border-t">
-            <h4 className="font-medium text-gray-700 mb-3">Nouveau Rappel (Pôle: {isGlobalView ? 'Global' : activePoleLabel}) :</h4>
-            
-            {/* ✅ LOGIQUE À METTRE À JOUR : Affichage du select pour l'admin en vue globale */}
-            {showPoleSelection && (
-              <div className="mb-3">
-                <label className="text-xs font-semibold text-gray-500 uppercase">Pôle concerné</label>
-                <select
-                  value={newRappel.pole || ''}
-                  onChange={(e) => setNewRappel({ ...newRappel, pole: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-fuchsia-500 focus:border-fuchsia-500" 
+                
+                <input 
+                  placeholder="Titre de la tâche" 
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  value={newTodo.titre} 
+                  onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })} 
+                />
+                <textarea 
+                  placeholder="Description (optionnel)" 
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                  rows={2} 
+                  value={newTodo.description} 
+                  onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })} 
+                />
+                <button 
+                  onClick={handleAddTodo}
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
-                  <option value="">Sélectionner un pôle</option>
-                  {poleOptions.map(option => (
-                    // On utilise les VALEURS en MAJUSCULES ici
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+                  <Plus className="w-4 h-4" />
+                  Ajouter la tâche
+                </button>
               </div>
-            )}
+            </div>
+          )}
+        </div>
+      </section>
 
-            {/* ❌ SUPPRIMÉS : Assignation utilisateur et mention de chargement */}
-
-            <input 
-              placeholder="Titre du rappel" 
-              className="border border-gray-300 p-3 rounded-lg w-full mb-3 focus:ring-fuchsia-500 focus:border-fuchsia-500" 
-              value={newRappel.titre} 
-              onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })} 
-            />
-            <textarea 
-              placeholder="Description du rappel" 
-              className="border border-gray-300 p-3 rounded-lg w-full mb-3 focus:ring-fuchsia-500 focus:border-fuchsia-500" 
-              rows={2} 
-              value={newRappel.description} 
-              onChange={(e) => setNewRappel({ ...newRappel, description: e.target.value })} 
-            />
-            <input 
-              type="datetime-local" 
-              className="border border-gray-300 p-3 rounded-lg w-full mb-3 focus:ring-fuchsia-500 focus:border-fuchsia-500" 
-              value={newRappel.date_rappel} 
-              onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })} 
-            />
-            <button onClick={handleAddRappel} className="bg-fuchsia-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-fuchsia-700">
-              Programmer Rappel
-            </button>
+      {/* ========== RAPPELS ========== */}
+      <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-5 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500 rounded-lg">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">Rappels</h3>
+                <p className="text-sm text-gray-600">
+                  {filteredRappels.length} rappel{filteredRappels.length > 1 ? 's' : ''} · {isGlobalView ? 'Vue Globale' : activePoleLabel}
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {filteredRappels.length ? (
+            <div className="space-y-3">
+              {filteredRappels.map((r: any) => (
+                <div 
+                  key={r.id} 
+                  className="group relative bg-white border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all duration-200"
+                >
+                  {editingRappelId === r.id ? (
+                    // Mode édition
+                    <div className="space-y-4">
+                      <div className="grid gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Titre</label>
+                          <input 
+                            value={rappelForm.titre} 
+                            onChange={(e) => updateRappelForm('titre', e.target.value)} 
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                          <textarea 
+                            value={rappelForm.description} 
+                            onChange={(e) => updateRappelForm('description', e.target.value)} 
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            rows={2} 
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Date & heure</label>
+                            <input 
+                              type="datetime-local" 
+                              value={rappelForm.date_rappel} 
+                              onChange={(e) => updateRappelForm('date_rappel', e.target.value)} 
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={rappelForm.fait}
+                                onChange={(e) => updateRappelForm('fait', e.target.checked)}
+                                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                              />
+                              <span className="text-sm text-gray-700">Effectué</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleUpdateRappel(r.id, rappelForm)} 
+                          disabled={savingRappel}
+                          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                        >
+                          {savingRappel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          Enregistrer
+                        </button>
+                        <button 
+                          onClick={cancelEditRappel}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          <X className="w-4 h-4" /> Annuler
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Mode affichage
+                    <>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            {r.fait ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <Clock className="w-4 h-4 text-purple-500" />
+                            )}
+                            <h4 className="font-semibold text-gray-900 truncate">{r.titre}</h4>
+                          </div>
+                          {r.description && (
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{r.description}</p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${r.fait ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200'}`}>
+                              {r.fait ? 'Effectué' : 'À venir'}
+                            </span>
+                            {r.pole && (
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${POLE_OPTIONS.find(p => p.value === r.pole)?.color || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                <Layers className="w-3 h-3 mr-1" />
+                                {POLE_OPTIONS.find(p => p.value === r.pole)?.label || r.pole}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {formatDateTime(r.date_rappel)}
+                            </span>
+                            {r.user?.name && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                <User className="w-3 h-3 mr-1" />
+                                {r.user.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {canEdit && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => startEditRappel(r)}
+                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                              title="Modifier"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRappel(r.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <Calendar className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-sm">Aucun rappel programmé</p>
+            </div>
+          )}
+
+          {/* Nouveau Rappel */}
+          {canEdit && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 text-sm flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Nouveau rappel
+                </h4>
+                
+                {showPoleSelection && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                    <select
+                      value={newRappel.pole || ''}
+                      onChange={(e) => setNewRappel({ ...newRappel, pole: e.target.value })}
+                      className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Sélectionner un pôle</option>
+                      {POLE_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                <input 
+                  placeholder="Titre du rappel" 
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                  value={newRappel.titre} 
+                  onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })} 
+                />
+                <textarea 
+                  placeholder="Description (optionnel)" 
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                  rows={2} 
+                  value={newRappel.description} 
+                  onChange={(e) => setNewRappel({ ...newRappel, description: e.target.value })} 
+                />
+                <input 
+                  type="datetime-local" 
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                  value={newRappel.date_rappel} 
+                  onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })} 
+                />
+                <button 
+                  onClick={handleAddRappel}
+                  className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Programmer le rappel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

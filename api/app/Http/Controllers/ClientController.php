@@ -25,7 +25,7 @@ class ClientController extends Controller
     }
 
     /**
-     * Création d’un nouveau client
+     * Création d'un nouveau client
      */
     public function store(Request $request): JsonResponse
     {
@@ -66,7 +66,7 @@ class ClientController extends Controller
     }
 
     /**
-     * Affichage détaillé d’un client
+     * Affichage détaillé d'un client
      */
     public function show($id): JsonResponse
     {
@@ -87,15 +87,28 @@ class ClientController extends Controller
     }
 
     /**
-     * Mise à jour d’un client
+     * Mise à jour d'un client
      */
     public function update(Request $request, Client $client): JsonResponse
     {
         $this->authorize('manage clients');
 
+        // Mise à jour avec toutes les données du formulaire
         $client->update($request->all());
+        
+        // ✅ Recharger le client pour avoir toutes les données à jour
+        $client->refresh();
+        
+        // ✅ Charger les relations pour le retour complet
+        $client->load([
+            'prestations',
+            'todos',
+            'rappels',
+            'contenu.user:id,name'
+        ]);
 
-        return (new ClientResource($client))->response();
+        // ✅ Retourner le client complet mis à jour
+        return response()->json($client);
     }
 
     /**

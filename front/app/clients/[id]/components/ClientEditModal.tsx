@@ -1,19 +1,93 @@
 // app/clients/[id]/components/ClientEditModal.tsx
 import React from 'react';
-import { Loader2, Save, X } from 'lucide-react';
-// CORRECTION: Import du type ClientFormState depuis ClientUtils
-import { ClientFormState } from '../ClientUtils'; 
+import { 
+  Loader2, 
+  Save, 
+  X, 
+  Building2, 
+  User, 
+  MapPin, 
+  Mail, 
+  Phone, 
+  Globe, 
+  Hash,
+  FileText,
+  CreditCard,
+  Calendar,
+  Euro,
+  Repeat,
+  Wallet,
+  Building,
+  Sparkles
+} from 'lucide-react';
+import { ClientFormState } from '../ClientUtils';
 
 interface ClientEditModalProps {
   open: boolean;
   onClose: () => void;
-  // Utilisation du type importé
   form: ClientFormState;
-  // Utilisation de keyof ClientFormState pour garantir la sécurité des types
-  onChange: (field: keyof ClientFormState, value: string) => void; 
+  onChange: (field: keyof ClientFormState, value: string) => void;
   onSubmit: () => void;
   saving: boolean;
 }
+
+// Composant Input modernisé avec icône
+const InputField = ({ 
+  icon: Icon, 
+  label, 
+  value, 
+  onChange, 
+  type = 'text',
+  rows,
+  helper,
+  placeholder
+}: any) => {
+  const isTextarea = !!rows;
+  const InputComponent = isTextarea ? 'textarea' : 'input';
+
+  return (
+    <div className="group">
+      <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+        {Icon && <Icon className="w-3.5 h-3.5 text-indigo-500" />}
+        {label}
+      </label>
+      <div className="relative">
+        <InputComponent
+          type={type}
+          value={value}
+          onChange={onChange}
+          rows={rows}
+          placeholder={placeholder}
+          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 hover:border-gray-300 bg-white"
+        />
+        {!isTextarea && (
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
+            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+          </div>
+        )}
+      </div>
+      {helper && (
+        <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+          <span className="inline-block w-1 h-1 bg-gray-400 rounded-full" />
+          {helper}
+        </p>
+      )}
+    </div>
+  );
+};
+
+// Section avec titre
+const Section = ({ icon: Icon, title, children }: any) => (
+  <div className="space-y-4">
+    <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+      <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg">
+        <Icon className="w-5 h-5 text-indigo-600" />
+      </div>
+      <h4 className="text-base font-bold text-gray-800">{title}</h4>
+    </div>
+    {children}
+  </div>
+);
 
 export default function ClientEditModal({
   open,
@@ -23,195 +97,298 @@ export default function ClientEditModal({
   onSubmit,
   saving,
 }: ClientEditModalProps) {
-  if (!open) return null;
+  // ✅ 1. TOUS LES HOOKS EN PREMIER (avant tout return conditionnel)
+  
+  // Hook 1: Gestion du scroll
+  React.useEffect(() => {
+    if (open) {
+      // Sauvegarde l'état initial
+      const scrollY = window.scrollY;
+      const body = document.body;
+      const originalOverflow = body.style.overflow;
+      const originalPosition = body.style.position;
+      const originalTop = body.style.top;
+      const originalWidth = body.style.width;
+      
+      // Bloque le scroll
+      body.style.overflow = 'hidden';
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollY}px`;
+      body.style.width = '100%';
 
+      // Cleanup: restaure l'état original
+      return () => {
+        body.style.overflow = originalOverflow;
+        body.style.position = originalPosition;
+        body.style.top = originalTop;
+        body.style.width = originalWidth;
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [open]);
+
+  // Hook 2: Fermeture avec touche Escape
+  React.useEffect(() => {
+    if (!open) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [open, onClose]);
+
+  // ✅ 2. RETURN CONDITIONNEL EN DERNIER (après tous les hooks)
+  if (!open) {
+    return null;
+  }
+
+  // ✅ 3. RETURN PRINCIPAL
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-gray-100">
-        <header className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="text-xl font-semibold text-gray-900">Modifier la fiche client</h3>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            aria-label="Fermer le formulaire"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </header>
-
-        <div className="px-6 py-6 space-y-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Société</label>
-              <input
-                value={form.societe}
-                onChange={(e) => onChange('societe', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-5xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header Premium avec Gradient */}
+        <header className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-6 overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24" />
+          
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <Building2 className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white">Modifier la fiche client</h3>
+                <p className="text-indigo-100 text-sm mt-1">Mettez à jour les informations de votre client</p>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Gérant</label>
-              <input
-                value={form.gerant}
-                onChange={(e) => onChange('gerant', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Adresse</label>
-              <input
-                value={form.adresse}
-                onChange={(e) => onChange('adresse', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Ville</label>
-              <input
-                value={form.ville}
-                onChange={(e) => onChange('ville', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Code Postal</label>
-              <input
-                value={form.code_postal}
-                onChange={(e) => onChange('code_postal', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Site Web</label>
-              <input
-                value={form.site_web}
-                onChange={(e) => onChange('site_web', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Emails</label>
-              <textarea
-                value={form.emails}
-                onChange={(e) => onChange('emails', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                rows={2}
-              />
-              <p className="mt-1 text-xs text-gray-400">Séparez les adresses e-mail par une virgule.</p>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Téléphones</label>
-              <textarea
-                value={form.telephones}
-                onChange={(e) => onChange('telephones', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                rows={2}
-              />
-              <p className="mt-1 text-xs text-gray-400">Séparez les numéros par une virgule.</p>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">SIRET</label>
-              <input
-                value={form.siret}
-                onChange={(e) => onChange('siret', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Contrat</label>
-              <input
-                value={form.contrat}
-                onChange={(e) => onChange('contrat', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Date de signature</label>
-              <input
-                type="date"
-                value={form.date_contrat}
-                onChange={(e) => onChange('date_contrat', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Échéance</label>
-              <input
-                type="date"
-                value={form.date_echeance}
-                onChange={(e) => onChange('date_echeance', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Montant mensuel total (€)</label>
-              <input
-                value={form.montant_mensuel_total}
-                onChange={(e) => onChange('montant_mensuel_total', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Fréquence de facturation</label>
-              <input
-                value={form.frequence_facturation}
-                onChange={(e) => onChange('frequence_facturation', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">Mode de paiement</label>
-              <input
-                value={form.mode_paiement}
-                onChange={(e) => onChange('mode_paiement', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase">IBAN</label>
-              <input
-                value={form.iban}
-                onChange={(e) => onChange('iban', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase">Description générale</label>
-              <textarea
-                value={form.description_generale}
-                onChange={(e) => onChange('description_generale', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                rows={3}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase">Notes comptables</label>
-              <textarea
-                value={form.notes_comptables}
-                onChange={(e) => onChange('notes_comptables', e.target.value)}
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                rows={3}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-4">
             <button
               onClick={onClose}
-              className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300"
+              className="p-2.5 rounded-xl text-white hover:bg-white/20 transition-all duration-200 hover:rotate-90 transform"
+              aria-label="Fermer le formulaire"
             >
-              <X className="w-4 h-4 mr-2" /> Annuler
-            </button>
-            <button
-              onClick={onSubmit}
-              disabled={saving}
-              className="inline-flex items-center px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-              Enregistrer les modifications
+              <X className="w-6 h-6" />
             </button>
           </div>
+        </header>
+
+        {/* Contenu avec scroll */}
+        <div className="overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
+          <div className="space-y-8">
+            
+            {/* Section 1: Informations Générales */}
+            <Section icon={Building2} title="Informations Générales">
+              <div className="grid md:grid-cols-2 gap-5">
+                <InputField
+                  icon={Building}
+                  label="Société"
+                  value={form.societe}
+                  onChange={(e: any) => onChange('societe', e.target.value)}
+                  placeholder="Nom de l'entreprise"
+                />
+                <InputField
+                  icon={User}
+                  label="Gérant"
+                  value={form.gerant}
+                  onChange={(e: any) => onChange('gerant', e.target.value)}
+                  placeholder="Nom du gérant"
+                />
+                <InputField
+                  icon={Hash}
+                  label="SIRET"
+                  value={form.siret}
+                  onChange={(e: any) => onChange('siret', e.target.value)}
+                  placeholder="XXX XXX XXX XXXXX"
+                />
+                <InputField
+                  icon={Globe}
+                  label="Site Web"
+                  value={form.site_web}
+                  onChange={(e: any) => onChange('site_web', e.target.value)}
+                  placeholder="https://www.exemple.com"
+                />
+              </div>
+            </Section>
+
+            {/* Section 2: Adresse & Contact */}
+            <Section icon={MapPin} title="Adresse & Contact">
+              <div className="grid md:grid-cols-3 gap-5">
+                <div className="md:col-span-2">
+                  <InputField
+                    icon={MapPin}
+                    label="Adresse"
+                    value={form.adresse}
+                    onChange={(e: any) => onChange('adresse', e.target.value)}
+                    placeholder="123 Rue Exemple"
+                  />
+                </div>
+                <InputField
+                  icon={Hash}
+                  label="Code Postal"
+                  value={form.code_postal}
+                  onChange={(e: any) => onChange('code_postal', e.target.value)}
+                  placeholder="69000"
+                />
+                <div className="md:col-span-3">
+                  <InputField
+                    icon={Building}
+                    label="Ville"
+                    value={form.ville}
+                    onChange={(e: any) => onChange('ville', e.target.value)}
+                    placeholder="Lyon"
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <InputField
+                    icon={Mail}
+                    label="Adresses Email"
+                    value={form.emails}
+                    onChange={(e: any) => onChange('emails', e.target.value)}
+                    rows={2}
+                    helper="Séparez plusieurs adresses par une virgule (ex: contact@exemple.com, support@exemple.com)"
+                    placeholder="contact@exemple.com, info@exemple.com"
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <InputField
+                    icon={Phone}
+                    label="Numéros de Téléphone"
+                    value={form.telephones}
+                    onChange={(e: any) => onChange('telephones', e.target.value)}
+                    rows={2}
+                    helper="Séparez plusieurs numéros par une virgule (ex: 01 23 45 67 89, 06 12 34 56 78)"
+                    placeholder="01 23 45 67 89, 06 12 34 56 78"
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* Section 3: Informations Financières */}
+            <Section icon={CreditCard} title="Informations Financières & Contrat">
+              <div className="grid md:grid-cols-2 gap-5">
+                <InputField
+                  icon={FileText}
+                  label="Type de Contrat"
+                  value={form.contrat}
+                  onChange={(e: any) => onChange('contrat', e.target.value)}
+                  placeholder="Ex: Maintenance, Abonnement..."
+                />
+                <InputField
+                  icon={Euro}
+                  label="Montant Mensuel Total (€)"
+                  value={form.montant_mensuel_total}
+                  onChange={(e: any) => onChange('montant_mensuel_total', e.target.value)}
+                  placeholder="1500"
+                  type="number"
+                />
+                <InputField
+                  icon={Calendar}
+                  label="Date de Signature"
+                  value={form.date_contrat}
+                  onChange={(e: any) => onChange('date_contrat', e.target.value)}
+                  type="date"
+                />
+                <InputField
+                  icon={Calendar}
+                  label="Date d'Échéance"
+                  value={form.date_echeance}
+                  onChange={(e: any) => onChange('date_echeance', e.target.value)}
+                  type="date"
+                />
+                <InputField
+                  icon={Repeat}
+                  label="Fréquence de Facturation"
+                  value={form.frequence_facturation}
+                  onChange={(e: any) => onChange('frequence_facturation', e.target.value)}
+                  placeholder="Ex: Mensuelle, Trimestrielle..."
+                />
+                <InputField
+                  icon={Wallet}
+                  label="Mode de Paiement"
+                  value={form.mode_paiement}
+                  onChange={(e: any) => onChange('mode_paiement', e.target.value)}
+                  placeholder="Ex: Virement, Prélèvement..."
+                />
+                <div className="md:col-span-2">
+                  <InputField
+                    icon={CreditCard}
+                    label="IBAN"
+                    value={form.iban}
+                    onChange={(e: any) => onChange('iban', e.target.value)}
+                    placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX"
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* Section 4: Descriptions */}
+            <Section icon={FileText} title="Descriptions & Notes">
+              <div className="space-y-5">
+                <InputField
+                  icon={FileText}
+                  label="Description Générale"
+                  value={form.description_generale}
+                  onChange={(e: any) => onChange('description_generale', e.target.value)}
+                  rows={4}
+                  placeholder="Décrivez l'activité du client, ses besoins, son contexte..."
+                />
+                <InputField
+                  icon={Euro}
+                  label="Notes Comptables"
+                  value={form.notes_comptables}
+                  onChange={(e: any) => onChange('notes_comptables', e.target.value)}
+                  rows={4}
+                  placeholder="Ajoutez des notes concernant la facturation, les paiements, les particularités comptables..."
+                />
+              </div>
+            </Section>
+
+          </div>
         </div>
+
+        {/* Footer avec Actions */}
+        <footer className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-t border-gray-200">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm text-gray-600 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+              Les modifications seront enregistrées immédiatement
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={onClose}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X className="w-4 h-4" />
+                Annuler
+              </button>
+              <button
+                onClick={onSubmit}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Enregistrer les modifications
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

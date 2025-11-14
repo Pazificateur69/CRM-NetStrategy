@@ -7,7 +7,6 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import FicheTabs, { type TabDefinition } from '@/components/FicheTabs';
 
-// Import logique et composants
 import { useClientLogic } from './ClientLogic';
 import ClientEditModal from './components/ClientEditModal';
 import ClientInfoDetails from './components/ClientInfoDetails';
@@ -33,6 +32,14 @@ export default function ClientDetailPage() {
     newComment,
     setNewComment,
     handleAddComment,
+    editingCommentId,
+    commentForm,
+    startEditComment,
+    cancelEditComment,
+    handleUpdateComment,
+    handleDeleteComment,
+    savingComment,
+    
     showEditModal,
     setShowEditModal,
     clientForm,
@@ -72,10 +79,8 @@ export default function ClientDetailPage() {
     cancelEditRappel,
   } = useClientLogic();
 
-  // === Fichier à uploader ===
   const [file, setFile] = useState<File | null>(null);
 
-  // === Upload d’un fichier lié à un pôle ===
   const handleUpload = async (pole: string) => {
     if (!file) return;
     try {
@@ -92,11 +97,10 @@ export default function ClientDetailPage() {
       setFile(null);
       await reloadClient();
     } catch (error) {
-      console.error('Erreur lors de l’upload du document :', error);
+      console.error('Erreur lors de l upload du document :', error);
     }
   };
 
-  // === États de chargement et erreurs ===
   if (loading)
     return (
       <DashboardLayout>
@@ -115,7 +119,6 @@ export default function ClientDetailPage() {
       </DashboardLayout>
     );
 
-  // === Props partagées entre les composants d’activité ===
   const sharedActivityProps = {
     filteredTodos,
     filteredRappels,
@@ -145,7 +148,6 @@ export default function ClientDetailPage() {
     cancelEditRappel,
   };
 
-  // === Rendu principal ===
   return (
     <DashboardLayout>
       {/* === HEADER CLIENT === */}
@@ -186,6 +188,13 @@ export default function ClientDetailPage() {
             newComment={newComment}
             setNewComment={setNewComment}
             handleAddComment={handleAddComment}
+            editingCommentId={editingCommentId}
+            commentForm={commentForm}
+            startEditComment={startEditComment}
+            cancelEditComment={cancelEditComment}
+            handleUpdateComment={handleUpdateComment}
+            handleDeleteComment={handleDeleteComment}
+            savingComment={savingComment}
             userRole={userRole}
             {...sharedActivityProps}
           />
