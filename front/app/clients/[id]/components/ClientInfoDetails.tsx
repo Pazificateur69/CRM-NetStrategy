@@ -1,13 +1,16 @@
 // app/clients/[id]/components/ClientInfoDetails.tsx
 
 import React from 'react';
-import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles } from 'lucide-react';
+import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles, CheckSquare } from 'lucide-react';
 import { InfoCard } from '../ClientUtils';
 import ClientActivityStream from './ClientActivityStream';
+import ClientInterlocuteurs from './ClientInterlocuteurs';
+import { updateClient } from '@/services/crm';
 
 interface ClientInfoDetailsProps {
   client: any;
   canEdit: boolean;
+  reloadClient: () => Promise<void>;
   newComment: string;
   setNewComment: React.Dispatch<React.SetStateAction<string>>;
   handleAddComment: () => Promise<void>;
@@ -68,6 +71,7 @@ const ModernInfoCard = ({ icon: Icon, label, value }: { icon: any; label: string
 export default function ClientInfoDetails({
   client,
   canEdit,
+  reloadClient,
   newComment,
   setNewComment,
   handleAddComment,
@@ -102,6 +106,17 @@ export default function ClientInfoDetails({
 
   // Afficher seulement les 3 plus récents par défaut
   const comments = showAllComments ? allComments : allComments.slice(0, 3);
+
+  // Gestion des interlocuteurs
+  const handleUpdateInterlocuteurs = async (interlocuteurs: any[]) => {
+    try {
+      await updateClient(Number(client.id), { interlocuteurs });
+      await reloadClient();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des interlocuteurs:', error);
+      throw error;
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -243,6 +258,13 @@ export default function ClientInfoDetails({
                 )}
               </div>
             </div>
+
+            {/* Interlocuteurs du Client */}
+            <ClientInterlocuteurs
+              interlocuteurs={client.interlocuteurs || []}
+              onUpdate={handleUpdateInterlocuteurs}
+              canEdit={canEdit}
+            />
           </div>
         </div>
       </section>

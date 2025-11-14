@@ -185,6 +185,8 @@ export default function ClientDetailPage() {
         {activeTab === 'informations' && (
           <ClientInfoDetails
             client={client}
+            canEdit={canEdit}
+            reloadClient={reloadClient}
             newComment={newComment}
             setNewComment={setNewComment}
             handleAddComment={handleAddComment}
@@ -209,6 +211,7 @@ export default function ClientDetailPage() {
             <ClientPoleTab
               key={tab.id}
               client={client}
+              reloadClient={reloadClient}
               tab={
                 tab as TabDefinition & {
                   accent: { border: string; badge: string; title: string };

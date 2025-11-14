@@ -32,6 +32,7 @@ class Client extends Model
         'notes_comptables',
         'lien_externe',
         'liens_externes',
+        'interlocuteurs',
         'couleur_statut',
     ];
 
@@ -39,20 +40,21 @@ class Client extends Model
         'emails' => 'array',
         'telephones' => 'array',
         'liens_externes' => 'array',
+        'interlocuteurs' => 'array',
         'date_contrat' => 'datetime',
         'date_echeance' => 'datetime',
         'montant_mensuel_total' => 'decimal:2',
     ];
 
-    // ✅ Relations polymorphiques
-    public function todos(): MorphMany
+    // ✅ Relations directes (corrigées pour utiliser client_id)
+    public function todos(): HasMany
     {
-        return $this->morphMany(Todo::class, 'todoable');
+        return $this->hasMany(Todo::class, 'client_id')->orderBy('created_at', 'desc');
     }
 
-    public function rappels(): MorphMany
+    public function rappels(): HasMany
     {
-        return $this->morphMany(Rappel::class, 'rappelable');
+        return $this->hasMany(Rappel::class, 'client_id')->orderBy('created_at', 'desc');
     }
 
     public function contenu(): MorphMany
