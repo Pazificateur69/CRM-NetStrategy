@@ -14,11 +14,11 @@ class RappelController extends Controller
         $user = $request->user();
 
         $rappels = $user->hasRole('admin')
-            ? Rappel::with(['user', 'rappelable', 'assignedUsers'])
+            ? Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
                 ->orderBy('ordre')
                 ->orderBy('created_at', 'asc')
                 ->get()
-            : Rappel::with(['user', 'rappelable', 'assignedUsers'])
+            : Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
                 ->whereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id))
                 ->orWhere('user_id', $user->id)
                 ->orderBy('ordre')
@@ -33,12 +33,12 @@ class RappelController extends Controller
         $user = $request->user();
 
         $rappels = ($user->hasRole('admin') || $user->pole === 'admin')
-            ? Rappel::with(['user', 'rappelable', 'assignedUsers'])
+            ? Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
                 ->where('pole', $pole)
                 ->orderBy('ordre', 'asc')
                 ->orderBy('created_at', 'asc')
                 ->get()
-            : Rappel::with(['user', 'rappelable', 'assignedUsers'])
+            : Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
                 ->where('pole', $pole)
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
@@ -93,7 +93,7 @@ class RappelController extends Controller
 
         return response()->json([
             'message' => 'Rappel créé avec succès.',
-            'data' => $rappel->load(['user', 'rappelable', 'assignedUsers']),
+            'data' => $rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles']),
         ], 201);
     }
 
@@ -139,7 +139,7 @@ class RappelController extends Controller
 
         return response()->json([
             'message' => 'Rappel mis à jour avec succès.',
-            'data' => $rappel->load(['user', 'rappelable', 'assignedUsers']),
+            'data' => $rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles']),
         ]);
     }
 
@@ -182,7 +182,7 @@ class RappelController extends Controller
 
         return response()->json([
             'message' => "Rappel décalé de {$validated['jours']} jour(s) avec succès.",
-            'data' => $rappel->load(['user', 'rappelable', 'assignedUsers']),
+            'data' => $rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles']),
         ]);
     }
 }
