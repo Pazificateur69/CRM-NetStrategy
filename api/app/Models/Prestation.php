@@ -21,6 +21,7 @@ class Prestation extends Model
         'date_debut',
         'date_fin',
         'notes',
+        'statut',
     ];
 
     protected $casts = [

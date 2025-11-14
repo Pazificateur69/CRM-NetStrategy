@@ -102,6 +102,10 @@ Route::middleware('auth:sanctum')->group(function () {
         ->only(['index', 'show', 'update', 'destroy'])
         ->middleware('permission:view clients');
 
+    // Route pour valider une prestation
+    Route::post('/prestations/{prestation}/validate', [PrestationController::class, 'validate'])
+        ->middleware('permission:manage clients');
+
     // ===================================================
     // 💰 COMPTABILITÉ
     // ===================================================

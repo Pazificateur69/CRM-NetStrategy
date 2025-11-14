@@ -157,3 +157,8 @@ export const updatePrestation = async (prestationId: number, data: Partial<Prest
 export const deletePrestation = async (prestationId: number): Promise<void> => {
   await api.delete(`/prestations/${prestationId}`);
 };
+
+export const validatePrestation = async (prestationId: number): Promise<Prestation> => {
+  const response = await api.post<{ data: Prestation }>(`/prestations/${prestationId}/validate`);
+  return response.data.data;
+};

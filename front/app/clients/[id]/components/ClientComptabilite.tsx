@@ -23,6 +23,7 @@ type Prestation = {
     date_debut: string;
     date_fin: string;
     notes: string;
+    statut: 'en_attente' | 'validee';
     updated_at: string;
 };
 
@@ -43,6 +44,7 @@ interface ClientComptabiliteProps {
     handleUpdatePrestation: (id: number, data: any) => Promise<void>;
     handleDeletePrestation: (id: number) => Promise<void>;
     handleAddPrestation: (data: any) => Promise<void>;
+    handleValidatePrestation: (id: number) => Promise<void>;
     reloadClient: () => Promise<void>;
 }
 
@@ -235,12 +237,13 @@ const AddPrestationForm = ({ handleAddPrestation, setShowAddForm, client }: AddP
 };
 
 
-export default function ClientComptabilite({ 
-    client, 
+export default function ClientComptabilite({
+    client,
     canEdit,
     handleUpdatePrestation,
     handleDeletePrestation,
     handleAddPrestation,
+    handleValidatePrestation,
     reloadClient
 }: ClientComptabiliteProps) {
     const [editingPrestationId, setEditingPrestationId] = useState<number | null>(null);
@@ -337,8 +340,9 @@ export default function ClientComptabilite({
                                 <th className="px-6 py-3">Engagement</th>
                                 <th className="px-6 py-3">Période</th>
                                 <th className="px-6 py-3">Notes</th>
+                                <th className="px-6 py-3">Statut</th>
                                 <th className="px-6 py-3">Mise à jour</th>
-                                {canEdit && <th className="px-6 py-3 text-right">Actions</th>} 
+                                {canEdit && <th className="px-6 py-3 text-right">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 bg-white">
@@ -429,6 +433,18 @@ export default function ClientComptabilite({
                                                 prestation.notes?.length ? prestation.notes : '—'
                                             )}
                                         </td>
+                                        <td className="px-6 py-4">
+                                            {prestation.statut === 'validee' ? (
+                                                <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                    <Check className="w-3 h-3 mr-1" />
+                                                    Validée
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    En attente
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-gray-500 text-xs">
                                             {prestation.updated_at
                                                 ? new Date(prestation.updated_at).toLocaleDateString('fr-FR')
@@ -457,6 +473,14 @@ export default function ClientComptabilite({
                                                         </>
                                                     ) : (
                                                         <>
+                                                            {prestation.statut === 'en_attente' && (
+                                                                <ActionButton
+                                                                    onClick={() => handleValidatePrestation(prestation.id)}
+                                                                    icon={Check}
+                                                                    color="green"
+                                                                    label="Valider"
+                                                                />
+                                                            )}
                                                             <ActionButton
                                                                 onClick={() => startEdit(prestation)}
                                                                 icon={Edit}
