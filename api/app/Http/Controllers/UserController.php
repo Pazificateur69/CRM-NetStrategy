@@ -10,20 +10,20 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    // 🧩 Liste des utilisateurs (admin uniquement)
+    // 🧩 Liste des utilisateurs (tous les utilisateurs authentifiés)
     public function index()
     {
         $user = auth()->user();
 
-        if (!$user || !$user->hasRole('admin')) {
-            Log::warning('⛔ Accès refusé à /users (index)', [
-                'user_id' => $user?->id,
-                'roles' => $user?->getRoleNames(),
-            ]);
-            return response()->json(['message' => 'Accès refusé'], 403);
+        if (!$user) {
+            Log::warning('⛔ Accès refusé à /users (index) - Non authentifié');
+            return response()->json(['message' => 'Non authentifié'], 401);
         }
 
-        Log::info('✅ Accès à la liste complète des utilisateurs', ['admin_id' => $user->id]);
+        Log::info('✅ Accès à la liste des utilisateurs', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+        ]);
 
         return response()->json(
             User::with('roles')
