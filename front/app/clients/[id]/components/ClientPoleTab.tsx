@@ -91,12 +91,19 @@ export default function ClientPoleTab({
 
   return (
     <section
-      className={`bg-white p-8 rounded-2xl shadow-xl border ${tab.accent.border}`}
+  className={`bg-white p-8 rounded-2xl shadow-xl border ${
+        tab.accent?.border ?? 'border-gray-200'
+      }`}
     >
-      {/* === En-tête du pôle === */}
-      <h3 className={`text-2xl font-bold mb-3 flex items-center ${tab.accent.title}`}>
-        <IconComponent className="w-6 h-6 mr-3" /> {tab.label}
+      <h3
+        className={`text-2xl font-bold mb-3 flex items-center ${
+          tab.accent?.title ?? 'text-gray-700'
+        }`}
+      >
+        <IconComponent className="w-6 h-6 mr-3" />
+        {tab.label}
       </h3>
+
       <p className="text-sm text-gray-500 mb-6">{tab.description}</p>
 
       {/* === Liens externes === */}

@@ -33,15 +33,43 @@ export default function UserSelector({
 }: UserSelectorProps) {
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
-        const endpoint = pole ? `/users/by-pole/${pole}` : '/users';
-        const response = await api.get(endpoint);
+        // ✅ Essayer d'abord l'endpoint filtré par pôle
+        let response;
+        
+        if (pole) {
+          try {
+            response = await api.get(`/users/by-pole/${pole}`);
+          } catch (poleError: any) {
+            // Si l'endpoint by-pole n'existe pas (403/404), récupérer tous les users
+            console.warn(`Endpoint /users/by-pole/${pole} non disponible, récupération de tous les utilisateurs`);
+            response = await api.get('/users');
+            
+            // ✅ Filtrer côté client si nécessaire
+            if (response.data && Array.isArray(response.data)) {
+              const filteredUsers = response.data.filter((u: UserOption) => 
+                !pole || u.pole?.toUpperCase() === pole.toUpperCase()
+              );
+              setUsers(filteredUsers);
+              return;
+            }
+          }
+        } else {
+          response = await api.get('/users');
+        }
+        
         setUsers(response.data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erreur lors du chargement des utilisateurs:', error);
+        setError('Impossible de charger les utilisateurs');
+        setUsers([]);
       } finally {
         setLoading(false);
       }
@@ -56,6 +84,17 @@ export default function UserSelector({
         {label && <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>}
         <div className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500">
           Chargement...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={className}>
+        {label && <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>}
+        <div className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm bg-red-50 text-red-600">
+          {error}
         </div>
       </div>
     );
