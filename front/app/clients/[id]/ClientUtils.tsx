@@ -21,6 +21,15 @@ import {
 // === TYPES EXPORTÉS ===
 // ======================
 
+export interface Interlocuteur {
+  id?: string;
+  poste: string;
+  nom: string;
+  telephone?: string;
+  email?: string;
+  notes?: string;
+}
+
 export interface ClientFormState {
   societe: string;
   gerant: string;
@@ -41,6 +50,7 @@ export interface ClientFormState {
   mode_paiement: string;
   iban: string;
   notes_comptables: string;
+  interlocuteurs: Interlocuteur[];
 }
 
 export interface NewTodoPayload {
