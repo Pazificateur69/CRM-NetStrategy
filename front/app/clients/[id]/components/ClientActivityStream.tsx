@@ -10,6 +10,7 @@ import {
   X,
   Clock,
   User,
+  Users,
   Layers,
   AlertCircle,
   CheckCircle2,
@@ -29,6 +30,7 @@ interface NewTodoState {
   titre: string;
   description: string;
   pole?: string;
+  assigned_to?: number | null;
 }
 
 interface NewRappelState {
@@ -36,6 +38,7 @@ interface NewRappelState {
   description: string;
   date_rappel: string;
   pole?: string;
+  assigned_users?: number[];
 }
 
 export interface ClientActivityStreamProps {
@@ -203,14 +206,36 @@ export default function ClientActivityStream({
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">Échéance</label>
-                            <input 
-                              type="date" 
-                              value={todoForm.date_echeance} 
-                              onChange={(e) => updateTodoForm('date_echeance', e.target.value)} 
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                            <input
+                              type="date"
+                              value={todoForm.date_echeance}
+                              onChange={(e) => updateTodoForm('date_echeance', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                           </div>
                         </div>
+                        {showPoleSelection && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                            <select
+                              value={todoForm.pole || ''}
+                              onChange={(e) => updateTodoForm('pole', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="">Sélectionner un pôle</option>
+                              {POLE_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <UserSelector
+                          value={todoForm.assigned_to || undefined}
+                          onChange={(value) => updateTodoForm('assigned_to', value as number)}
+                          label="Attribuer à"
+                          placeholder="Sélectionner un utilisateur"
+                          pole={todoForm.pole || undefined}
+                        />
                       </div>
                       <div className="flex gap-2">
                         <button 
@@ -260,7 +285,13 @@ export default function ClientActivityStream({
                             {t.user?.name && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
                                 <User className="w-3 h-3 mr-1" />
-                                {t.user.name}
+                                Créé par: {t.user.name}
+                              </span>
+                            )}
+                            {t.assignedUser?.name && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                                <User className="w-3 h-3 mr-1" />
+                                Assigné à: {t.assignedUser.name}
                               </span>
                             )}
                           </div>
@@ -322,19 +353,27 @@ export default function ClientActivityStream({
                     </select>
                   </div>
                 )}
-                
-                <input 
-                  placeholder="Titre de la tâche" 
-                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  value={newTodo.titre} 
-                  onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })} 
+
+                <input
+                  placeholder="Titre de la tâche"
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newTodo.titre}
+                  onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })}
                 />
-                <textarea 
-                  placeholder="Description (optionnel)" 
-                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                  rows={2} 
-                  value={newTodo.description} 
-                  onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })} 
+                <textarea
+                  placeholder="Description (optionnel)"
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={2}
+                  value={newTodo.description}
+                  onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+                />
+
+                <UserSelector
+                  value={newTodo.assigned_to || undefined}
+                  onChange={(value) => setNewTodo({ ...newTodo, assigned_to: value as number })}
+                  label="Attribuer à"
+                  placeholder="Sélectionner un utilisateur"
+                  pole={newTodo.pole || undefined}
                 />
                 <button 
                   onClick={handleAddTodo}
@@ -401,11 +440,11 @@ export default function ClientActivityStream({
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">Date & heure</label>
-                            <input 
-                              type="datetime-local" 
-                              value={rappelForm.date_rappel} 
-                              onChange={(e) => updateRappelForm('date_rappel', e.target.value)} 
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            <input
+                              type="datetime-local"
+                              value={rappelForm.date_rappel}
+                              onChange={(e) => updateRappelForm('date_rappel', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             />
                           </div>
                           <div className="flex items-end">
@@ -420,6 +459,29 @@ export default function ClientActivityStream({
                             </label>
                           </div>
                         </div>
+                        {showPoleSelection && (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                            <select
+                              value={rappelForm.pole || ''}
+                              onChange={(e) => updateRappelForm('pole', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                              <option value="">Sélectionner un pôle</option>
+                              {POLE_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <UserSelector
+                          value={rappelForm.assigned_users || []}
+                          onChange={(value) => updateRappelForm('assigned_users', value as number[])}
+                          label="Attribuer à"
+                          placeholder="Sélectionner des utilisateurs"
+                          pole={rappelForm.pole || undefined}
+                          multiple={true}
+                        />
                       </div>
                       <div className="flex gap-2">
                         <button 
@@ -471,7 +533,13 @@ export default function ClientActivityStream({
                             {r.user?.name && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
                                 <User className="w-3 h-3 mr-1" />
-                                {r.user.name}
+                                Créé par: {r.user.name}
+                              </span>
+                            )}
+                            {r.assignedUsers && r.assignedUsers.length > 0 && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200">
+                                <Users className="w-3 h-3 mr-1" />
+                                Assigné à: {r.assignedUsers.map((u: any) => u.name).join(', ')}
                               </span>
                             )}
                           </div>
@@ -533,25 +601,34 @@ export default function ClientActivityStream({
                     </select>
                   </div>
                 )}
-                
-                <input 
-                  placeholder="Titre du rappel" 
-                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                  value={newRappel.titre} 
-                  onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })} 
+
+                <input
+                  placeholder="Titre du rappel"
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  value={newRappel.titre}
+                  onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })}
                 />
-                <textarea 
-                  placeholder="Description (optionnel)" 
-                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                  rows={2} 
-                  value={newRappel.description} 
-                  onChange={(e) => setNewRappel({ ...newRappel, description: e.target.value })} 
+                <textarea
+                  placeholder="Description (optionnel)"
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  rows={2}
+                  value={newRappel.description}
+                  onChange={(e) => setNewRappel({ ...newRappel, description: e.target.value })}
                 />
-                <input 
-                  type="datetime-local" 
-                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                  value={newRappel.date_rappel} 
-                  onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })} 
+                <input
+                  type="datetime-local"
+                  className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  value={newRappel.date_rappel}
+                  onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })}
+                />
+
+                <UserSelector
+                  value={newRappel.assigned_users || []}
+                  onChange={(value) => setNewRappel({ ...newRappel, assigned_users: value as number[] })}
+                  label="Attribuer à"
+                  placeholder="Sélectionner des utilisateurs"
+                  pole={newRappel.pole || undefined}
+                  multiple={true}
                 />
                 <button 
                   onClick={handleAddRappel}

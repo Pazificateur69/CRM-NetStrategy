@@ -48,6 +48,7 @@ export interface NewTodoPayload {
   description: string;
   statut: 'en_cours' | 'termine' | 'retard';
   pole: string | null;
+  assigned_to?: number | null;
 }
 
 export interface NewRappelPayload {
@@ -56,6 +57,7 @@ export interface NewRappelPayload {
   date_rappel: string;
   fait: boolean;
   pole: string | null;
+  assigned_users?: number[];
 }
 
 export interface TodoFormState {
@@ -63,6 +65,8 @@ export interface TodoFormState {
   description: string;
   statut: 'en_cours' | 'termine' | 'retard';
   date_echeance: string;
+  assigned_to?: number | null;
+  pole?: string | null;
 }
 
 export interface RappelFormState {
@@ -70,6 +74,8 @@ export interface RappelFormState {
   description: string;
   date_rappel: string;
   fait: boolean;
+  assigned_users?: number[];
+  pole?: string | null;
 }
 
 // ============================

@@ -62,11 +62,11 @@ export interface UseClientLogicReturn {
   handleDeleteComment: (id: number) => Promise<void>;
   savingComment: boolean;
 
-  newTodo: { titre: string; description: string; pole: string };
-  setNewTodo: Dispatch<SetStateAction<{ titre: string; description: string; pole: string }>>;
+  newTodo: { titre: string; description: string; pole: string; assigned_to?: number | null };
+  setNewTodo: Dispatch<SetStateAction<{ titre: string; description: string; pole: string; assigned_to?: number | null }>>;
   handleAddTodo: () => Promise<void>;
   startEditTodo: (todo: any) => void;
-  cancelEditTodo: () => void; 
+  cancelEditTodo: () => void;
   editingTodoId: number | null;
   todoForm: TodoFormState;
   setTodoForm: Dispatch<SetStateAction<TodoFormState>>;
@@ -74,8 +74,8 @@ export interface UseClientLogicReturn {
   handleDeleteTodo: (id: number) => Promise<void>;
   savingTodo: boolean;
 
-  newRappel: { titre: string; description: string; date_rappel: string; pole: string };
-  setNewRappel: Dispatch<SetStateAction<{ titre: string; description: string; date_rappel: string; pole: string }>>;
+  newRappel: { titre: string; description: string; date_rappel: string; pole: string; assigned_users?: number[] };
+  setNewRappel: Dispatch<SetStateAction<{ titre: string; description: string; date_rappel: string; pole: string; assigned_users?: number[] }>>;
   handleAddRappel: () => Promise<void>;
   startEditRappel: (rappel: any) => void;
   cancelEditRappel: () => void;
@@ -128,8 +128,8 @@ export function useClientLogic(): UseClientLogicReturn {
     const [commentForm, setCommentForm] = useState({ texte: '' });
     const [savingComment, setSavingComment] = useState(false);
     
-    const [newTodo, setNewTodo] = useState({ titre: '', description: '', pole: '' });
-    const [newRappel, setNewRappel] = useState({ titre: '', description: '', date_rappel: '', pole: '' });
+    const [newTodo, setNewTodo] = useState({ titre: '', description: '', pole: '', assigned_to: null as number | null });
+    const [newRappel, setNewRappel] = useState({ titre: '', description: '', date_rappel: '', pole: '', assigned_users: [] as number[] });
     const [file, setFile] = useState<File | null>(null);
 
     const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
@@ -201,12 +201,14 @@ export function useClientLogic(): UseClientLogicReturn {
             description: todo.description || '',
             statut: todo.statut || 'en_cours',
             date_echeance: normaliseDate(todo.date_echeance),
+            assigned_to: todo.assigned_to || null,
+            pole: todo.pole || null,
         });
     }, []);
 
     const cancelEditTodo = useCallback(() => {
         setEditingTodoId(null);
-        setTodoForm({ titre: '', description: '', statut: 'en_cours', date_echeance: '' });
+        setTodoForm({ titre: '', description: '', statut: 'en_cours', date_echeance: '', assigned_to: null, pole: null });
     }, []);
 
     const startEditRappel = useCallback((rappel: any) => {
@@ -216,12 +218,14 @@ export function useClientLogic(): UseClientLogicReturn {
             description: rappel.description || '',
             date_rappel: normaliseDateTime(rappel.date_rappel),
             fait: rappel.fait || false,
+            assigned_users: rappel.assignedUsers?.map((u: any) => u.id) || rappel.assigned_users || [],
+            pole: rappel.pole || null,
         });
     }, []);
 
     const cancelEditRappel = useCallback(() => {
         setEditingRappelId(null);
-        setRappelForm({ titre: '', description: '', date_rappel: '', fait: false });
+        setRappelForm({ titre: '', description: '', date_rappel: '', fait: false, assigned_users: [], pole: null });
     }, []);
 
     const getPrestationsByTypes = useCallback((types?: string[]) => {
@@ -363,7 +367,7 @@ export function useClientLogic(): UseClientLogicReturn {
                     statut: 'en_cours',
                     pole: pole || undefined
                 });
-                setNewTodo({ titre: '', description: '', pole: '' }); 
+                setNewTodo({ titre: '', description: '', pole: '', assigned_to: null });
                 await reloadClient();
             } catch (error) {
                 console.error('Erreur lors de l\'ajout de la tâche:', error);
@@ -402,12 +406,12 @@ export function useClientLogic(): UseClientLogicReturn {
             if (!newRappel.titre.trim() || !newRappel.date_rappel.trim() || !client?.id) return;
             const pole = getCurrentPole(); // Utilise le pôle actuel pour l'ajout
             try {
-                await addRappel(Number(client.id), { 
-                    ...newRappel, 
-                    fait: false, 
-                    pole: pole || undefined 
+                await addRappel(Number(client.id), {
+                    ...newRappel,
+                    fait: false,
+                    pole: pole || undefined
                 });
-                setNewRappel({ titre: '', description: '', date_rappel: '', pole: '' });
+                setNewRappel({ titre: '', description: '', date_rappel: '', pole: '', assigned_users: [] });
                 await reloadClient();
             } catch (error) {
                 console.error('Erreur lors de l\'ajout du rappel:', error);
