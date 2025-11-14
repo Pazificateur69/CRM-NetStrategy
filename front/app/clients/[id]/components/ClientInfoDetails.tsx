@@ -71,7 +71,7 @@ export default function ClientInfoDetails({
   newComment,
   setNewComment,
   handleAddComment,
-  
+
   editingCommentId,
   commentForm,
   startEditComment,
@@ -79,12 +79,14 @@ export default function ClientInfoDetails({
   handleUpdateComment,
   handleDeleteComment,
   savingComment,
-  
+
   filteredTodos,
   filteredRappels,
   userRole,
   ...activityHandlers
 }: ClientInfoDetailsProps) {
+  const [showAllComments, setShowAllComments] = React.useState(false);
+
   const activityProps = {
     filteredTodos,
     filteredRappels,
@@ -94,7 +96,12 @@ export default function ClientInfoDetails({
     ...activityHandlers,
   };
 
-  const comments = client.contenu?.filter((c: any) => c.type !== 'Fichier') || [];
+  // Inverser l'ordre des commentaires (plus récents en premier)
+  const allComments = (client.contenu?.filter((c: any) => c.type !== 'Fichier') || [])
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Afficher seulement les 3 plus récents par défaut
+  const comments = showAllComments ? allComments : allComments.slice(0, 3);
 
   return (
     <div className="space-y-8">
@@ -150,28 +157,91 @@ export default function ClientInfoDetails({
             />
           </div>
 
-          {/* Description avec style amélioré */}
-          <div className="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-2xl p-6 border border-indigo-100 overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-200 rounded-full opacity-10 -mr-20 -mt-20" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200 rounded-full opacity-10 -ml-16 -mb-16" />
-            
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-indigo-600 rounded-lg">
-                  <FileText className="w-5 h-5 text-white" />
+          {/* Profil Client Complet - Présentation & Prestations */}
+          <div className="space-y-6">
+            {/* Présentation du Client */}
+            <div className="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-2xl p-6 border border-indigo-100 overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-200 rounded-full opacity-10 -mr-20 -mt-20" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200 rounded-full opacity-10 -ml-16 -mb-16" />
+
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-indigo-600 rounded-lg">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-indigo-900">
+                    Présentation du Client
+                  </h3>
                 </div>
-                <h3 className="text-lg font-bold text-indigo-900">
-                  Présentation & Éléments Clés
-                </h3>
+                {client.description_generale ? (
+                  <p className="text-gray-700 leading-relaxed text-sm">{client.description_generale}</p>
+                ) : (
+                  <div className="flex items-center gap-3 text-gray-500 italic text-sm">
+                    <div className="w-1 h-12 bg-gray-300 rounded-full" />
+                    <p>Aucune présentation n'a encore été renseignée pour ce client.</p>
+                  </div>
+                )}
               </div>
-              {client.description_generale ? (
-                <p className="text-gray-700 leading-relaxed text-sm">{client.description_generale}</p>
-              ) : (
-                <div className="flex items-center gap-3 text-gray-500 italic text-sm">
-                  <div className="w-1 h-12 bg-gray-300 rounded-full" />
-                  <p>Aucune description globale n'a encore été renseignée pour ce client.</p>
+            </div>
+
+            {/* Prestations Validées */}
+            <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-50 rounded-2xl p-6 border border-emerald-100 overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-200 rounded-full opacity-10 -mr-20 -mt-20" />
+
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-600 rounded-lg">
+                      <CheckSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-emerald-900">
+                      Prestations Validées
+                    </h3>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-full">
+                    {client.prestations?.length || 0} service{(client.prestations?.length || 0) > 1 ? 's' : ''}
+                  </span>
                 </div>
-              )}
+
+                {client.prestations && client.prestations.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {client.prestations.map((prestation: any) => (
+                      <div
+                        key={prestation.id}
+                        className="flex items-start gap-3 bg-white rounded-xl p-4 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                          <CheckSquare className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 text-sm mb-1">
+                            {prestation.type}
+                          </h4>
+                          {prestation.description && (
+                            <p className="text-xs text-gray-600 line-clamp-2">
+                              {prestation.description}
+                            </p>
+                          )}
+                          {prestation.montant && (
+                            <p className="text-xs text-emerald-700 font-semibold mt-2">
+                              {new Intl.NumberFormat('fr-FR', {
+                                style: 'currency',
+                                currency: 'EUR'
+                              }).format(prestation.montant)}
+                              {prestation.frequence && ` / ${prestation.frequence}`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 text-gray-500 italic text-sm">
+                    <div className="w-1 h-12 bg-gray-300 rounded-full" />
+                    <p>Aucune prestation n'a encore été enregistrée pour ce client.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -203,13 +273,14 @@ export default function ClientInfoDetails({
             Journal des Événements & Commentaires
           </h3>
           <p className="text-gray-100 text-sm mt-2">
-            {comments.length} {comments.length > 1 ? 'commentaires' : 'commentaire'}
+            {allComments.length} {allComments.length > 1 ? 'commentaires' : 'commentaire'}
+            {allComments.length > 3 && !showAllComments && <span className="ml-2 text-white/80">(affichage des 3 plus récents)</span>}
           </p>
         </div>
 
         <div className="p-8">
           {/* Liste des commentaires */}
-          {comments.length > 0 ? (
+          {allComments.length > 0 ? (
             <div className="space-y-4 mb-8">
               {comments.map((c: any, index: number) => (
                 <div
@@ -318,6 +389,32 @@ export default function ClientInfoDetails({
                   )}
                 </div>
               ))}
+
+              {/* Bouton "Voir plus" / "Voir moins" */}
+              {allComments.length > 3 && (
+                <div className="flex justify-center pt-4">
+                  <button
+                    onClick={() => setShowAllComments(!showAllComments)}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 font-semibold rounded-xl hover:from-indigo-200 hover:to-purple-200 transition-all duration-300 shadow-md hover:shadow-lg"
+                  >
+                    {showAllComments ? (
+                      <>
+                        <span>Voir moins</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </>
+                    ) : (
+                      <>
+                        <span>Voir {allComments.length - 3} commentaire{allComments.length - 3 > 1 ? 's' : ''} de plus</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             // État vide moderne

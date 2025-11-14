@@ -17,9 +17,15 @@ class ClientController extends Controller
     {
         $this->authorize('view clients');
 
-        $clients = Client::with(['prestations', 'todos', 'rappels', 'contenu'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $clients = Client::with([
+            'prestations.contenu.user:id,name',
+            'prestations.responsable:id,name',
+            'todos.user:id,name,email',
+            'todos.assignedUser:id,name,email',
+            'rappels.user:id,name,email',
+            'rappels.assignedUsers:id,name,email',
+            'contenu.user:id,name'
+        ])->orderBy('created_at', 'desc')->get();
 
         return ClientResource::collection($clients)->response();
     }
@@ -76,7 +82,10 @@ class ClientController extends Controller
             'prestations.contenu.user:id,name',
             'prestations.responsable:id,name',
             'todos.user:id,name,email',
+            'todos.assignedUser:id,name,email',
+            'todos.client:id,societe',
             'rappels.user:id,name,email',
+            'rappels.assignedUsers:id,name,email',
             'contenu.user:id,name',
         ])->findOrFail($id);
 
@@ -101,9 +110,13 @@ class ClientController extends Controller
         
         // ✅ Charger les relations pour le retour complet
         $client->load([
-            'prestations',
-            'todos',
-            'rappels',
+            'prestations.contenu.user:id,name',
+            'prestations.responsable:id,name',
+            'todos.user:id,name,email',
+            'todos.assignedUser:id,name,email',
+            'todos.client:id,societe',
+            'rappels.user:id,name,email',
+            'rappels.assignedUsers:id,name,email',
             'contenu.user:id,name'
         ]);
 

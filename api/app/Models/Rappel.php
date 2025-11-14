@@ -31,14 +31,19 @@ class Rappel extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
     public function rappelable()
     {
         return $this->morphTo();
     }
 
     public function assignedUsers()
-{
-    return $this->belongsToMany(User::class, 'rappel_user');
-}
+    {
+        return $this->belongsToMany(User::class, 'rappel_user');
+    }
 
 }
