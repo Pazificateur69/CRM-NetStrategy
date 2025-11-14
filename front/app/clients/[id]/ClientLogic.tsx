@@ -6,6 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import {
     getClientById,
     addComment,
+    updateComment,
+    deleteComment,
     addTodo,
     updateTodo,
     deleteTodo,
@@ -27,14 +29,11 @@ import {
     normaliseDate, 
     normaliseDateTime, 
     parseListField, 
-    parseNumberField 
+    parseNumberField,
+    POLE_MAPPING // ✅ NOUVEAU : Import du mapping centralisé
 } from './ClientUtils'; 
 import { BadgeEuro, Code, Download, FileText, Megaphone, Search, Share2 } from 'lucide-react';
 
-// ==========================================================
-// 1. ✅ CORRIGÉ : Typage de newRappel mis à jour
-// === Typage explicite pour le hook ===
-// ==========================================================
 export interface UseClientLogicReturn {
   client: any;
   loading: boolean;
@@ -54,9 +53,17 @@ export interface UseClientLogicReturn {
   newComment: string;
   setNewComment: Dispatch<SetStateAction<string>>;
   handleAddComment: () => Promise<void>;
+  
+  editingCommentId: number | null;
+  commentForm: { texte: string };
+  startEditComment: (comment: any) => void;
+  cancelEditComment: () => void;
+  handleUpdateComment: (id: number, texte: string) => Promise<void>;
+  handleDeleteComment: (id: number) => Promise<void>;
+  savingComment: boolean;
 
-  newTodo: { titre: string; description: string; pole: string }; // ⬅️ MODIFIÉ
-  setNewTodo: Dispatch<SetStateAction<{ titre: string; description: string; pole: string }>>; // ⬅️ MODIFIÉ
+  newTodo: { titre: string; description: string; pole: string };
+  setNewTodo: Dispatch<SetStateAction<{ titre: string; description: string; pole: string }>>;
   handleAddTodo: () => Promise<void>;
   startEditTodo: (todo: any) => void;
   cancelEditTodo: () => void; 
@@ -67,8 +74,8 @@ export interface UseClientLogicReturn {
   handleDeleteTodo: (id: number) => Promise<void>;
   savingTodo: boolean;
 
-  newRappel: { titre: string; description: string; date_rappel: string; pole: string }; // ⬅️ MODIFIÉ
-  setNewRappel: Dispatch<SetStateAction<{ titre: string; description: string; date_rappel: string; pole: string }>>; // ⬅️ MODIFIÉ
+  newRappel: { titre: string; description: string; date_rappel: string; pole: string };
+  setNewRappel: Dispatch<SetStateAction<{ titre: string; description: string; date_rappel: string; pole: string }>>;
   handleAddRappel: () => Promise<void>;
   startEditRappel: (rappel: any) => void;
   cancelEditRappel: () => void;
@@ -96,10 +103,6 @@ export interface UseClientLogicReturn {
   savingClient: boolean;
 }
 
-
-// ==========================================================
-// === Définition des onglets ===
-// ==========================================================
 export const tabDefinitions: TabDefinition[] = [
     { id: 'informations', label: 'Détails', icon: FileText },
     { id: 'pole-branding', label: 'Pôle Branding', icon: Megaphone, allowedRoles: ['admin', 'branding'], prestationTypes: ['Branding'], accent: { border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', title: 'text-amber-700' } },
@@ -110,9 +113,6 @@ export const tabDefinitions: TabDefinition[] = [
     { id: 'compta', label: 'Comptabilité', icon: BadgeEuro, allowedRoles: ['admin', 'comptabilite'], prestationTypes: ['Comptabilite'], accent: { border: 'border-teal-200', badge: 'bg-teal-100 text-teal-700', title: 'text-teal-700' } },
 ];
 
-// ==========================================================
-// === Hook principal ===
-// ==========================================================
 export function useClientLogic(): UseClientLogicReturn {
     const { id } = useParams();
     const router = useRouter();
@@ -123,8 +123,13 @@ export function useClientLogic(): UseClientLogicReturn {
     const [userRole, setUserRole] = useState<string>('');
     
     const [newComment, setNewComment] = useState('');
-    const [newTodo, setNewTodo] = useState({ titre: '', description: '', pole: '' }); // ⬅️ DÉJÀ MODIFIÉ
-    const [newRappel, setNewRappel] = useState({ titre: '', description: '', date_rappel: '', pole: '' }); // ⬅️ MODIFIÉ
+    
+    const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+    const [commentForm, setCommentForm] = useState({ texte: '' });
+    const [savingComment, setSavingComment] = useState(false);
+    
+    const [newTodo, setNewTodo] = useState({ titre: '', description: '', pole: '' });
+    const [newRappel, setNewRappel] = useState({ titre: '', description: '', date_rappel: '', pole: '' });
     const [file, setFile] = useState<File | null>(null);
 
     const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
@@ -179,6 +184,16 @@ export function useClientLogic(): UseClientLogicReturn {
         });
     }, []);
 
+    const startEditComment = useCallback((comment: any) => {
+        setEditingCommentId(comment.id);
+        setCommentForm({ texte: comment.texte });
+    }, []);
+
+    const cancelEditComment = useCallback(() => {
+        setEditingCommentId(null);
+        setCommentForm({ texte: '' });
+    }, []);
+
     const startEditTodo = useCallback((todo: any) => {
         setEditingTodoId(todo.id);
         setTodoForm({
@@ -214,10 +229,14 @@ export function useClientLogic(): UseClientLogicReturn {
         return (client?.prestations ?? []).filter((p: any) => types.includes(p.type));
     }, [client?.prestations]);
 
+    // ✅ CORRIGÉ : Utilisation du mapping centralisé
     const getCurrentPole = useCallback(() => {
         const tab = tabDefinitions.find(t => t.id === activeTab);
-        // La valeur de pole dans la BDD est en MAJUSCULES (ex: COM, SEO, DEV)
-        return tab?.id.startsWith('pole-') ? tab.id.replace('pole-', '').toUpperCase() : null;
+        if (!tab) return null;
+        
+        // ✅ Utilise le mapping centralisé pour harmoniser les valeurs
+        const poleValue = POLE_MAPPING[tab.id as keyof typeof POLE_MAPPING];
+        return poleValue || null;
     }, [activeTab]);
 
     useEffect(() => {
@@ -248,10 +267,8 @@ export function useClientLogic(): UseClientLogicReturn {
         if (client) syncClientForm(client);
     }, [client, syncClientForm]);
 
-    // L'EFFECT qui chargeait usersInPole a été supprimé
-
-    const canEdit = ['admin', 'branding', 'ads', 'dev', 'comptabilite'].includes(userRole);
-    const canSeeDocs = ['admin', 'comptabilite', 'dev'].includes(userRole);
+    const canEdit = ['admin', 'branding', 'ads', 'seo', 'dev', 'reseaux_sociaux', 'comptabilite'].includes(userRole);
+    const canSeeDocs = ['admin', 'comptabilite', 'dev', 'branding', 'ads', 'seo', 'reseaux_sociaux'].includes(userRole);
 
     const accessibleTabs = useMemo(() => 
         tabDefinitions.filter(tab => 
@@ -261,25 +278,21 @@ export function useClientLogic(): UseClientLogicReturn {
     const currentTabDefinition = useMemo(() => 
         tabDefinitions.find(tab => tab.id === activeTab), [activeTab]);
 
-    // ✅ Filtres pour les Tâches
     const filteredTodos = useMemo(() => {
         if (!client?.todos) return [];
         const currentPole = getCurrentPole();
-
-        // Si on est sur l'onglet "Informations", on ne montre que les tâches sans pôle
+        // Si 'informations', on filtre les todos sans pole
         if (activeTab === 'informations') return client.todos.filter((t: any) => !t.pole);
-        
-        // Si on est sur un onglet de pôle, on ne montre que les tâches de ce pôle
+        // Sinon, on filtre les todos du pôle actif
         return client.todos.filter((t: any) => t.pole === currentPole);
     }, [client?.todos, activeTab, getCurrentPole]);
 
-    // ✅ Filtres pour les Rappels
     const filteredRappels = useMemo(() => {
         if (!client?.rappels) return [];
         const currentPole = getCurrentPole();
-
+        // Si 'informations', on filtre les rappels sans pole
         if (activeTab === 'informations') return client.rappels.filter((r: any) => !r.pole);
-        
+        // Sinon, on filtre les rappels du pôle actif
         return client.rappels.filter((r: any) => r.pole === currentPole);
     }, [client?.rappels, activeTab, getCurrentPole]);
 
@@ -290,30 +303,72 @@ export function useClientLogic(): UseClientLogicReturn {
         reloadClient, getPrestationsByTypes, getCurrentPole, 
         
         // Commentaires
-        newComment, setNewComment, handleAddComment: async () => {
+        newComment, 
+        setNewComment, 
+        handleAddComment: async () => {
             if (!newComment.trim() || !client?.id) return;
-            await addComment(Number(client.id), newComment);
-            setNewComment('');
-            reloadClient();
+            try {
+                await addComment(Number(client.id), newComment);
+                setNewComment('');
+                await reloadClient();
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout du commentaire:', error);
+                alert('Erreur lors de l\'ajout du commentaire.');
+            }
         },
+        
+        editingCommentId,
+        commentForm,
+        startEditComment,
+        cancelEditComment,
+        handleUpdateComment: async (id: number, texte: string) => {
+            if (!texte.trim()) return;
+            setSavingComment(true);
+            try {
+                await updateComment(id, texte);
+                cancelEditComment();
+                await reloadClient();
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour du commentaire:', error);
+                alert('Erreur lors de la mise à jour.');
+            } finally {
+                setSavingComment(false);
+            }
+        },
+        handleDeleteComment: async (id: number) => {
+            const confirmation = window.confirm(
+                '⚠️ Êtes-vous sûr de vouloir supprimer ce commentaire ?\n\n' +
+                'Cette action est irréversible et le commentaire sera définitivement supprimé.'
+            );
+            
+            if (confirmation) {
+                try {
+                    await deleteComment(id);
+                    await reloadClient();
+                } catch (error) {
+                    console.error('Erreur lors de la suppression du commentaire:', error);
+                    alert('❌ Erreur lors de la suppression. Veuillez réessayer.');
+                }
+            }
+        },
+        savingComment,
 
         // Tâches (Todos)
-        newTodo, setNewTodo, handleAddTodo: async () => { // ⬅️ LOGIQUE MISE À JOUR
+        newTodo, setNewTodo, handleAddTodo: async () => {
             if (!newTodo.titre.trim() || !client?.id) return;
-
-            // Si newTodo.pole est renseigné (via un formulaire global)
-            // OU si nous sommes sur un onglet de pôle spécifique, la valeur est déduite.
-            const pole = newTodo.pole || getCurrentPole();
-
-            await addTodo(Number(client.id), {
-                ...newTodo,
-                statut: 'en_cours',
-                pole: pole || undefined
-            });
-
-            // Réinitialisation incluant le champ pole
-            setNewTodo({ titre: '', description: '', pole: '' }); 
-            reloadClient();
+            const pole = getCurrentPole(); // Utilise le pôle actuel pour l'ajout
+            try {
+                await addTodo(Number(client.id), {
+                    ...newTodo,
+                    statut: 'en_cours',
+                    pole: pole || undefined
+                });
+                setNewTodo({ titre: '', description: '', pole: '' }); 
+                await reloadClient();
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout de la tâche:', error);
+                alert('Erreur lors de l\'ajout de la tâche.');
+            }
         },
         startEditTodo,
         cancelEditTodo,
@@ -322,27 +377,42 @@ export function useClientLogic(): UseClientLogicReturn {
         setTodoForm,
         handleUpdateTodo: async (id: number, data: TodoFormState) => { 
             setSavingTodo(true);
-            await updateTodo(id, data); 
-            setSavingTodo(false);
-            cancelEditTodo();
-            reloadClient(); 
+            try {
+                await updateTodo(id, data); 
+                cancelEditTodo();
+                await reloadClient(); 
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour de la tâche:', error);
+                alert('Erreur lors de la mise à jour de la tâche.');
+            } finally {
+                setSavingTodo(false);
+            }
         },
-        handleDeleteTodo: async (id: number) => { await deleteTodo(id); reloadClient(); },
+        handleDeleteTodo: async (id: number) => { 
+            const confirmation = window.confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?');
+            if (confirmation) {
+                await deleteTodo(id); 
+                await reloadClient(); 
+            }
+        },
         savingTodo,
 
         // Rappels
         newRappel, setNewRappel, handleAddRappel: async () => {
             if (!newRappel.titre.trim() || !newRappel.date_rappel.trim() || !client?.id) return;
-            
-            // Si newRappel.pole est renseigné (via un formulaire global)
-            // OU si nous sommes sur un onglet de pôle spécifique, la valeur est déduite.
-            const pole = newRappel.pole || getCurrentPole(); // Utilise le pole du state ou celui déduit
-            
-            await addRappel(Number(client.id), { ...newRappel, fait: false, pole: pole || undefined });
-            
-            // Réinitialisation incluant le champ pole
-            setNewRappel({ titre: '', description: '', date_rappel: '', pole: '' }); // ⬅️ MODIFIÉ
-            reloadClient();
+            const pole = getCurrentPole(); // Utilise le pôle actuel pour l'ajout
+            try {
+                await addRappel(Number(client.id), { 
+                    ...newRappel, 
+                    fait: false, 
+                    pole: pole || undefined 
+                });
+                setNewRappel({ titre: '', description: '', date_rappel: '', pole: '' });
+                await reloadClient();
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout du rappel:', error);
+                alert('Erreur lors de l\'ajout du rappel.');
+            }
         },
         startEditRappel,
         cancelEditRappel,
@@ -351,49 +421,104 @@ export function useClientLogic(): UseClientLogicReturn {
         setRappelForm,
         handleUpdateRappel: async (id: number, data: RappelFormState) => { 
             setSavingRappel(true);
-            await updateRappel(id, data); 
-            setSavingRappel(false);
-            cancelEditRappel();
-            reloadClient(); 
+            try {
+                await updateRappel(id, data); 
+                cancelEditRappel();
+                await reloadClient(); 
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour du rappel:', error);
+                alert('Erreur lors de la mise à jour du rappel.');
+            } finally {
+                setSavingRappel(false);
+            }
         },
-        handleDeleteRappel: async (id: number) => { await deleteRappel(id); reloadClient(); },
+        handleDeleteRappel: async (id: number) => { 
+            const confirmation = window.confirm('Êtes-vous sûr de vouloir supprimer ce rappel ?');
+            if (confirmation) {
+                await deleteRappel(id); 
+                await reloadClient(); 
+            }
+        },
         savingRappel,
         
         // Documents
         file, setFile, handleUpload: async (pole: string) => { 
             if (!file || !client?.id) return; 
-            // Note: uploadDocument est appelé sans argument 'pole' car il est maintenant géré par le formulaire
-            await uploadDocument(Number(client.id), file, pole); // J'assume ici que uploadDocument prends pole en argument, même si le code précédent l'ignorait
-            setFile(null); 
-            reloadClient(); 
+            try {
+                await uploadDocument(Number(client.id), file, pole);
+                setFile(null); 
+                await reloadClient(); 
+            } catch (error) {
+                console.error('Erreur lors de l\'upload du document:', error);
+                alert('Erreur lors de l\'upload du document.');
+            }
         },
         
         // Prestations
-        handleAddPrestation: async (data: any) => { await addPrestation(Number(client.id), data); reloadClient(); },
-        handleUpdatePrestation: async (id: number, data: any) => { await updatePrestation(id, data); reloadClient(); },
-        handleDeletePrestation: async (id: number) => { await deletePrestation(id); reloadClient(); }, 
+        handleAddPrestation: async (data: any) => { 
+            try {
+                await addPrestation(Number(client.id), data); 
+                await reloadClient(); 
+            } catch (error) {
+                console.error('Erreur lors de l\'ajout de la prestation:', error);
+                alert('Erreur lors de l\'ajout de la prestation.');
+            }
+        },
+        handleUpdatePrestation: async (id: number, data: any) => { 
+            try {
+                await updatePrestation(id, data); 
+                await reloadClient(); 
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour de la prestation:', error);
+                alert('Erreur lors de la mise à jour de la prestation.');
+            }
+        },
+        handleDeletePrestation: async (id: number) => { 
+            const confirmation = window.confirm('Êtes-vous sûr de vouloir supprimer cette prestation ?');
+            if (confirmation) {
+                await deletePrestation(id); 
+                await reloadClient(); 
+            }
+        }, 
         
         // Modale Client
         showEditModal, setShowEditModal, clientForm,
-        // 2. ✅ CORRIGÉ : Ajout des types explicites pour 'f' et 'v'
         handleClientFieldChange: (f: keyof ClientFormState, v: string) => setClientForm(prev => ({ ...prev, [f]: v })),
         handleCloseModal: () => { syncClientForm(client); setShowEditModal(false); },
+        
         handleSaveClient: async () => {
             if (!client?.id) return;
             setSavingClient(true);
+            
             try {
                 const updateData = {
-                    ...clientForm,
+                    societe: clientForm.societe?.trim() || undefined,
+                    gerant: clientForm.gerant?.trim() || undefined,
+                    siret: clientForm.siret?.trim() || undefined,
+                    site_web: clientForm.site_web?.trim() || undefined,
+                    adresse: clientForm.adresse?.trim() || undefined,
+                    ville: clientForm.ville?.trim() || undefined,
+                    code_postal: clientForm.code_postal?.trim() || undefined,
                     emails: parseListField(clientForm.emails),
                     telephones: parseListField(clientForm.telephones),
-                    montant_mensuel_total: parseNumberField(clientForm.montant_mensuel_total),
+                    contrat: clientForm.contrat?.trim() || undefined,
+                    date_contrat: clientForm.date_contrat || undefined,
+                    date_echeance: clientForm.date_echeance || undefined,
+                    montant_mensuel_total: parseNumberField(clientForm.montant_mensuel_total) ?? undefined,
+                    frequence_facturation: clientForm.frequence_facturation?.trim() || undefined,
+                    mode_paiement: clientForm.mode_paiement?.trim() || undefined,
+                    iban: clientForm.iban?.trim() || undefined,
+                    description_generale: clientForm.description_generale?.trim() || undefined,
+                    notes_comptables: clientForm.notes_comptables?.trim() || undefined,
+                    lien_externe: clientForm.lien_externe?.trim() || undefined,
                 };
 
                 await updateClient(Number(client.id), updateData);
                 setShowEditModal(false);
-                reloadClient();
+                await reloadClient();
             } catch (error) {
                 console.error('Erreur lors de la sauvegarde du client:', error);
+                alert('Erreur lors de la sauvegarde');
             } finally {
                 setSavingClient(false);
             }

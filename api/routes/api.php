@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // 📁 CONTENU / FICHIERS CLIENT
     // ===================================================
     Route::post('/contenu', [ContenuFicheController::class, 'store']);
+    Route::put('/contenu/{id}', [ContenuFicheController::class, 'update']); // ✅ NOUVEAU
     Route::get('/contenu/client/{client}', [ContenuFicheController::class, 'index']);
     Route::get('/contenu/{id}/download', [ContenuFicheController::class, 'download']);
     Route::delete('/contenu/{id}', [ContenuFicheController::class, 'destroy']);

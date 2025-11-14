@@ -39,6 +39,19 @@ export const addComment = async (clientId: number, texte: string): Promise<Conte
   return response.data.data;
 };
 
+// ✅ NOUVEAU : Mettre à jour un commentaire
+export const updateComment = async (commentId: number, texte: string): Promise<ContenuFiche> => {
+  const response = await api.put(`/contenu/${commentId}`, {
+    texte,
+  });
+  return response.data.data;
+};
+
+// ✅ NOUVEAU : Supprimer un commentaire
+export const deleteComment = async (commentId: number): Promise<void> => {
+  await api.delete(`/contenu/${commentId}`);
+};
+
 // ===============================
 // 🔹 TODOS
 // ===============================
@@ -102,7 +115,6 @@ export const uploadDocument = async (
   formData.append('client_id', clientId.toString());
   formData.append('fichier', file);
 
-  // ✅ Ajout du champ "pole" si présent
   if (pole) {
     formData.append('pole', pole);
   }
@@ -112,7 +124,6 @@ export const uploadDocument = async (
   });
   return response.data.data;
 };
-
 
 // ===============================
 // 🔹 PROSPECTS
@@ -130,7 +141,9 @@ export const convertProspect = async (id: number): Promise<ConversionResponse> =
   return response.data;
 };
 
-// === PRESTATIONS ===
+// ===============================
+// 🔹 PRESTATIONS
+// ===============================
 export const addPrestation = async (clientId: number, data: PrestationInput): Promise<Prestation> => {
   const response = await api.post<{ data: Prestation }>(`/clients/${clientId}/prestations`, data);
   return response.data.data;
