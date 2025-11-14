@@ -134,6 +134,8 @@ export interface ClientDetail extends BaseEntity {
   mode_paiement: string | null; // <-- CORRECTION AJOUTÉE
   iban: string | null; // <-- CORRECTION AJOUTÉE
   notes_comptables: string | null; // <-- CORRECTION AJOUTÉE
+  interlocuteurs?: any[]; // <-- CORRECTION AJOUTÉE
+  liens_externes?: any[]; // <-- CORRECTION AJOUTÉE
   couleur_statut: StatutCouleur;
   prestations: Prestation[];
   todos: Todo[];
