@@ -53,6 +53,9 @@ export default function ClientDetailPage() {
     handleDeletePrestation,
     handleAddPrestation,
 
+    // Liens externes
+    handleUpdateLinks,
+
     // Tâches et rappels
     newTodo,
     setNewTodo,
@@ -218,6 +221,7 @@ export default function ClientDetailPage() {
               file={file}
               setFile={setFile}
               handleUpload={handleUpload}
+              handleUpdateLinks={handleUpdateLinks}
               userRole={userRole}
               {...sharedActivityProps}
             />

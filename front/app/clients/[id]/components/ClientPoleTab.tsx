@@ -5,7 +5,8 @@
 import React, { ElementType } from 'react';
 import { Download, FileText, PlusCircle } from 'lucide-react';
 import ClientActivityStream from './ClientActivityStream';
-import { formatDateTime } from '../ClientUtils';
+import ExternalLinksBar from './ExternalLinksBar';
+import { formatDateTime, POLE_MAPPING } from '../ClientUtils';
 
 interface ClientPoleTabProps {
   client: any;
@@ -17,6 +18,7 @@ interface ClientPoleTabProps {
   file: File | null;
   setFile: React.Dispatch<React.SetStateAction<File | null>>;
   handleUpload: (pole: string) => Promise<void>;
+  handleUpdateLinks?: (liens: any) => Promise<void>;
   userRole: string; 
   newTodo: any;
   setNewTodo: any;
@@ -52,11 +54,15 @@ export default function ClientPoleTab({
   file,
   setFile,
   handleUpload,
+  handleUpdateLinks,
   userRole,
   ...activityHandlers
 }: ClientPoleTabProps) {
   const prestations = getPrestationsByTypes(tab.prestationTypes);
   const IconComponent: ElementType = tab.icon as ElementType;
+
+  // Récupérer le pôle pour la barre de liens
+  const poleValue = POLE_MAPPING[tab.id as keyof typeof POLE_MAPPING] || 'global';
 
   // 4️⃣ CORRIGÉ : Filtrer les fichiers en utilisant tab.id
   const poleDocs =
@@ -76,13 +82,22 @@ export default function ClientPoleTab({
 
   return (
     <section
-      className={`bg-white p-8 rounded-2xl shadow-xl border ${tab.accent.border}`}
+      className={`bg-white rounded-2xl shadow-xl border ${tab.accent.border} overflow-hidden`}
     >
-      {/* === En-tête du pôle === */}
-      <h3 className={`text-2xl font-bold mb-3 flex items-center ${tab.accent.title}`}>
-        <IconComponent className="w-6 h-6 mr-3" /> {tab.label}
-      </h3>
-      <p className="text-sm text-gray-500 mb-6">{tab.description}</p>
+      {/* === Barre de liens externes === */}
+      <ExternalLinksBar
+        client={client}
+        pole={poleValue}
+        canEdit={canEdit}
+        onUpdate={handleUpdateLinks}
+      />
+
+      <div className="p-8">
+        {/* === En-tête du pôle === */}
+        <h3 className={`text-2xl font-bold mb-3 flex items-center ${tab.accent.title}`}>
+          <IconComponent className="w-6 h-6 mr-3" /> {tab.label}
+        </h3>
+        <p className="text-sm text-gray-500 mb-6">{tab.description}</p>
 
       {/* === Dossier numérique par pôle === */}
       <div className="mt-6 mb-8">
@@ -147,12 +162,13 @@ export default function ClientPoleTab({
         )}
       </div>
 
-      {/* === Tâches / Rappels === */}
-      <div className="mt-10 pt-8 border-t border-gray-100">
-        <h3 className="text-2xl font-bold text-gray-700 border-b-2 border-gray-100 pb-3 mb-6">
-          Tâches et rappels d'activité — {tab.label}
-        </h3>
-        <ClientActivityStream {...activityHandlers} activePoleLabel={tab.label} canEdit={canEdit} filteredRappels={filteredRappels} filteredTodos={filteredTodos} userRole={userRole} />
+        {/* === Tâches / Rappels === */}
+        <div className="mt-10 pt-8 border-t border-gray-100">
+          <h3 className="text-2xl font-bold text-gray-700 border-b-2 border-gray-100 pb-3 mb-6">
+            Tâches et rappels d'activité — {tab.label}
+          </h3>
+          <ClientActivityStream {...activityHandlers} activePoleLabel={tab.label} canEdit={canEdit} filteredRappels={filteredRappels} filteredTodos={filteredTodos} userRole={userRole} />
+        </div>
       </div>
     </section>
   );

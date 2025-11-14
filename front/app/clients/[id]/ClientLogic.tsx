@@ -14,12 +14,13 @@ import {
     addRappel,
     updateRappel,
     deleteRappel,
-    uploadDocument, 
+    uploadDocument,
     updateClient,
     addPrestation,
     updatePrestation,
     deletePrestation
 } from '@/services/crm';
+import { getUsers } from '@/services/users';
 import api from '@/services/api';
 import { TabDefinition } from '@/components/FicheTabs';
 import { 
@@ -40,6 +41,7 @@ export interface UseClientLogicReturn {
   activeTab: string;
   setActiveTab: Dispatch<SetStateAction<string>>;
   userRole: string;
+  users: any[];
   accessibleTabs: TabDefinition[];
   currentTabDefinition?: TabDefinition;
   filteredTodos: any[];
@@ -88,12 +90,14 @@ export interface UseClientLogicReturn {
 
   file: File | null;
   setFile: Dispatch<SetStateAction<File | null>>;
-  handleUpload: (pole: string) => Promise<void>; 
+  handleUpload: (pole: string) => Promise<void>;
 
   handleAddPrestation: (data: any) => Promise<void>;
   handleUpdatePrestation: (id: number, data: any) => Promise<void>;
   handleDeletePrestation: (id: number) => Promise<void>;
-  
+
+  handleUpdateLinks: (liens: any) => Promise<void>;
+
   showEditModal: boolean;
   setShowEditModal: (v: boolean) => void;
   clientForm: ClientFormState;
@@ -121,7 +125,8 @@ export function useClientLogic(): UseClientLogicReturn {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<string>('informations');
     const [userRole, setUserRole] = useState<string>('');
-    
+    const [users, setUsers] = useState<any[]>([]);
+
     const [newComment, setNewComment] = useState('');
     
     const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -247,12 +252,14 @@ export function useClientLogic(): UseClientLogicReturn {
                 return;
             }
             try {
-                const [clientData, userData] = await Promise.all([
+                const [clientData, userData, usersData] = await Promise.all([
                     getClientById(id),
                     api.get('/user'),
+                    getUsers().catch(() => []), // Récupérer les utilisateurs (fail silencieusement si non admin)
                 ]);
                 setClient(clientData);
                 setUserRole(userData.data.roles?.[0] || '');
+                setUsers(usersData);
             } catch (err) {
                 console.error('Erreur de chargement client:', err);
                 router.replace('/clients');
@@ -297,7 +304,7 @@ export function useClientLogic(): UseClientLogicReturn {
     }, [client?.rappels, activeTab, getCurrentPole]);
 
     return {
-        client, loading, activeTab, setActiveTab, userRole,
+        client, loading, activeTab, setActiveTab, userRole, users,
         accessibleTabs, currentTabDefinition, filteredTodos, filteredRappels,
         canEdit, canSeeDocs,
         reloadClient, getPrestationsByTypes, getCurrentPole, 
@@ -473,14 +480,26 @@ export function useClientLogic(): UseClientLogicReturn {
                 alert('Erreur lors de la mise à jour de la prestation.');
             }
         },
-        handleDeletePrestation: async (id: number) => { 
+        handleDeletePrestation: async (id: number) => {
             const confirmation = window.confirm('Êtes-vous sûr de vouloir supprimer cette prestation ?');
             if (confirmation) {
-                await deletePrestation(id); 
-                await reloadClient(); 
+                await deletePrestation(id);
+                await reloadClient();
             }
-        }, 
-        
+        },
+
+        // Liens externes
+        handleUpdateLinks: async (liens: any) => {
+            if (!client?.id) return;
+            try {
+                await updateClient(Number(client.id), { liens_externes: liens });
+                await reloadClient();
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour des liens:', error);
+                alert('Erreur lors de la mise à jour des liens.');
+            }
+        },
+
         // Modale Client
         showEditModal, setShowEditModal, clientForm,
         handleClientFieldChange: (f: keyof ClientFormState, v: string) => setClientForm(prev => ({ ...prev, [f]: v })),
