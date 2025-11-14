@@ -18,13 +18,27 @@ class ClientController extends Controller
         $this->authorize('view clients');
 
         $clients = Client::with([
-            'prestations.contenu.user:id,name',
-            'prestations.responsable:id,name',
-            'todos.user:id,name,email',
-            'todos.assignedUser:id,name,email',
-            'rappels.user:id,name,email',
-            'rappels.assignedUsers:id,name,email',
-            'contenu.user:id,name'
+            'prestations.contenu.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'prestations.responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'todos.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'todos.assignedUser' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'rappels.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'rappels.assignedUsers' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'contenu.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
         ])->orderBy('created_at', 'desc')->get();
 
         return ClientResource::collection($clients)->response();
@@ -79,18 +93,28 @@ class ClientController extends Controller
         $this->authorize('view clients');
 
         $client = Client::with([
-            'prestations.contenu.user:id,name',
-            'prestations.responsable:id,name',
-            'todos.user:id,name,email,role,pole',
-            'todos.user.roles',
-            'todos.assignedUser:id,name,email,role,pole',
-            'todos.assignedUser.roles',
+            'prestations.contenu.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'prestations.responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'todos.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'todos.assignedUser' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
             'todos.client:id,societe',
-            'rappels.user:id,name,email,role,pole',
-            'rappels.user.roles',
-            'rappels.assignedUsers:id,name,email,role,pole',
-            'rappels.assignedUsers.roles',
-            'contenu.user:id,name',
+            'rappels.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'rappels.assignedUsers' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'contenu.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
         ])->findOrFail($id);
 
         return response()->json([
@@ -114,14 +138,28 @@ class ClientController extends Controller
         
         // ✅ Charger les relations pour le retour complet
         $client->load([
-            'prestations.contenu.user:id,name',
-            'prestations.responsable:id,name',
-            'todos.user:id,name,email',
-            'todos.assignedUser:id,name,email',
+            'prestations.contenu.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'prestations.responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'todos.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'todos.assignedUser' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
             'todos.client:id,societe',
-            'rappels.user:id,name,email',
-            'rappels.assignedUsers:id,name,email',
-            'contenu.user:id,name'
+            'rappels.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'rappels.assignedUsers' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            },
+            'contenu.user' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
         ]);
 
         // ✅ Retourner le client complet mis à jour

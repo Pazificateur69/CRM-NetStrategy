@@ -17,7 +17,12 @@ class PrestationController extends Controller
     {
         $this->authorize('view clients');
 
-        $prestations = Prestation::with(['client', 'responsable'])->get();
+        $prestations = Prestation::with([
+            'client',
+            'responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ])->get();
 
         return PrestationResource::collection($prestations)->response();
     }
@@ -45,9 +50,12 @@ class PrestationController extends Controller
 
         $prestation = Prestation::create($validated);
 
-        return (new PrestationResource($prestation->load(['client', 'responsable'])))
-            ->response()
-            ->setStatusCode(201);
+        return (new PrestationResource($prestation->load([
+            'client',
+            'responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ])))->response()->setStatusCode(201);
     }
 
     /**
@@ -57,7 +65,12 @@ class PrestationController extends Controller
     {
         $this->authorize('view clients');
 
-        $prestation->load(['client', 'responsable']);
+        $prestation->load([
+            'client',
+            'responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ]);
 
         return (new PrestationResource($prestation))->response();
     }
@@ -82,7 +95,12 @@ class PrestationController extends Controller
 
         $prestation->update($validated);
 
-        return (new PrestationResource($prestation->fresh(['client', 'responsable'])))->response();
+        return (new PrestationResource($prestation->fresh([
+            'client',
+            'responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ])))->response();
     }
 
     /**
@@ -107,6 +125,11 @@ class PrestationController extends Controller
 
         $prestation->update(['statut' => 'validee']);
 
-        return (new PrestationResource($prestation->fresh(['client', 'responsable'])))->response();
+        return (new PrestationResource($prestation->fresh([
+            'client',
+            'responsable' => function($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ])))->response();
     }
 }
