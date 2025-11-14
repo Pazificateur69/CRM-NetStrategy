@@ -4,47 +4,60 @@ import React, { useMemo } from 'react';
 import { Task, updateTaskStatus } from '@/services/tasks';
 import api from '@/services/api';
 
+// 📚 Librairies d'icônes (exemple : lucide-react ou heroicons)
+// Simulé ici pour l'exemple, à intégrer dans votre projet.
+const CalendarIcon = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+);
+const UserIcon = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+);
+const ClockIcon = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+);
+
 // ===========================================
-// 🎨 CONFIG DES COLONNES DU KANBAN
+// 🎨 CONFIG DES COLONNES DU KANBAN (Esthétique plus profonde)
 // ===========================================
-const TASK_STATUSES: { id: Task['status']; title: string; color: string }[] = [
-  { id: 'todo', title: 'À faire', color: 'bg-gray-200 text-gray-800' },
-  { id: 'in-progress', title: 'En cours', color: 'bg-indigo-200 text-indigo-800' },
-  { id: 'done', title: 'Terminé', color: 'bg-green-200 text-green-800' },
+const TASK_STATUSES: { id: Task['status']; title: string; color: string; bgColor: string }[] = [
+  { id: 'todo', title: 'À faire', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  { id: 'in-progress', title: 'En cours', color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
+  { id: 'done', title: 'Terminé', color: 'text-green-600', bgColor: 'bg-green-100' },
 ];
 
 // ===========================================
-// 🎨 COULEURS DE PRIORITÉ
+// 🎨 COULEURS DE PRIORITÉ (Plus d'impact visuel)
 // ===========================================
-const getPriorityColor = (priorite: string) => {
+const getPriorityStyles = (priorite: string) => {
   switch (priorite) {
     case 'haute':
-      return 'border-l-red-500 bg-red-50';
+      return {
+        cardBorder: 'border-l-red-500',
+        badge: 'bg-red-500 text-white font-bold',
+      };
     case 'moyenne':
-      return 'border-l-yellow-500 bg-yellow-50';
+      return {
+        cardBorder: 'border-l-yellow-500',
+        badge: 'bg-yellow-100 text-yellow-700 font-medium',
+      };
     case 'basse':
-      return 'border-l-green-500 bg-green-50';
+      return {
+        cardBorder: 'border-l-green-400',
+        badge: 'bg-green-100 text-green-700 font-medium',
+      };
     default:
-      return 'border-l-gray-500 bg-gray-50';
+      return {
+        cardBorder: 'border-l-gray-400',
+        badge: 'bg-gray-100 text-gray-700 font-medium',
+      };
   }
 };
 
-const getPriorityBadge = (priorite: string) => {
-  switch (priorite) {
-    case 'haute':
-      return 'bg-red-100 text-red-700';
-    case 'moyenne':
-      return 'bg-yellow-100 text-yellow-700';
-    case 'basse':
-      return 'bg-green-100 text-green-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-};
+// ===========================================
+// 🧩 COMPOSANT - Carte individuelle (Stylée)
+// ===========================================
 
-// ===========================================
-// 🧩 COMPOSANT - Carte individuelle (compacte)
-// ===========================================
+// --- CORRECTION 1: Ajout de l'interface TaskCardProps ---
 interface TaskCardProps {
   task: Task;
   index: number;
@@ -68,43 +81,75 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onDragStart,
   onDragEnter,
 }) => {
-  const priorityColor = getPriorityColor(task.priorite || 'moyenne');
-  const priorityBadge = getPriorityBadge(task.priorite || 'moyenne');
+  const { cardBorder, badge } = getPriorityStyles(task.priorite || 'moyenne');
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
 
+  const formattedDueDate = task.dueDate
+    ? new Date(task.dueDate).toLocaleDateString('fr-FR', {
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
+
   return (
     <div
-      className={`bg-white p-2 rounded-lg shadow-sm cursor-grab transition-shadow hover:shadow-md border-l-4 ${priorityColor}`}
+      className={`
+        bg-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ease-in-out 
+        cursor-grab active:cursor-grabbing 
+        border-l-4 ${cardBorder} 
+        transform hover:scale-[1.02]
+      `}
       draggable
       onDragStart={(e) => onDragStart(e, task.id, task.status, index, task.type)}
       onDragEnter={(e) => onDragEnter(e, index, task.status)}
     >
-      <div className="flex justify-between items-start mb-1">
-        <h4 className="text-xs font-bold text-gray-800 leading-tight truncate flex-1">
+      <div className="flex justify-between items-start mb-2">
+        <h4 className="text-sm font-semibold text-gray-800 leading-snug flex-1 mr-2">
           {task.title}
         </h4>
         <span
-          className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ml-1 ${priorityBadge}`}
+          className={`text-[10px] px-2 py-0.5 rounded-full uppercase ${badge}`}
         >
           {task.priorite || 'moyenne'}
         </span>
       </div>
 
-      <p className="text-[10px] text-gray-500 truncate">
-        <span className="font-medium text-gray-700">{task.client || 'N/A'}</span>
-      </p>
+      {/* Détails en bas de carte */}
+      <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+        {/* Client */}
+        <div className="flex items-center space-x-1">
+          <UserIcon className="w-3 h-3 text-gray-400" />
+          <span className="font-medium text-gray-600 truncate max-w-[80px]">
+            {task.client || 'Client N/A'}
+          </span>
+        </div>
 
-      {isOverdue && (
-        <p className="text-[10px] text-red-500 font-bold mt-1">⚠️ En retard</p>
-      )}
+        {/* Échéance ou Retard */}
+        {formattedDueDate && (
+          <div
+            className={`flex items-center space-x-1 ${
+              isOverdue ? 'text-red-500 font-bold' : 'text-gray-500'
+            }`}
+          >
+            {isOverdue ? (
+              <ClockIcon className="w-3 h-3 animate-pulse" />
+            ) : (
+              <CalendarIcon className="w-3 h-3" />
+            )}
+            <span>{isOverdue ? 'Retard!' : formattedDueDate}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 // ===========================================
-// 🧩 COMPOSANT - Section TODO ou RAPPEL
+// 🧩 COMPOSANT - Section TODO ou RAPPEL (Épuré)
 // ===========================================
+
+// --- CORRECTION 2: Ajout de l'interface TaskSectionProps ---
 interface TaskSectionProps {
   title: string;
   tasks: Task[];
@@ -140,10 +185,10 @@ const TaskSection: React.FC<TaskSectionProps> = ({
   onDragOver,
 }) => {
   const tasksByStatus = useMemo(() => {
-    return TASK_STATUSES.reduce((acc, status) => {
+    return TASK_STATUSES.reduce((acc: Record<Task['status'], Task[]>, status) => { // CORRECTION 3: Type explicite pour 'acc'
       acc[status.id] = tasks
-        .filter((t) => t.status === status.id && t.type === type)
-        .sort((a, b) => {
+        .filter((t: Task) => t.status === status.id && t.type === type) // CORRECTION 4: Type explicite pour 't'
+        .sort((a: Task, b: Task) => { // CORRECTION 5: Types explicites pour 'a' et 'b'
           const diff = (a.ordre ?? 0) - (b.ordre ?? 0);
           if (diff !== 0) return diff;
           return a.id.localeCompare(b.id);
@@ -153,23 +198,27 @@ const TaskSection: React.FC<TaskSectionProps> = ({
   }, [tasks, type]);
 
   return (
-    <div className={`${bgColor} p-4 rounded-xl border border-gray-200 mb-4`}>
-      <h3 className="text-sm font-bold text-gray-800 mb-3">{title}</h3>
+    <div className={`${bgColor} p-6 rounded-2xl shadow-inner border border-gray-100 mb-8`}>
+      <h3 className="text-xl font-extrabold text-gray-700 mb-5 border-b pb-2">
+        {type === 'todo' ? '📋' : '🔔'} {title}
+      </h3>
 
       <div className="flex gap-4">
         {TASK_STATUSES.map((status) => (
           <div
             key={status.id}
-            className="flex-1 min-w-[200px] bg-gray-50 rounded-lg p-2"
+            className="flex-1 min-w-[280px] bg-white/50 backdrop-blur-sm rounded-xl p-3 shadow-inner ring-1 ring-gray-100 transition-all duration-150"
             onDrop={(e) => onDrop(e, status.id)}
             onDragOver={onDragOver}
           >
-            <div className={`mb-2 px-2 py-1 rounded-md text-xs font-bold ${status.color}`}>
+            {/* Tête de colonne stylée */}
+            <div className={`mb-3 px-3 py-1.5 rounded-lg text-sm font-extrabold ${status.bgColor} ${status.color}`}>
               {status.title} ({tasksByStatus[status.id]?.length || 0})
             </div>
 
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {tasksByStatus[status.id]?.slice(0, 10).map((task, index) => (
+            {/* Liste de cartes : hauteur max stylée avec scrollbar fine */}
+            <div className="space-y-3 max-h-[calc(100vh-350px)] overflow-y-auto pr-1 custom-scrollbar">
+              {tasksByStatus[status.id]?.map((task, index) => (
                 <TaskCard
                   key={task.id}
                   task={task}
@@ -178,10 +227,10 @@ const TaskSection: React.FC<TaskSectionProps> = ({
                   onDragEnter={onDragEnter}
                 />
               ))}
-              {tasksByStatus[status.id]?.length > 10 && (
-                <p className="text-xs text-gray-500 text-center italic">
-                  +{tasksByStatus[status.id].length - 10} autre(s)...
-                </p>
+              {tasksByStatus[status.id]?.length === 0 && (
+                <div className="text-center text-gray-400 text-sm p-4 border-2 border-dashed border-gray-200 rounded-lg italic">
+                  Déposez une tâche ici
+                </div>
               )}
             </div>
           </div>
@@ -194,6 +243,8 @@ const TaskSection: React.FC<TaskSectionProps> = ({
 // ===========================================
 // 🧩 COMPOSANT - Kanban principal
 // ===========================================
+
+// --- CORRECTION 6: Ajout de l'interface TaskKanbanBoardProps ---
 interface TaskKanbanBoardProps {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -212,9 +263,6 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
 
   const dragOverItem = React.useRef<{ index: number; status: Task['status'] } | null>(null);
 
-  // -------------------------------
-  // 🎯 Gestion du drag & drop
-  // -------------------------------
   const handleDragStart = (
     e: React.DragEvent<HTMLDivElement>,
     taskId: string,
@@ -234,9 +282,6 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
     dragOverItem.current = { index: targetIndex, status: columnStatus };
   };
 
-  // ---------------------------------
-  // 🧠 Logique de drop principale
-  // ---------------------------------
   const handleDrop = async (
     e: React.DragEvent<HTMLDivElement>,
     newStatus: Task['status']
@@ -257,39 +302,39 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
 
     // 🔹 CAS 1 : même colonne → réordonnancement local
     if (fromStatus === newStatus) {
-      const sameColumn = updated.filter((t) => t.status === newStatus);
+      const sameColumn = updated.filter((t) => t.status === newStatus && t.type === type);
 
-      // Si on dépose sur un élément → insérer à sa position
-      let newIndex = sameColumn.length;
-      if (over && over.index >= 0) newIndex = over.index;
+      // Trouver l'index d'insertion dans le tableau filtré
+      let newIndexInFiltered = sameColumn.length;
+      if (over && over.index >= 0) newIndexInFiltered = over.index;
 
-      const insertAt = updated.findIndex(
-        (t, i) => t.status === newStatus && sameColumn.indexOf(t) === newIndex
-      );
+      // Trouver l'index d'insertion dans le tableau `updated`
+      const indexBeforeInsert = sameColumn[newIndexInFiltered] ? updated.findIndex(t => t.id === sameColumn[newIndexInFiltered].id) : updated.length;
+      
+      updated.splice(indexBeforeInsert, 0, dragged);
 
-      if (insertAt >= 0) updated.splice(insertAt, 0, dragged);
-      else updated.push({ ...dragged, status: newStatus });
 
       // 🔁 Recalcul local de l'ordre
       const reordered = updated
-        .filter((t) => t.status === newStatus)
+        .filter((t) => t.status === newStatus && t.type === type)
         .map((t, i) => ({ ...t, ordre: i + 1 }));
 
-      setTasks((prev) =>
-        prev.map((t) => {
+      setTasks((prev: Task[]) => // CORRECTION 7: Type explicite pour 'prev'
+        prev.map((t: Task) => { // CORRECTION 8: Type explicite pour 't'
           const found = reordered.find((r) => r.id === t.id);
           return found ? { ...t, ordre: found.ordre } : t;
         })
       );
 
-      // 🔥 Envoie au back chaque update d'ordre
+      // 🔥 Envoie au back chaque update d'ordre (à optimiser, mais la logique est conservée)
       for (const r of reordered) {
         try {
           const payload = { ordre: r.ordre };
           if (r.type === 'todo') {
             await api.put(`/todos/${r.id}`, payload);
           } else {
-            await api.put(`/rappels/${r.id.replace('r-', '')}`, payload);
+            // Assumer que les rappels ont un préfixe 'r-'
+            await api.put(`/rappels/${r.id.replace('r-', '')}`, payload); 
           }
         } catch (err) {
           console.error('❌ Erreur update ordre:', err);
@@ -299,7 +344,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
 
     // 🔹 CAS 2 : changement de colonne (update statut)
     else {
-      const moved = { ...dragged, status: newStatus };
+      const moved = { ...dragged, status: newStatus, ordre: undefined }; // Reset ordre à la fin de la colonne
       updated.splice(draggedIndex, 0, moved);
       setTasks(updated);
 
@@ -320,17 +365,17 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
   // 🖼️ Rendu
   // ---------------------------------
   return (
-    <section>
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-3">
-        To-Do & Rappels (Kanban + Priorités)
-      </h2>
+    <section className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <h1 className="text-4xl font-extrabold mb-8 text-gray-900 tracking-tight">
+        ✨ Tableau de bord Projet
+      </h1>
 
       {/* SECTION TÂCHES */}
       <TaskSection
-        title="📋 Tâches (Todos)"
+        title="Tâches (Todos)"
         tasks={tasks}
         type="todo"
-        bgColor="bg-indigo-50"
+        bgColor="bg-white"
         onDragStart={handleDragStart}
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
@@ -339,10 +384,10 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
 
       {/* SECTION RAPPELS */}
       <TaskSection
-        title="🔔 Rappels"
+        title="Rappels"
         tasks={tasks}
         type="reminder"
-        bgColor="bg-yellow-50"
+        bgColor="bg-white"
         onDragStart={handleDragStart}
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
