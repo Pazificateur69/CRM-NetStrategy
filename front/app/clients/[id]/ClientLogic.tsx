@@ -98,6 +98,7 @@ export interface UseClientLogicReturn {
   setShowEditModal: (v: boolean) => void;
   clientForm: ClientFormState;
   handleClientFieldChange: (field: keyof ClientFormState, value: string) => void;
+  handleInterlocuteursChange: (interlocuteurs: any[]) => void;
   handleCloseModal: () => void;
   handleSaveClient: () => Promise<void>;
   savingClient: boolean;
@@ -146,7 +147,7 @@ export function useClientLogic(): UseClientLogicReturn {
         societe: '', gerant: '', adresse: '', ville: '', code_postal: '', site_web: '',
         description_generale: '', lien_externe: '', emails: '', telephones: '', siret: '', contrat: '',
         date_contrat: '', date_echeance: '', montant_mensuel_total: '', frequence_facturation: '',
-        mode_paiement: '', iban: '', notes_comptables: '',
+        mode_paiement: '', iban: '', notes_comptables: '', interlocuteurs: [],
     });
 
     const reloadClient = useCallback(async () => {
@@ -181,6 +182,7 @@ export function useClientLogic(): UseClientLogicReturn {
             mode_paiement: details.mode_paiement ?? '',
             iban: details.iban ?? '',
             notes_comptables: details.notes_comptables ?? '',
+            interlocuteurs: details.interlocuteurs ?? [],
         });
     }, []);
 
@@ -489,8 +491,13 @@ export function useClientLogic(): UseClientLogicReturn {
         handleSaveClient: async () => {
             if (!client?.id) return;
             setSavingClient(true);
-            
+
             try {
+                // Nettoyer les interlocuteurs vides
+                const cleanedInterlocuteurs = clientForm.interlocuteurs.filter(
+                    i => i.nom.trim() !== '' && i.poste.trim() !== ''
+                );
+
                 const updateData = {
                     societe: clientForm.societe?.trim() || undefined,
                     gerant: clientForm.gerant?.trim() || undefined,
@@ -511,6 +518,7 @@ export function useClientLogic(): UseClientLogicReturn {
                     description_generale: clientForm.description_generale?.trim() || undefined,
                     notes_comptables: clientForm.notes_comptables?.trim() || undefined,
                     lien_externe: clientForm.lien_externe?.trim() || undefined,
+                    interlocuteurs: cleanedInterlocuteurs,
                 };
 
                 await updateClient(Number(client.id), updateData);
@@ -522,6 +530,9 @@ export function useClientLogic(): UseClientLogicReturn {
             } finally {
                 setSavingClient(false);
             }
+        },
+        handleInterlocuteursChange: (interlocuteurs: any[]) => {
+            setClientForm(prev => ({ ...prev, interlocuteurs }));
         },
         savingClient,
     };
