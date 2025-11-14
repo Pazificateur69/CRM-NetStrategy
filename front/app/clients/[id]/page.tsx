@@ -185,7 +185,6 @@ export default function ClientDetailPage() {
         {activeTab === 'informations' && (
           <ClientInfoDetails
             client={client}
-            canEdit={canEdit}
             reloadClient={reloadClient}
             newComment={newComment}
             setNewComment={setNewComment}
