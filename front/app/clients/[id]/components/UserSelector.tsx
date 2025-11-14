@@ -54,8 +54,8 @@ export default function UserSelector({
             
             // ✅ Filtrer côté client si nécessaire
             if (response.data && Array.isArray(response.data)) {
-              const filteredUsers = response.data.filter((u: UserOption) => 
-                !pole || u.pole?.toUpperCase() === pole.toUpperCase()
+              const filteredUsers = response.data.filter((u: UserOption) =>
+                !pole || u.pole?.toLowerCase() === pole.toLowerCase()
               );
               setUsers(filteredUsers);
               return;

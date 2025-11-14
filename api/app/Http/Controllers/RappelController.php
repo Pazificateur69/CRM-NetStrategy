@@ -19,8 +19,10 @@ class RappelController extends Controller
                 ->orderBy('created_at', 'asc')
                 ->get()
             : Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
-                ->whereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id))
-                ->orWhere('user_id', $user->id)
+                ->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                          ->orWhereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id));
+                })
                 ->orderBy('ordre')
                 ->orderBy('created_at', 'asc')
                 ->get();
@@ -107,7 +109,9 @@ class RappelController extends Controller
         }
 
         $user = $request->user();
-        if ($user->id !== $rappel->user_id && !$user->hasRole('admin')) {
+        // Autoriser le créateur, un utilisateur assigné ou un admin
+        $isAssigned = $rappel->assignedUsers()->where('user_id', $user->id)->exists();
+        if ($user->id !== $rappel->user_id && !$isAssigned && !$user->hasRole('admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
@@ -147,7 +151,9 @@ class RappelController extends Controller
     {
         $user = $request->user();
 
-        if ($user->id !== $rappel->user_id && !$user->hasRole('admin')) {
+        // Autoriser le créateur, un utilisateur assigné ou un admin
+        $isAssigned = $rappel->assignedUsers()->where('user_id', $user->id)->exists();
+        if ($user->id !== $rappel->user_id && !$isAssigned && !$user->hasRole('admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
@@ -169,7 +175,9 @@ class RappelController extends Controller
         $rappel = Rappel::findOrFail($id);
 
         $user = $request->user();
-        if ($user->id !== $rappel->user_id && !$user->hasRole('admin')) {
+        // Autoriser le créateur, un utilisateur assigné ou un admin
+        $isAssigned = $rappel->assignedUsers()->where('user_id', $user->id)->exists();
+        if ($user->id !== $rappel->user_id && !$isAssigned && !$user->hasRole('admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
