@@ -71,7 +71,7 @@ export default function ClientInfoDetails({
   newComment,
   setNewComment,
   handleAddComment,
-  
+
   editingCommentId,
   commentForm,
   startEditComment,
@@ -79,12 +79,14 @@ export default function ClientInfoDetails({
   handleUpdateComment,
   handleDeleteComment,
   savingComment,
-  
+
   filteredTodos,
   filteredRappels,
   userRole,
   ...activityHandlers
 }: ClientInfoDetailsProps) {
+  const [showAllComments, setShowAllComments] = React.useState(false);
+
   const activityProps = {
     filteredTodos,
     filteredRappels,
@@ -94,7 +96,12 @@ export default function ClientInfoDetails({
     ...activityHandlers,
   };
 
-  const comments = client.contenu?.filter((c: any) => c.type !== 'Fichier') || [];
+  // Inverser l'ordre des commentaires (plus récents en premier)
+  const allComments = (client.contenu?.filter((c: any) => c.type !== 'Fichier') || [])
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Afficher seulement les 3 plus récents par défaut
+  const comments = showAllComments ? allComments : allComments.slice(0, 3);
 
   return (
     <div className="space-y-8">
@@ -203,13 +210,14 @@ export default function ClientInfoDetails({
             Journal des Événements & Commentaires
           </h3>
           <p className="text-gray-100 text-sm mt-2">
-            {comments.length} {comments.length > 1 ? 'commentaires' : 'commentaire'}
+            {allComments.length} {allComments.length > 1 ? 'commentaires' : 'commentaire'}
+            {allComments.length > 3 && !showAllComments && <span className="ml-2 text-white/80">(affichage des 3 plus récents)</span>}
           </p>
         </div>
 
         <div className="p-8">
           {/* Liste des commentaires */}
-          {comments.length > 0 ? (
+          {allComments.length > 0 ? (
             <div className="space-y-4 mb-8">
               {comments.map((c: any, index: number) => (
                 <div
@@ -318,6 +326,32 @@ export default function ClientInfoDetails({
                   )}
                 </div>
               ))}
+
+              {/* Bouton "Voir plus" / "Voir moins" */}
+              {allComments.length > 3 && (
+                <div className="flex justify-center pt-4">
+                  <button
+                    onClick={() => setShowAllComments(!showAllComments)}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 font-semibold rounded-xl hover:from-indigo-200 hover:to-purple-200 transition-all duration-300 shadow-md hover:shadow-lg"
+                  >
+                    {showAllComments ? (
+                      <>
+                        <span>Voir moins</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </>
+                    ) : (
+                      <>
+                        <span>Voir {allComments.length - 3} commentaire{allComments.length - 3 > 1 ? 's' : ''} de plus</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             // État vide moderne
