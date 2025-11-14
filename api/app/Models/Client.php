@@ -31,12 +31,14 @@ class Client extends Model
         'description_generale',
         'notes_comptables',
         'lien_externe',
+        'liens_externes',
         'couleur_statut',
     ];
 
     protected $casts = [
         'emails' => 'array',
         'telephones' => 'array',
+        'liens_externes' => 'array',
         'date_contrat' => 'datetime',
         'date_echeance' => 'datetime',
         'montant_mensuel_total' => 'decimal:2',
