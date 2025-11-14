@@ -94,27 +94,27 @@ export interface RappelFormState {
 
 /**
  * Table de mapping centralisée pour harmoniser les valeurs de pôles dans tout le système
- * Convertit les IDs de tabs en valeurs de pôles normalisées
+ * Convertit les IDs de tabs en valeurs de pôles normalisées (lowercase pour correspondre au backend)
  */
 export const POLE_MAPPING = {
-  'pole-branding': 'BRANDING',
-  'pole-ads': 'ADS',
-  'pole-seo': 'SEO',
-  'pole-dev': 'DEV',
-  'pole-reseaux': 'RESEAUX_SOCIAUX',
-  'compta': 'COMPTABILITE',
+  'pole-branding': 'branding',
+  'pole-ads': 'ads',
+  'pole-seo': 'seo',
+  'pole-dev': 'dev',
+  'pole-reseaux': 'reseaux_sociaux',
+  'compta': 'comptabilite',
 } as const;
 
 /**
- * Options de pôles pour les sélecteurs (harmonisées)
+ * Options de pôles pour les sélecteurs (harmonisées avec le backend en lowercase)
  */
 export const POLE_OPTIONS = [
-  { value: 'BRANDING', label: 'Branding', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  { value: 'ADS', label: 'Publicité (Ads)', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  { value: 'SEO', label: 'SEO', color: 'bg-green-100 text-green-700 border-green-200' },
-  { value: 'DEV', label: 'Développement', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { value: 'RESEAUX_SOCIAUX', label: 'Réseaux Sociaux', color: 'bg-pink-100 text-pink-700 border-pink-200' },
-  { value: 'COMPTABILITE', label: 'Comptabilité', color: 'bg-teal-100 text-teal-700 border-teal-200' },
+  { value: 'branding', label: 'Branding', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  { value: 'ads', label: 'Publicité (Ads)', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+  { value: 'seo', label: 'SEO', color: 'bg-green-100 text-green-700 border-green-200' },
+  { value: 'dev', label: 'Développement', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  { value: 'reseaux_sociaux', label: 'Réseaux Sociaux', color: 'bg-pink-100 text-pink-700 border-pink-200' },
+  { value: 'comptabilite', label: 'Comptabilité', color: 'bg-teal-100 text-teal-700 border-teal-200' },
 ] as const;
 
 // ============================

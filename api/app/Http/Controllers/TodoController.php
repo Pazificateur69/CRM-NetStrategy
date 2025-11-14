@@ -114,7 +114,8 @@ class TodoController extends Controller
         }
 
         $user = $request->user();
-        if ($user->id !== $todo->user_id && !$user->hasRole('admin')) {
+        // Autoriser le créateur, l'utilisateur assigné ou un admin
+        if ($user->id !== $todo->user_id && $user->id !== $todo->assigned_to && !$user->hasRole('admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
@@ -151,7 +152,8 @@ class TodoController extends Controller
     {
         $user = $request->user();
 
-        if ($user->id !== $todo->user_id && !$user->hasRole('admin')) {
+        // Autoriser le créateur, l'utilisateur assigné ou un admin
+        if ($user->id !== $todo->user_id && $user->id !== $todo->assigned_to && !$user->hasRole('admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
