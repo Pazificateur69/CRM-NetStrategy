@@ -1,9 +1,10 @@
 // app/clients/[id]/components/ClientInfoDetails.tsx
 
 import React from 'react';
-import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles } from 'lucide-react';
+import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles, CheckSquare } from 'lucide-react';
 import { InfoCard } from '../ClientUtils';
 import ClientActivityStream from './ClientActivityStream';
+import ClientInterlocuteurs from './ClientInterlocuteurs';
 
 interface ClientInfoDetailsProps {
   client: any;
