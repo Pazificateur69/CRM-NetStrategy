@@ -48,37 +48,34 @@ const ClientRow: React.FC<ClientRowProps> = ({ client }) => {
     const clientLink = `/clients/${client.id}`;
 
     return (
-        <Link href={clientLink} passHref legacyBehavior>
-            <a className="grid grid-cols-12 items-center py-4 px-6 border-b border-gray-100 last:border-b-0 cursor-pointer 
+        <Link
+            href={clientLink}
+            className="grid grid-cols-12 items-center py-4 px-6 border-b border-gray-100 last:border-b-0 cursor-pointer 
                         hover:bg-indigo-50 transition duration-150 ease-in-out group focus:outline-none focus:ring-2 
                         focus:ring-indigo-500 focus:z-10">
-                
-                {/* Colonne 1: Société et Gérant */}
-                <div className="col-span-12 sm:col-span-4 lg:col-span-3">
-                    <p className="text-base font-semibold text-gray-900 truncate">{client.societe}</p>
-                    <p className="text-xs text-gray-500 sm:hidden lg:inline-block">Gérant: {client.gerant || 'N/A'}</p>
-                </div>
 
-                {/* Colonne 2: Gérant (Desktop) */}
-                <div className="hidden lg:col-span-2 lg:block">
-                    <p className="text-sm text-gray-700">{client.gerant || 'N/A'}</p>
-                </div>
+            {/* Colonne 1: Société et Gérant */}
+            <div className="col-span-12 sm:col-span-4 lg:col-span-3">
+                <p className="text-base font-semibold text-gray-900 truncate">{client.societe}</p>
+                <p className="text-xs text-gray-500 sm:hidden lg:inline-block">Gérant: {client.gerant || 'N/A'}</p>
+            </div>
+            {/* Colonne 2: Gérant (Desktop) */}
+            <div className="hidden lg:col-span-2 lg:block">
+                <p className="text-sm text-gray-700">{client.gerant || 'N/A'}</p>
+            </div>
+            {/* Colonne 3: Email */}
+            <div className="col-span-12 sm:col-span-4 lg:col-span-4 mt-2 sm:mt-0">
+                <p className="text-sm text-indigo-600 truncate">{client.emails[0] || 'N/A'}</p>
+            </div>
+            {/* Colonne 4: Date Contrat */}
+            <div className="col-span-6 sm:col-span-3 lg:col-span-2 mt-2 sm:mt-0">
+                <p className="text-sm font-medium text-gray-500">{formattedDate}</p>
+            </div>
+            {/* Colonne 5: Action (Flèche Cliquable) */}
+            <div className="col-span-6 sm:col-span-1 lg:col-span-1 flex justify-end">
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition" />
+            </div>
 
-                {/* Colonne 3: Email */}
-                <div className="col-span-12 sm:col-span-4 lg:col-span-4 mt-2 sm:mt-0">
-                    <p className="text-sm text-indigo-600 truncate">{client.emails[0] || 'N/A'}</p>
-                </div>
-
-                {/* Colonne 4: Date Contrat */}
-                <div className="col-span-6 sm:col-span-3 lg:col-span-2 mt-2 sm:mt-0">
-                    <p className="text-sm font-medium text-gray-500">{formattedDate}</p>
-                </div>
-
-                {/* Colonne 5: Action (Flèche Cliquable) */}
-                <div className="col-span-6 sm:col-span-1 lg:col-span-1 flex justify-end">
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition" />
-                </div>
-            </a>
         </Link>
     );
 };

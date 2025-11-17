@@ -59,6 +59,7 @@ interface InputFieldProps {
     placeholder?: string;
     required?: boolean;
     error?: string;
+    name?: string;
 }
 
 const InputField: React.FC<InputFieldProps> = ({ 
@@ -72,10 +73,11 @@ const InputField: React.FC<InputFieldProps> = ({
     placeholder,
     required = false,
     error,
+    name,
 }) => {
     const isTextarea = !!rows;
     const InputComponent = isTextarea ? 'textarea' : 'input';
-    const fieldName = label.toLowerCase().replace(/ /g, '_');
+    const fieldName = name || label.toLowerCase().replace(/ /g, '_');
 
     return (
         <div className="group">
@@ -93,10 +95,10 @@ const InputField: React.FC<InputFieldProps> = ({
                     rows={rows}
                     placeholder={placeholder}
                     required={required}
-                    className={`w-full border-2 ${error ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-indigo-500'} rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-gray-300 bg-white`}
+                    className={`w-full border-2 ${error ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-indigo-500'} rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-gray-300 bg-white relative z-10`}
                 />
                 {!isTextarea && (
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity z-0">
                         <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
                     </div>
                 )}
@@ -179,89 +181,91 @@ export default function CreateClientPage() {
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        // La convention de nommage des inputs (label.toLowerCase().replace(/ /g, '_')) correspond aux clés de ClientFormState
-        setFormData(prev => ({ ...prev, [name as keyof ClientFormState]: value }));
         
         // Effacer l'erreur lors de la saisie si elle existe
         if (errors[name]) {
              setErrors(prev => ({ ...prev, [name]: [] })); 
         }
 
-        // Mise à jour de l'interlocuteur principal (le gérant) en temps réel
-        if (name === 'gerant' || name === 'emails' || name === 'telephones') {
-            setFormData(prev => {
-                const updatedInterlocuteurs = prev.interlocuteurs.map(i => 
+        // Mise à jour du formulaire ET de l'interlocuteur en un seul appel
+        setFormData(prev => {
+            const updatedData = { ...prev, [name as keyof ClientFormState]: value };
+            
+            // Mise à jour de l'interlocuteur principal (le gérant) en temps réel
+            if (name === 'gerant' || name === 'emails' || name === 'telephones') {
+                updatedData.interlocuteurs = prev.interlocuteurs.map(i => 
                     i.poste === 'gerant' ? { 
                         ...i, 
-                        nom: name === 'gerant' ? value : i.nom,
+                        nom: name === 'gerant' ? value : (prev.gerant || i.nom),
                         email: name === 'emails' ? value.split(',')[0]?.trim() || undefined : i.email, 
                         telephone: name === 'telephones' ? value.split(',')[0]?.trim() || undefined : i.telephone, 
                     } : i
                 );
-                return { ...prev, interlocuteurs: updatedInterlocuteurs };
-            });
-        }
+            }
+            
+            return updatedData;
+        });
     }, [errors]);
     
 
     const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrors({});
-    setSuccess('');
-    
-    // Préparation du payload avec garantie des champs obligatoires
-    const payload = {
-        // Champs obligatoires (toujours présents)
-        societe: formData.societe,
-        gerant: formData.gerant,
-        emails: formData.emails.split(',').map(s => s.trim()).filter(s => s),
-        telephones: formData.telephones.split(',').map(s => s.trim()).filter(s => s),
-        // Champs optionnels (ajoutés seulement s'ils ont une valeur)
-        ...(formData.siret.trim() && { siret: formData.siret.trim() }),
-        ...(formData.site_web.trim() && { site_web: formData.site_web.trim() }),
-        ...(formData.adresse.trim() && { adresse: formData.adresse.trim() }),
-        ...(formData.code_postal.trim() && { code_postal: formData.code_postal.trim() }),
-        ...(formData.ville.trim() && { ville: formData.ville.trim() }),
-        ...(formData.contrat.trim() && { contrat: formData.contrat.trim() }),
-        ...(formData.montant_mensuel_total.trim() && { montant_mensuel_total: formData.montant_mensuel_total.trim() }),
-        ...(formData.date_contrat.trim() && { date_contrat: formData.date_contrat.trim() }),
-        ...(formData.date_echeance.trim() && { date_echeance: formData.date_echeance.trim() }),
-        ...(formData.frequence_facturation.trim() && { frequence_facturation: formData.frequence_facturation.trim() }),
-        ...(formData.mode_paiement.trim() && { mode_paiement: formData.mode_paiement.trim() }),
-        ...(formData.iban.trim() && { iban: formData.iban.trim() }),
-        ...(formData.description_generale.trim() && { description_generale: formData.description_generale.trim() }),
-        ...(formData.notes_comptables.trim() && { notes_comptables: formData.notes_comptables.trim() }),
-    };
-
-    // Interlocuteurs (gérant + autres)
-    const validInterlocuteurs = formData.interlocuteurs.filter(i => i.nom && i.poste);
-    if (validInterlocuteurs.length > 0) {
-        (payload as any).interlocuteurs = validInterlocuteurs;
-    }
-
-    try {
-        const newClient = await createClient(payload as any);
+        e.preventDefault();
+        setLoading(true);
+        setErrors({});
+        setSuccess('');
         
-        setSuccess(`Client "${newClient.societe}" créé avec succès !`);
-        
-        // Redirection après succès
-        setTimeout(() => {
-            router.push(`/clients/${newClient.id}`);
-        }, 1000);
+        // Préparation du payload avec garantie des champs obligatoires
+        const payload = {
+            // Champs obligatoires (toujours présents)
+            societe: formData.societe,
+            gerant: formData.gerant,
+            emails: formData.emails.split(',').map(s => s.trim()).filter(s => s),
+            telephones: formData.telephones.split(',').map(s => s.trim()).filter(s => s),
+            // Champs optionnels (ajoutés seulement s'ils ont une valeur)
+            ...(formData.siret.trim() && { siret: formData.siret.trim() }),
+            ...(formData.site_web.trim() && { site_web: formData.site_web.trim() }),
+            ...(formData.adresse.trim() && { adresse: formData.adresse.trim() }),
+            ...(formData.code_postal.trim() && { code_postal: formData.code_postal.trim() }),
+            ...(formData.ville.trim() && { ville: formData.ville.trim() }),
+            ...(formData.contrat.trim() && { contrat: formData.contrat.trim() }),
+            ...(formData.montant_mensuel_total.trim() && { montant_mensuel_total: formData.montant_mensuel_total.trim() }),
+            ...(formData.date_contrat.trim() && { date_contrat: formData.date_contrat.trim() }),
+            ...(formData.date_echeance.trim() && { date_echeance: formData.date_echeance.trim() }),
+            ...(formData.frequence_facturation.trim() && { frequence_facturation: formData.frequence_facturation.trim() }),
+            ...(formData.mode_paiement.trim() && { mode_paiement: formData.mode_paiement.trim() }),
+            ...(formData.iban.trim() && { iban: formData.iban.trim() }),
+            ...(formData.description_generale.trim() && { description_generale: formData.description_generale.trim() }),
+            ...(formData.notes_comptables.trim() && { notes_comptables: formData.notes_comptables.trim() }),
+        };
 
-    } catch (err: any) {
-        console.error("Erreur de création de client:", err);
-        if (err.response && err.response.status === 422) {
-            // Gestion des erreurs de validation (ex: 'emails.0', 'societe')
-            setErrors(err.response.data.errors);
-        } else {
-            setErrors({ general: [err.response?.data?.message || "Une erreur inattendue est survenue lors de la création."] });
+        // Interlocuteurs (gérant + autres)
+        const validInterlocuteurs = formData.interlocuteurs.filter(i => i.nom && i.poste);
+        if (validInterlocuteurs.length > 0) {
+            (payload as any).interlocuteurs = validInterlocuteurs;
         }
-    } finally {
-        setLoading(false);
-    }
-};
+
+        try {
+            const newClient = await createClient(payload as any);
+            
+            setSuccess(`Client "${newClient.societe}" créé avec succès !`);
+            
+            // Redirection après succès
+            setTimeout(() => {
+                router.push(`/clients/${newClient.id}`);
+            }, 1000);
+
+        } catch (err: any) {
+            console.error("Erreur de création de client:", err);
+            if (err.response && err.response.status === 422) {
+                // Gestion des erreurs de validation (ex: 'emails.0', 'societe')
+                setErrors(err.response.data.errors);
+            } else {
+                setErrors({ general: [err.response?.data?.message || "Une erreur inattendue est survenue lors de la création."] });
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Fonction pour récupérer l'erreur, gérant les formats du backend ('field' ou 'field.0')
     const getError = (field: keyof ClientFormState | 'general') => errors[field]?.[0] || errors[`${field}.0`]?.[0] || '';
@@ -303,6 +307,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Building}
                                     label="Société"
+                                    name="societe"
                                     value={formData.societe}
                                     onChange={handleChange}
                                     placeholder="Nom de l'entreprise"
@@ -313,6 +318,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={User}
                                     label="Gérant"
+                                    name="gerant"
                                     value={formData.gerant}
                                     onChange={handleChange}
                                     placeholder="Nom du gérant"
@@ -323,6 +329,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Hash}
                                     label="SIRET"
+                                    name="siret"
                                     value={formData.siret}
                                     onChange={handleChange}
                                     placeholder="XXX XXX XXX XXXXX"
@@ -332,6 +339,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Globe}
                                     label="Site Web"
+                                    name="site_web"
                                     value={formData.site_web}
                                     onChange={handleChange}
                                     placeholder="https://www.exemple.com"
@@ -346,6 +354,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Mail}
                                     label="Adresses Email"
+                                    name="emails"
                                     value={formData.emails}
                                     onChange={handleChange}
                                     rows={2}
@@ -358,6 +367,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Phone}
                                     label="Numéros de Téléphone"
+                                    name="telephones"
                                     value={formData.telephones}
                                     onChange={handleChange}
                                     rows={2}
@@ -376,6 +386,7 @@ export default function CreateClientPage() {
                                     <InputField
                                         icon={MapPin}
                                         label="Adresse"
+                                        name="adresse"
                                         value={formData.adresse}
                                         onChange={handleChange}
                                         placeholder="123 Rue Exemple"
@@ -385,6 +396,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Hash}
                                     label="Code Postal"
+                                    name="code_postal"
                                     value={formData.code_postal}
                                     onChange={handleChange}
                                     placeholder="69000"
@@ -394,6 +406,7 @@ export default function CreateClientPage() {
                                     <InputField
                                         icon={Building}
                                         label="Ville"
+                                        name="ville"
                                         value={formData.ville}
                                         onChange={handleChange}
                                         placeholder="Lyon"
@@ -409,6 +422,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={FileText}
                                     label="Type de Contrat"
+                                    name="contrat"
                                     value={formData.contrat}
                                     onChange={handleChange}
                                     placeholder="Ex: Maintenance, Abonnement..."
@@ -417,6 +431,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Euro}
                                     label="Montant Mensuel Total (€)"
+                                    name="montant_mensuel_total"
                                     value={formData.montant_mensuel_total}
                                     onChange={handleChange}
                                     placeholder="1500"
@@ -426,6 +441,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Repeat}
                                     label="Fréquence de Facturation"
+                                    name="frequence_facturation"
                                     value={formData.frequence_facturation}
                                     onChange={handleChange}
                                     placeholder="Ex: Mensuelle, Trimestrielle..."
@@ -434,6 +450,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Calendar}
                                     label="Date de Contrat"
+                                    name="date_contrat"
                                     value={formData.date_contrat}
                                     onChange={handleChange}
                                     type="date"
@@ -443,6 +460,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Calendar}
                                     label="Date d'Échéance"
+                                    name="date_echeance"
                                     value={formData.date_echeance}
                                     onChange={handleChange}
                                     type="date"
@@ -451,6 +469,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Wallet}
                                     label="Mode de Paiement"
+                                    name="mode_paiement"
                                     value={formData.mode_paiement}
                                     onChange={handleChange}
                                     placeholder="Ex: Virement, Prélèvement..."
@@ -460,6 +479,7 @@ export default function CreateClientPage() {
                                     <InputField
                                         icon={CreditCard}
                                         label="IBAN"
+                                        name="iban"
                                         value={formData.iban}
                                         onChange={handleChange}
                                         placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX"
@@ -474,6 +494,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={FileText}
                                     label="Description Générale"
+                                    name="description_generale"
                                     value={formData.description_generale}
                                     onChange={handleChange}
                                     rows={4}
@@ -482,6 +503,7 @@ export default function CreateClientPage() {
                                 <InputField
                                     icon={Euro}
                                     label="Notes Comptables"
+                                    name="notes_comptables"
                                     value={formData.notes_comptables}
                                     onChange={handleChange}
                                     rows={4}
