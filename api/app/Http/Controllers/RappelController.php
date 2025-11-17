@@ -69,6 +69,10 @@ class RappelController extends Controller
         $user = $request->user();
         $maxOrdre = Rappel::where('user_id', $user->id)->max('ordre') ?? 0;
 
+        $firstAssignedUser = !empty($validated['assigned_users'])
+            ? User::find($validated['assigned_users'][0])
+            : null;
+
         $rappel = new Rappel([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
@@ -78,7 +82,7 @@ class RappelController extends Controller
             'statut' => 'planifie',
             'ordre' => $maxOrdre + 1,
             'user_id' => $user->id,
-            'pole' => $validated['pole'] ?? $user->pole ?? null,
+            'pole' => $validated['pole'] ?? $firstAssignedUser?->pole ?? $user->pole ?? null,
             'client_id' => $validated['client_id'] ?? null,
         ]);
 
@@ -125,7 +129,18 @@ class RappelController extends Controller
             'ordre' => 'nullable|integer',
             'assigned_users' => 'nullable|array',
             'assigned_users.*' => 'integer|exists:users,id',
+            'pole' => 'nullable|string|max:100',
         ]);
+
+        $firstAssignedUser = isset($validated['assigned_users'][0])
+            ? User::find($validated['assigned_users'][0])
+            : ($rappel->assignedUsers()->first());
+
+        $newPole = $validated['pole']
+            ?? $firstAssignedUser?->pole
+            ?? $rappel->pole
+            ?? $user->pole
+            ?? null;
 
         $rappel->update(array_filter([
             'titre' => $validated['titre'] ?? $rappel->titre,
@@ -135,6 +150,7 @@ class RappelController extends Controller
             'fait' => $validated['fait'] ?? $rappel->fait,
             'date_rappel' => $validated['date_rappel'] ?? $rappel->date_rappel,
             'ordre' => $validated['ordre'] ?? $rappel->ordre,
+            'pole' => $newPole,
         ]));
 
         if (isset($validated['assigned_users'])) {
