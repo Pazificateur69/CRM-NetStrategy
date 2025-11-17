@@ -78,6 +78,10 @@ class TodoController extends Controller
         $user = $request->user();
         $maxOrdre = Todo::where('user_id', $user->id)->max('ordre') ?? 0;
 
+        $assignedUser = isset($validated['assigned_to'])
+            ? User::find($validated['assigned_to'])
+            : null;
+
         $todo = new Todo([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
@@ -87,7 +91,7 @@ class TodoController extends Controller
             'ordre' => $maxOrdre + 1,
             'user_id' => $user->id,
             'client_id' => $validated['client_id'],
-            'pole' => $validated['pole'] ?? $user->pole ?? null,
+            'pole' => $validated['pole'] ?? $assignedUser?->pole ?? $user->pole ?? null,
             'assigned_to' => $validated['assigned_to'] ?? null,
             'todoable_type' => Client::class,
             'todoable_id' => $validated['client_id'],
@@ -127,7 +131,18 @@ class TodoController extends Controller
             'date_echeance' => 'nullable|date',
             'ordre' => 'nullable|integer',
             'assigned_to' => 'nullable|integer|exists:users,id',
+            'pole' => 'nullable|string|max:100',
         ]);
+
+        $assignedUser = isset($validated['assigned_to'])
+            ? User::find($validated['assigned_to'])
+            : $todo->assignedUser;
+
+        $newPole = $validated['pole']
+            ?? ($assignedUser?->pole)
+            ?? $todo->pole
+            ?? $user->pole
+            ?? null;
 
         $todo->update(array_filter([
             'titre' => $validated['titre'] ?? $todo->titre,
@@ -137,6 +152,7 @@ class TodoController extends Controller
             'date_echeance' => $validated['date_echeance'] ?? $todo->date_echeance,
             'ordre' => $validated['ordre'] ?? $todo->ordre,
             'assigned_to' => $validated['assigned_to'] ?? $todo->assigned_to,
+            'pole' => $newPole,
         ]));
 
         return response()->json([
