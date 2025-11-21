@@ -1,7 +1,7 @@
 // app/clients/[id]/components/ClientInfoDetails.tsx
 
-import React from 'react';
-import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles, CheckSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles, CheckSquare, Plus, DollarSign } from 'lucide-react';
 import { InfoCard } from '../ClientUtils';
 import ClientActivityStream from './ClientActivityStream';
 import ClientInterlocuteurs from './ClientInterlocuteurs';
@@ -26,6 +26,8 @@ interface ClientInfoDetailsProps {
   filteredTodos: any[];
   filteredRappels: any[];
   userRole: string;
+  currentUserId?: number;
+  currentUserName?: string;
   newTodo: any;
   setNewTodo: any;
   handleAddTodo: any;
@@ -87,9 +89,27 @@ export default function ClientInfoDetails({
   filteredTodos,
   filteredRappels,
   userRole,
+  currentUserId,
+  currentUserName,
   ...activityHandlers
 }: ClientInfoDetailsProps) {
-  const [showAllComments, setShowAllComments] = React.useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
+  
+  // États pour l'édition de la présentation
+  const [isEditingPresentation, setIsEditingPresentation] = useState(false);
+  const [presentationForm, setPresentationForm] = useState('');
+  const [savingPresentation, setSavingPresentation] = useState(false);
+
+  // États pour les prestations
+  const [isAddingPrestation, setIsAddingPrestation] = useState(false);
+  const [editingPrestationId, setEditingPrestationId] = useState<number | null>(null);
+  const [prestationForm, setPrestationForm] = useState({
+    type: '',
+    description: '',
+    montant: '',
+    frequence: ''
+  });
+  const [savingPrestation, setSavingPrestation] = useState(false);
 
   const activityProps = {
     filteredTodos,
@@ -97,6 +117,8 @@ export default function ClientInfoDetails({
     canEdit,
     activePoleLabel: 'Global',
     userRole,
+    currentUserId,
+    currentUserName,
     ...activityHandlers,
   };
 
@@ -115,6 +137,125 @@ export default function ClientInfoDetails({
     } catch (error) {
       console.error('Erreur lors de la mise à jour des interlocuteurs:', error);
       throw error;
+    }
+  };
+
+  // ========== GESTION DE LA PRÉSENTATION ==========
+  const startEditPresentation = () => {
+    setPresentationForm(client.description_generale || '');
+    setIsEditingPresentation(true);
+  };
+
+  const cancelEditPresentation = () => {
+    setPresentationForm('');
+    setIsEditingPresentation(false);
+  };
+
+  const handleSavePresentation = async () => {
+    try {
+      setSavingPresentation(true);
+      await updateClient(Number(client.id), { 
+        description_generale: presentationForm.trim() 
+      });
+      await reloadClient();
+      setIsEditingPresentation(false);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la présentation:', error);
+      alert('Erreur lors de la sauvegarde');
+    } finally {
+      setSavingPresentation(false);
+    }
+  };
+
+  // ========== GESTION DES PRESTATIONS ==========
+  const resetPrestationForm = () => {
+    setPrestationForm({
+      type: '',
+      description: '',
+      montant: '',
+      frequence: ''
+    });
+    setIsAddingPrestation(false);
+    setEditingPrestationId(null);
+  };
+
+  const startAddPrestation = () => {
+    resetPrestationForm();
+    setIsAddingPrestation(true);
+  };
+
+  const startEditPrestation = (prestation: any) => {
+    setPrestationForm({
+      type: prestation.type || '',
+      description: prestation.description || '',
+      montant: prestation.montant?.toString() || '',
+      frequence: prestation.frequence || ''
+    });
+    setEditingPrestationId(prestation.id);
+    setIsAddingPrestation(false);
+  };
+
+  const handleSavePrestation = async () => {
+    if (!prestationForm.type.trim()) {
+      alert('Veuillez saisir le type de prestation');
+      return;
+    }
+
+    try {
+      setSavingPrestation(true);
+      const currentPrestations = client.prestations || [];
+      
+      let updatedPrestations;
+      if (editingPrestationId) {
+        // Modification
+        updatedPrestations = currentPrestations.map((p: any) =>
+          p.id === editingPrestationId
+            ? {
+                ...p,
+                type: prestationForm.type.trim(),
+                description: prestationForm.description.trim(),
+                montant: prestationForm.montant ? parseFloat(prestationForm.montant) : null,
+                frequence: prestationForm.frequence.trim() || null
+              }
+            : p
+        );
+      } else {
+        // Ajout
+        const newPrestation = {
+          id: Date.now(), // ID temporaire
+          type: prestationForm.type.trim(),
+          description: prestationForm.description.trim(),
+          montant: prestationForm.montant ? parseFloat(prestationForm.montant) : null,
+          frequence: prestationForm.frequence.trim() || null
+        };
+        updatedPrestations = [...currentPrestations, newPrestation];
+      }
+
+      await updateClient(Number(client.id), { prestations: updatedPrestations });
+      await reloadClient();
+      resetPrestationForm();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de la prestation:', error);
+      alert('Erreur lors de la sauvegarde');
+    } finally {
+      setSavingPrestation(false);
+    }
+  };
+
+  const handleDeletePrestation = async (prestationId: number) => {
+    if (!confirm('Voulez-vous vraiment supprimer cette prestation ?')) {
+      return;
+    }
+
+    try {
+      const updatedPrestations = (client.prestations || []).filter(
+        (p: any) => p.id !== prestationId
+      );
+      await updateClient(Number(client.id), { prestations: updatedPrestations });
+      await reloadClient();
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la prestation:', error);
+      alert('Erreur lors de la suppression');
     }
   };
 
@@ -174,33 +315,83 @@ export default function ClientInfoDetails({
 
           {/* Profil Client Complet - Présentation & Prestations */}
           <div className="space-y-6">
-            {/* Présentation du Client */}
-            <div className="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-2xl p-6 border border-indigo-100 overflow-hidden">
+            {/* Présentation du Client - ÉDITABLE */}
+            <div className="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-2xl p-6 border border-indigo-100 overflow-hidden group">
               <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-200 rounded-full opacity-10 -mr-20 -mt-20" />
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200 rounded-full opacity-10 -ml-16 -mb-16" />
 
               <div className="relative">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-indigo-600 rounded-lg">
-                    <FileText className="w-5 h-5 text-white" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-600 rounded-lg">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-indigo-900">
+                      Présentation du Client
+                    </h3>
                   </div>
-                  <h3 className="text-lg font-bold text-indigo-900">
-                    Présentation du Client
-                  </h3>
+                  
+                  {canEdit && !isEditingPresentation && (
+                    <button
+                      onClick={startEditPresentation}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Modifier
+                    </button>
+                  )}
                 </div>
-                {client.description_generale ? (
-                  <p className="text-gray-700 leading-relaxed text-sm">{client.description_generale}</p>
-                ) : (
-                  <div className="flex items-center gap-3 text-gray-500 italic text-sm">
-                    <div className="w-1 h-12 bg-gray-300 rounded-full" />
-                    <p>Aucune présentation n'a encore été renseignée pour ce client.</p>
+
+                {isEditingPresentation ? (
+                  // Mode édition
+                  <div className="space-y-4">
+                    <textarea
+                      value={presentationForm}
+                      onChange={(e) => setPresentationForm(e.target.value)}
+                      className="w-full border-2 border-indigo-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white resize-none"
+                      rows={6}
+                      placeholder="Décrivez votre client, son activité, ses besoins, etc."
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleSavePresentation}
+                        disabled={savingPresentation}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all duration-200 font-medium"
+                      >
+                        {savingPresentation ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        Enregistrer
+                      </button>
+                      <button
+                        onClick={cancelEditPresentation}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium"
+                      >
+                        <X className="w-4 h-4" />
+                        Annuler
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  // Mode affichage
+                  <>
+                    {client.description_generale ? (
+                      <p className="text-gray-700 leading-relaxed text-sm">{client.description_generale}</p>
+                    ) : (
+                      <div className="flex items-center gap-3 text-gray-500 italic text-sm">
+                        <div className="w-1 h-12 bg-gray-300 rounded-full" />
+                        <p>Aucune présentation n'a encore été renseignée pour ce client.</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
 
-            {/* Prestations Validées */}
-            <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-50 rounded-2xl p-6 border border-emerald-100 overflow-hidden">
+            {/* Prestations Validées - ÉDITABLE */}
+            <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-50 rounded-2xl p-6 border border-emerald-100 overflow-hidden group">
               <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-200 rounded-full opacity-10 -mr-20 -mt-20" />
 
               <div className="relative">
@@ -213,17 +404,111 @@ export default function ClientInfoDetails({
                       Prestations Validées
                     </h3>
                   </div>
-                  <span className="px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-full">
-                    {client.prestations?.length || 0} service{(client.prestations?.length || 0) > 1 ? 's' : ''}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-full">
+                      {client.prestations?.length || 0} service{(client.prestations?.length || 0) > 1 ? 's' : ''}
+                    </span>
+                    {canEdit && !isAddingPrestation && !editingPrestationId && (
+                      <button
+                        onClick={startAddPrestation}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Ajouter
+                      </button>
+                    )}
+                  </div>
                 </div>
 
+                {/* Formulaire d'ajout/édition de prestation */}
+                {(isAddingPrestation || editingPrestationId) && (
+                  <div className="bg-white rounded-xl p-5 border-2 border-emerald-300 mb-4">
+                    <h4 className="font-semibold text-emerald-900 mb-4 flex items-center gap-2">
+                      <CheckSquare className="w-4 h-4" />
+                      {editingPrestationId ? 'Modifier la prestation' : 'Nouvelle prestation'}
+                    </h4>
+                    <div className="grid gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Type de prestation <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={prestationForm.type}
+                          onChange={(e) => setPrestationForm({ ...prestationForm, type: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          placeholder="ex: Développement web, SEO, Community Management..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                        <textarea
+                          value={prestationForm.description}
+                          onChange={(e) => setPrestationForm({ ...prestationForm, description: e.target.value })}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                          rows={2}
+                          placeholder="Détails de la prestation..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Montant (€)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={prestationForm.montant}
+                            onChange={(e) => setPrestationForm({ ...prestationForm, montant: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Fréquence</label>
+                          <select
+                            value={prestationForm.frequence}
+                            onChange={(e) => setPrestationForm({ ...prestationForm, frequence: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          >
+                            <option value="">Sélectionner</option>
+                            <option value="Unique">Unique</option>
+                            <option value="Mensuel">Mensuel</option>
+                            <option value="Trimestriel">Trimestriel</option>
+                            <option value="Annuel">Annuel</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleSavePrestation}
+                          disabled={savingPrestation}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all duration-200 font-medium"
+                        >
+                          {savingPrestation ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                          Enregistrer
+                        </button>
+                        <button
+                          onClick={resetPrestationForm}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium"
+                        >
+                          <X className="w-4 h-4" />
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Liste des prestations */}
                 {client.prestations && client.prestations.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {client.prestations.map((prestation: any) => (
                       <div
                         key={prestation.id}
-                        className="flex items-start gap-3 bg-white rounded-xl p-4 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                        className="group/item relative flex items-start gap-3 bg-white rounded-xl p-4 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                       >
                         <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                           <CheckSquare className="w-4 h-4 text-emerald-600" />
@@ -233,12 +518,13 @@ export default function ClientInfoDetails({
                             {prestation.type}
                           </h4>
                           {prestation.description && (
-                            <p className="text-xs text-gray-600 line-clamp-2">
+                            <p className="text-xs text-gray-600 line-clamp-2 mb-2">
                               {prestation.description}
                             </p>
                           )}
                           {prestation.montant && (
-                            <p className="text-xs text-emerald-700 font-semibold mt-2">
+                            <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
                               {new Intl.NumberFormat('fr-FR', {
                                 style: 'currency',
                                 currency: 'EUR'
@@ -247,6 +533,24 @@ export default function ClientInfoDetails({
                             </p>
                           )}
                         </div>
+                        {canEdit && (
+                          <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => startEditPrestation(prestation)}
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              title="Modifier"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePrestation(prestation.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

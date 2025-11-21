@@ -1,5 +1,5 @@
 // app/clients/[id]/components/ClientActivityStream.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Calendar,
   CheckSquare,
@@ -16,13 +16,15 @@ import {
   CheckCircle2,
   Circle,
   Plus,
+  UserCheck,
+  CalendarPlus,
 } from 'lucide-react';
 import {
   formatDate,
   formatDateTime,
   TodoFormState,
   RappelFormState,
-  POLE_OPTIONS // ✅ NOUVEAU : Import des options centralisées
+  POLE_OPTIONS // ✅ Import des options centralisées
 } from '../ClientUtils';
 import UserSelector from './UserSelector'; 
 
@@ -46,7 +48,9 @@ export interface ClientActivityStreamProps {
   filteredRappels: any[];
   canEdit: boolean;
   activePoleLabel: string; 
-  userRole: string; 
+  userRole: string;
+  currentUserId?: number; // ✅ ID de l'utilisateur connecté
+  currentUserName?: string; // ✅ Nom de l'utilisateur connecté
 
   newTodo: NewTodoState;
   setNewTodo: React.Dispatch<React.SetStateAction<NewTodoState>>;
@@ -78,7 +82,9 @@ export default function ClientActivityStream({
   filteredRappels,
   canEdit,
   activePoleLabel,
-  userRole, 
+  userRole,
+  currentUserId,
+  currentUserName,
 
   newTodo,
   setNewTodo,
@@ -105,6 +111,9 @@ export default function ClientActivityStream({
   savingRappel,
 }: ClientActivityStreamProps) {
   
+  const [todoValidationError, setTodoValidationError] = useState<string>('');
+  const [rappelValidationError, setRappelValidationError] = useState<string>('');
+
   const activeLabelLower = activePoleLabel.toLowerCase();
   const isGlobalView = activeLabelLower.includes('détail') || activeLabelLower.includes('global'); 
   
@@ -117,8 +126,56 @@ export default function ClientActivityStream({
   const updateRappelForm = (key: keyof RappelFormState, value: any) =>
     setRappelForm((prev: RappelFormState) => ({ ...prev, [key]: value }));
 
-  // ✅ SUPPRIMÉ : Ancienne définition locale de poleOptions
-  // On utilise maintenant POLE_OPTIONS importé depuis ClientUtils
+  // ✅ Fonction pour s'auto-attribuer une tâche
+  const handleAutoAssignTodo = () => {
+    if (currentUserId) {
+      setNewTodo({ ...newTodo, assigned_to: currentUserId });
+    }
+  };
+
+  // ✅ Fonction pour s'auto-attribuer un rappel
+  const handleAutoAssignRappel = () => {
+    if (currentUserId) {
+      const currentUsers = newRappel.assigned_users || [];
+      if (!currentUsers.includes(currentUserId)) {
+        setNewRappel({ ...newRappel, assigned_users: [...currentUsers, currentUserId] });
+      }
+    }
+  };
+
+  // ✅ Fonction pour reporter un rappel de X jours
+  const handlePostponeRappel = async (rappel: any, days: number) => {
+    const currentDate = new Date(rappel.date_rappel);
+    currentDate.setDate(currentDate.getDate() + days);
+    
+    // Format ISO pour datetime-local (sans le 'Z')
+    const newDateStr = currentDate.toISOString().slice(0, 16);
+    
+    await handleUpdateRappel(rappel.id, {
+      ...rappel,
+      date_rappel: newDateStr
+    });
+  };
+
+  // ✅ Validation avant d'ajouter une tâche
+  const handleAddTodoWithValidation = async () => {
+    if (showPoleSelection && !newTodo.pole) {
+      setTodoValidationError('Veuillez sélectionner un pôle');
+      return;
+    }
+    setTodoValidationError('');
+    await handleAddTodo();
+  };
+
+  // ✅ Validation avant d'ajouter un rappel
+  const handleAddRappelWithValidation = async () => {
+    if (showPoleSelection && !newRappel.pole) {
+      setRappelValidationError('Veuillez sélectionner un pôle');
+      return;
+    }
+    setRappelValidationError('');
+    await handleAddRappel();
+  };
 
   // Helper pour obtenir l'icône de statut
   const getStatusIcon = (statut: string) => {
@@ -216,7 +273,9 @@ export default function ClientActivityStream({
                         </div>
                         {showPoleSelection && (
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Pôle <span className="text-red-500">*</span>
+                            </label>
                             <select
                               value={todoForm.pole || ''}
                               onChange={(e) => updateTodoForm('pole', e.target.value)}
@@ -229,13 +288,15 @@ export default function ClientActivityStream({
                             </select>
                           </div>
                         )}
-                        <UserSelector
-                          value={todoForm.assigned_to || undefined}
-                          onChange={(value) => updateTodoForm('assigned_to', value as number)}
-                          label="Attribuer à"
-                          placeholder="Sélectionner un utilisateur"
-                          pole={todoForm.pole || undefined}
-                        />
+                        {isAdmin && (
+                          <UserSelector
+                            value={todoForm.assigned_to || undefined}
+                            onChange={(value) => updateTodoForm('assigned_to', value as number)}
+                            label="Attribuer à (optionnel)"
+                            placeholder="Sélectionner un utilisateur"
+                            pole={todoForm.pole || undefined}
+                          />
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button 
@@ -266,6 +327,33 @@ export default function ClientActivityStream({
                           {t.description && (
                             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{t.description}</p>
                           )}
+                          
+                          {/* ✅ Boutons de changement de statut rapide */}
+                          {canEdit && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {t.statut !== 'en_cours' && (
+                                <button
+                                  onClick={() => handleUpdateTodo(t.id, { ...t, statut: 'en_cours' })}
+                                  className="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-xs font-medium hover:bg-blue-200 transition-colors"
+                                  title="Marquer en cours"
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  En cours
+                                </button>
+                              )}
+                              {t.statut !== 'termine' && (
+                                <button
+                                  onClick={() => handleUpdateTodo(t.id, { ...t, statut: 'termine' })}
+                                  className="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 border border-green-200 rounded-md text-xs font-medium hover:bg-green-200 transition-colors"
+                                  title="Marquer terminé"
+                                >
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Terminé
+                                </button>
+                              )}
+                            </div>
+                          )}
+
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${getStatusBadge(t.statut)}`}>
                               {t.statut?.replace('_', ' ') || 'En cours'}
@@ -340,17 +428,30 @@ export default function ClientActivityStream({
                 
                 {showPoleSelection && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Pôle <span className="text-red-500">*</span>
+                    </label>
                     <select
                       value={newTodo.pole || ''}
-                      onChange={(e) => setNewTodo({ ...newTodo, pole: e.target.value })}
-                      className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => {
+                        setNewTodo({ ...newTodo, pole: e.target.value });
+                        setTodoValidationError('');
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        todoValidationError ? 'border-red-300 text-red-900' : 'border-gray-300 text-gray-600'
+                      }`}
                     >
                       <option value="">Sélectionner un pôle</option>
                       {POLE_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                       ))}
                     </select>
+                    {todoValidationError && (
+                      <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {todoValidationError}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -368,15 +469,36 @@ export default function ClientActivityStream({
                   onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
                 />
 
-                <UserSelector
-                  value={newTodo.assigned_to || undefined}
-                  onChange={(value) => setNewTodo({ ...newTodo, assigned_to: value as number })}
-                  label="Attribuer à"
-                  placeholder="Sélectionner un utilisateur"
-                  pole={newTodo.pole || undefined}
-                />
+                {/* ✅ UserSelector uniquement pour les admins */}
+                {isAdmin && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-medium text-gray-700">
+                        Attribuer à (optionnel)
+                      </label>
+                      {currentUserId && (
+                        <button
+                          onClick={handleAutoAssignTodo}
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                          title="M'attribuer cette tâche"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          M'attribuer
+                        </button>
+                      )}
+                    </div>
+                    <UserSelector
+                      value={newTodo.assigned_to || undefined}
+                      onChange={(value) => setNewTodo({ ...newTodo, assigned_to: value as number })}
+                      label=""
+                      placeholder="Sélectionner un utilisateur"
+                      pole={newTodo.pole || undefined}
+                    />
+                  </div>
+                )}
+
                 <button 
-                  onClick={handleAddTodo}
+                  onClick={handleAddTodoWithValidation}
                   className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -461,7 +583,9 @@ export default function ClientActivityStream({
                         </div>
                         {showPoleSelection && (
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Pôle <span className="text-red-500">*</span>
+                            </label>
                             <select
                               value={rappelForm.pole || ''}
                               onChange={(e) => updateRappelForm('pole', e.target.value)}
@@ -474,14 +598,16 @@ export default function ClientActivityStream({
                             </select>
                           </div>
                         )}
-                        <UserSelector
-                          value={rappelForm.assigned_users || []}
-                          onChange={(value) => updateRappelForm('assigned_users', value as number[])}
-                          label="Attribuer à"
-                          placeholder="Sélectionner des utilisateurs"
-                          pole={rappelForm.pole || undefined}
-                          multiple={true}
-                        />
+                        {isAdmin && (
+                          <UserSelector
+                            value={rappelForm.assigned_users || []}
+                            onChange={(value) => updateRappelForm('assigned_users', value as number[])}
+                            label="Attribuer à (optionnel)"
+                            placeholder="Sélectionner des utilisateurs"
+                            pole={rappelForm.pole || undefined}
+                            multiple={true}
+                          />
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button 
@@ -516,6 +642,37 @@ export default function ClientActivityStream({
                           {r.description && (
                             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{r.description}</p>
                           )}
+
+                          {/* ✅ Boutons de report de rappel */}
+                          {canEdit && !r.fait && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <button
+                                onClick={() => handlePostponeRappel(r, 1)}
+                                className="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-700 border border-purple-200 rounded-md text-xs font-medium hover:bg-purple-200 transition-colors"
+                                title="Reporter de 1 jour"
+                              >
+                                <CalendarPlus className="w-3 h-3 mr-1" />
+                                +1 jour
+                              </button>
+                              <button
+                                onClick={() => handlePostponeRappel(r, 7)}
+                                className="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-700 border border-purple-200 rounded-md text-xs font-medium hover:bg-purple-200 transition-colors"
+                                title="Reporter de 7 jours"
+                              >
+                                <CalendarPlus className="w-3 h-3 mr-1" />
+                                +7 jours
+                              </button>
+                              <button
+                                onClick={() => handlePostponeRappel(r, 30)}
+                                className="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-700 border border-purple-200 rounded-md text-xs font-medium hover:bg-purple-200 transition-colors"
+                                title="Reporter de 30 jours"
+                              >
+                                <CalendarPlus className="w-3 h-3 mr-1" />
+                                +30 jours
+                              </button>
+                            </div>
+                          )}
+
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${r.fait ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200'}`}>
                               {r.fait ? 'Effectué' : 'À venir'}
@@ -588,17 +745,30 @@ export default function ClientActivityStream({
                 
                 {showPoleSelection && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Pôle</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Pôle <span className="text-red-500">*</span>
+                    </label>
                     <select
                       value={newRappel.pole || ''}
-                      onChange={(e) => setNewRappel({ ...newRappel, pole: e.target.value })}
-                      className="w-full border border-gray-300 text-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      onChange={(e) => {
+                        setNewRappel({ ...newRappel, pole: e.target.value });
+                        setRappelValidationError('');
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                        rappelValidationError ? 'border-red-300 text-red-900' : 'border-gray-300 text-gray-600'
+                      }`}
                     >
                       <option value="">Sélectionner un pôle</option>
                       {POLE_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                       ))}
                     </select>
+                    {rappelValidationError && (
+                      <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {rappelValidationError}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -622,16 +792,37 @@ export default function ClientActivityStream({
                   onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })}
                 />
 
-                <UserSelector
-                  value={newRappel.assigned_users || []}
-                  onChange={(value) => setNewRappel({ ...newRappel, assigned_users: value as number[] })}
-                  label="Attribuer à"
-                  placeholder="Sélectionner des utilisateurs"
-                  pole={newRappel.pole || undefined}
-                  multiple={true}
-                />
+                {/* ✅ UserSelector uniquement pour les admins */}
+                {isAdmin && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-medium text-gray-700">
+                        Attribuer à (optionnel)
+                      </label>
+                      {currentUserId && (
+                        <button
+                          onClick={handleAutoAssignRappel}
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors"
+                          title="M'ajouter aux assignés"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          M'ajouter
+                        </button>
+                      )}
+                    </div>
+                    <UserSelector
+                      value={newRappel.assigned_users || []}
+                      onChange={(value) => setNewRappel({ ...newRappel, assigned_users: value as number[] })}
+                      label=""
+                      placeholder="Sélectionner des utilisateurs"
+                      pole={newRappel.pole || undefined}
+                      multiple={true}
+                    />
+                  </div>
+                )}
+
                 <button 
-                  onClick={handleAddRappel}
+                  onClick={handleAddRappelWithValidation}
                   className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />

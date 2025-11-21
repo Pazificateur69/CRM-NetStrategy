@@ -24,7 +24,8 @@ class TodoController extends Controller
             : Todo::with(['user.roles', 'client', 'assignedUser.roles'])
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
-                        ->orWhere('assigned_to', $user->id);
+                        ->orWhere('assigned_to', $user->id)
+                        ->orWhere('pole', $user->pole); // ✅ AJOUTÉ : Voir les tâches de son pôle
                 })
                 ->orderBy('ordre')
                 ->orderBy('created_at', 'asc')
@@ -40,6 +41,8 @@ class TodoController extends Controller
     {
         $user = $request->user();
 
+        // ✅ CORRECTION : Admin voit TOUTES les tâches du pôle
+        // Utilisateur normal voit les tâches du pôle où il est créateur, assigné OU qui ont le même pole que lui
         $todos = ($user->hasRole('admin') || $user->pole === 'admin')
             ? Todo::with(['user.roles', 'client', 'assignedUser.roles'])
                 ->where('pole', $pole)
@@ -50,7 +53,8 @@ class TodoController extends Controller
                 ->where('pole', $pole)
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
-                        ->orWhere('assigned_to', $user->id);
+                        ->orWhere('assigned_to', $user->id)
+                        ->orWhere('pole', $user->pole); // ✅ AJOUTÉ
                 })
                 ->orderBy('ordre', 'asc')
                 ->orderBy('created_at', 'asc')
@@ -82,6 +86,12 @@ class TodoController extends Controller
             ? User::find($validated['assigned_to'])
             : null;
 
+        // ✅ AMÉLIORATION : Détermine le pôle dans l'ordre de priorité
+        $determinedPole = $validated['pole'] 
+            ?? $assignedUser?->pole 
+            ?? $user->pole 
+            ?? null;
+
         $todo = new Todo([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
@@ -91,13 +101,21 @@ class TodoController extends Controller
             'ordre' => $maxOrdre + 1,
             'user_id' => $user->id,
             'client_id' => $validated['client_id'],
-            'pole' => $validated['pole'] ?? $assignedUser?->pole ?? $user->pole ?? null,
+            'pole' => $determinedPole,
             'assigned_to' => $validated['assigned_to'] ?? null,
             'todoable_type' => Client::class,
             'todoable_id' => $validated['client_id'],
         ]);
 
         $todo->save();
+
+        \Log::info('✅ Tâche créée', [
+            'id' => $todo->id,
+            'titre' => $todo->titre,
+            'pole' => $todo->pole,
+            'assigned_to' => $todo->assigned_to,
+            'user_id' => $todo->user_id,
+        ]);
 
         return response()->json([
             'message' => 'Tâche créée avec succès.',
@@ -138,6 +156,7 @@ class TodoController extends Controller
             ? User::find($validated['assigned_to'])
             : $todo->assignedUser;
 
+        // ✅ AMÉLIORATION : Mise à jour intelligente du pôle
         $newPole = $validated['pole']
             ?? ($assignedUser?->pole)
             ?? $todo->pole
@@ -154,6 +173,12 @@ class TodoController extends Controller
             'assigned_to' => $validated['assigned_to'] ?? $todo->assigned_to,
             'pole' => $newPole,
         ]));
+
+        \Log::info('✅ Tâche mise à jour', [
+            'id' => $todo->id,
+            'pole' => $todo->pole,
+            'assigned_to' => $todo->assigned_to,
+        ]);
 
         return response()->json([
             'message' => 'Tâche mise à jour avec succès.',

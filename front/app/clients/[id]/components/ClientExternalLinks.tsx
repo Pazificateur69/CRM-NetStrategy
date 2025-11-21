@@ -5,7 +5,7 @@ import {
   ExternalLink, Globe, BarChart, Search as SearchIcon,
   Facebook, Instagram, Linkedin, Twitter, Edit, Save, X, Youtube,
   Plus, Trash2, FileText, HardDrive, TrendingUp, Image, Palette,
-  BarChart3, MapPin, Video
+  BarChart3, MapPin, Video, Music, Mail, Phone, MessageCircle, Loader2
 } from 'lucide-react';
 
 interface ExternalLink {
@@ -39,41 +39,62 @@ const ICONS_MAP: Record<string, any> = {
   'meta_ads': Facebook,
   'drive': HardDrive,
   'drive_logo': HardDrive,
-  'kit_graphique': Image,
+  'kit_graphique': Palette,
   'rapport_seo': FileText,
+  'whatsapp': MessageCircle,
+  'email': Mail,
+  'telephone': Phone,
+  'spotify': Music,
 };
 
-// Liens prédéfinis par pôle
+// Liens prédéfinis par pôle avec les bons identifiants
 const LIENS_PAR_POLE: Record<string, { type: string; label: string; icon: string }[]> = {
-  'dev': [
+  'informations': [
+    { type: 'site_web', label: 'Site Internet', icon: 'site_web' },
+    { type: 'drive', label: 'Google Drive', icon: 'drive' },
+    { type: 'notion', label: 'Notion', icon: 'notion' },
+  ],
+  'pole-dev': [
     { type: 'site_web', label: 'Site Internet', icon: 'site_web' },
     { type: 'analytics', label: 'Google Analytics', icon: 'analytics' },
     { type: 'search_console', label: 'Search Console', icon: 'search_console' },
+    { type: 'drive', label: 'Google Drive', icon: 'drive' },
+    { type: 'notion', label: 'Notion', icon: 'notion' },
   ],
-  'seo': [
+  'pole-seo': [
     { type: 'site_web', label: 'Site Internet', icon: 'site_web' },
     { type: 'analytics', label: 'Google Analytics', icon: 'analytics' },
     { type: 'search_console', label: 'Search Console', icon: 'search_console' },
     { type: 'rapport_seo', label: 'Rapport SEO (Notion)', icon: 'rapport_seo' },
     { type: 'google_maps', label: 'Google Maps / GMB', icon: 'google_maps' },
+    { type: 'drive', label: 'Google Drive', icon: 'drive' },
   ],
-  'ads': [
+  'pole-ads': [
     { type: 'google_ads', label: 'Google Ads', icon: 'google_ads' },
-    { type: 'meta_ads', label: 'Meta Ads', icon: 'meta_ads' },
+    { type: 'meta_ads', label: 'Meta Ads Manager', icon: 'meta_ads' },
     { type: 'analytics', label: 'Google Analytics', icon: 'analytics' },
+    { type: 'drive', label: 'Google Drive', icon: 'drive' },
+    { type: 'notion', label: 'Notion', icon: 'notion' },
   ],
-  'reseaux': [
+  'pole-reseaux': [
     { type: 'facebook', label: 'Facebook', icon: 'facebook' },
     { type: 'instagram', label: 'Instagram', icon: 'instagram' },
     { type: 'linkedin', label: 'LinkedIn', icon: 'linkedin' },
     { type: 'tiktok', label: 'TikTok', icon: 'tiktok' },
     { type: 'youtube', label: 'YouTube', icon: 'youtube' },
     { type: 'twitter', label: 'X (Twitter)', icon: 'twitter' },
+    { type: 'drive', label: 'Google Drive', icon: 'drive' },
+    { type: 'notion', label: 'Notion', icon: 'notion' },
   ],
-  'branding': [
+  'pole-branding': [
     { type: 'site_web', label: 'Site Internet', icon: 'site_web' },
     { type: 'drive_logo', label: 'Drive Logo', icon: 'drive_logo' },
     { type: 'kit_graphique', label: 'Kit Graphique', icon: 'kit_graphique' },
+    { type: 'notion', label: 'Notion', icon: 'notion' },
+    { type: 'drive', label: 'Google Drive', icon: 'drive' },
+  ],
+  'compta': [
+    { type: 'drive', label: 'Google Drive', icon: 'drive' },
     { type: 'notion', label: 'Notion', icon: 'notion' },
   ],
 };
@@ -83,10 +104,12 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
   const [localLiens, setLocalLiens] = useState<ExternalLink[]>(liens || []);
   const [saving, setSaving] = useState(false);
 
-  const liensDisponibles = LIENS_PAR_POLE[pole] || [];
+  // Récupérer les liens disponibles pour ce pôle
+  const liensDisponibles = LIENS_PAR_POLE[pole] || LIENS_PAR_POLE['informations'];
 
   const handleToggleEdit = () => {
     if (editing) {
+      // Annuler les modifications
       setLocalLiens(liens || []);
     }
     setEditing(!editing);
@@ -95,11 +118,18 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
   const handleChange = (type: string, url: string) => {
     const existing = localLiens.find(l => l.type === type);
     if (existing) {
+      // Mettre à jour un lien existant
       setLocalLiens(localLiens.map(l => l.type === type ? { ...l, url } : l));
     } else {
+      // Ajouter un nouveau lien
       const lienTemplate = liensDisponibles.find(l => l.type === type);
       if (lienTemplate) {
-        setLocalLiens([...localLiens, { type, label: lienTemplate.label, url, icon: lienTemplate.icon }]);
+        setLocalLiens([...localLiens, { 
+          type, 
+          label: lienTemplate.label, 
+          url, 
+          icon: lienTemplate.icon 
+        }]);
       }
     }
   };
@@ -112,12 +142,12 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
     setSaving(true);
     try {
       // Nettoyer les liens vides
-      const cleanedLiens = localLiens.filter(l => l.url.trim() !== '');
+      const cleanedLiens = localLiens.filter(l => l.url && l.url.trim() !== '');
       await onUpdate(cleanedLiens);
       setEditing(false);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des liens:', error);
-      alert('Erreur lors de la sauvegarde');
+      alert('Erreur lors de la sauvegarde des liens externes');
     } finally {
       setSaving(false);
     }
@@ -128,76 +158,107 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
     return lien?.url || '';
   };
 
-  const liensActifs = localLiens.filter(l => l.url.trim() !== '');
+  // Filtrer les liens actifs (qui ont une URL)
+  const liensActifs = localLiens.filter(l => l.url && l.url.trim() !== '');
 
-  if (liensActifs.length === 0 && !editing && !canEdit) {
+  // Si pas de liens et pas de possibilité d'éditer, ne rien afficher
+  if (liensActifs.length === 0 && !canEdit) {
     return null;
   }
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ExternalLink className="w-5 h-5 text-blue-600" />
-          <h4 className="font-semibold text-gray-900 text-sm">Liens Externes</h4>
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <ExternalLink className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900 text-base">Liens Externes</h4>
+            <p className="text-xs text-gray-600">Accès rapides aux outils</p>
+          </div>
         </div>
         {canEdit && (
           <button
             onClick={handleToggleEdit}
-            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
             title={editing ? 'Annuler' : 'Modifier'}
           >
-            {editing ? <X className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
+            {editing ? (
+              <>
+                <X className="w-4 h-4" />
+                <span className="hidden sm:inline">Annuler</span>
+              </>
+            ) : (
+              <>
+                <Edit className="w-4 h-4" />
+                <span className="hidden sm:inline">Modifier</span>
+              </>
+            )}
           </button>
         )}
       </div>
 
       {editing ? (
         <div className="space-y-3">
-          {liensDisponibles.map((lienTemplate) => {
-            const Icon = ICONS_MAP[lienTemplate.icon] || Globe;
-            const url = getLinkUrl(lienTemplate.type);
+          <div className="grid gap-3">
+            {liensDisponibles.map((lienTemplate) => {
+              const Icon = ICONS_MAP[lienTemplate.icon] || Globe;
+              const url = getLinkUrl(lienTemplate.type);
 
-            return (
-              <div key={lienTemplate.type} className="bg-white rounded-lg p-3 border border-blue-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon className="w-4 h-4 text-blue-600" />
-                  <label className="text-xs font-medium text-gray-700">{lienTemplate.label}</label>
+              return (
+                <div key={lienTemplate.type} className="bg-white rounded-lg p-4 border border-blue-100 hover:border-blue-300 transition-colors">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Icon className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <label className="text-sm font-semibold text-gray-800">{lienTemplate.label}</label>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={url}
+                      onChange={(e) => handleChange(lienTemplate.type, e.target.value)}
+                      placeholder={`https://exemple.com/${lienTemplate.type}`}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                    {url && (
+                      <button
+                        onClick={() => handleRemove(lienTemplate.type)}
+                        className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Supprimer ce lien"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => handleChange(lienTemplate.type, e.target.value)}
-                    placeholder="https://..."
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  {url && (
-                    <button
-                      onClick={() => handleRemove(lienTemplate.type)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-3 border-t border-blue-100">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold shadow-md hover:shadow-lg"
             >
-              {saving ? <span className="animate-spin">⏳</span> : <Save className="w-4 h-4" />}
-              Enregistrer
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Enregistrer
+                </>
+              )}
             </button>
             <button
               onClick={handleToggleEdit}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors text-sm font-medium"
             >
               <X className="w-4 h-4" />
               Annuler
@@ -205,26 +266,39 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
           </div>
         </div>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          {liensActifs.map((lien) => {
-            const Icon = ICONS_MAP[lien.icon || lien.type] || Globe;
-            return (
-              <a
-                key={lien.type}
-                href={lien.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 bg-white text-blue-700 rounded-lg hover:bg-blue-100 hover:shadow-md transition-all duration-200 text-sm font-medium border border-blue-200"
-                title={`Ouvrir ${lien.label}`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{lien.label}</span>
-                <ExternalLink className="w-3 h-3 opacity-50" />
-              </a>
-            );
-          })}
-          {liensActifs.length === 0 && (
-            <p className="text-gray-500 text-sm italic">Aucun lien externe configuré</p>
+        <div>
+          {liensActifs.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {liensActifs.map((lien) => {
+                const Icon = ICONS_MAP[lien.icon || lien.type] || Globe;
+
+                return (
+                  <a
+                    key={lien.type}
+                    href={lien.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2 px-4 py-2.5 bg-white text-blue-700 rounded-lg hover:bg-blue-600 hover:text-white hover:shadow-lg transition-all duration-200 text-sm font-semibold border border-blue-200"
+                    title={`Ouvrir ${lien.label}`}
+                  >
+                    <Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    <span>{lien.label}</span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100" />
+                  </a>
+                );
+              })}
+
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
+                <ExternalLink className="w-6 h-6 text-blue-400" />
+              </div>
+              <p className="text-gray-500 text-sm">Aucun lien externe configuré</p>
+              {canEdit && (
+                <p className="text-gray-400 text-xs mt-1">Cliquez sur "Modifier" pour en ajouter</p>
+              )}
+            </div>
           )}
         </div>
       )}

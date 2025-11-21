@@ -21,7 +21,8 @@ class RappelController extends Controller
             : Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
-                          ->orWhereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id));
+                          ->orWhereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id))
+                          ->orWhere('pole', $user->pole); // ✅ AJOUTÉ : Voir les rappels de son pôle
                 })
                 ->orderBy('ordre')
                 ->orderBy('created_at', 'asc')
@@ -34,6 +35,7 @@ class RappelController extends Controller
     {
         $user = $request->user();
 
+        // ✅ CORRECTION : Admin voit TOUS les rappels du pôle
         $rappels = ($user->hasRole('admin') || $user->pole === 'admin')
             ? Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
                 ->where('pole', $pole)
@@ -44,7 +46,8 @@ class RappelController extends Controller
                 ->where('pole', $pole)
                 ->where(function ($query) use ($user) {
                     $query->where('user_id', $user->id)
-                          ->orWhereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id));
+                          ->orWhereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id))
+                          ->orWhere('pole', $user->pole); // ✅ AJOUTÉ
                 })
                 ->orderBy('ordre', 'asc')
                 ->orderBy('created_at', 'asc')
@@ -73,6 +76,12 @@ class RappelController extends Controller
             ? User::find($validated['assigned_users'][0])
             : null;
 
+        // ✅ AMÉLIORATION : Détermine le pôle dans l'ordre de priorité
+        $determinedPole = $validated['pole'] 
+            ?? $firstAssignedUser?->pole 
+            ?? $user->pole 
+            ?? null;
+
         $rappel = new Rappel([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
@@ -82,7 +91,7 @@ class RappelController extends Controller
             'statut' => 'planifie',
             'ordre' => $maxOrdre + 1,
             'user_id' => $user->id,
-            'pole' => $validated['pole'] ?? $firstAssignedUser?->pole ?? $user->pole ?? null,
+            'pole' => $determinedPole,
             'client_id' => $validated['client_id'] ?? null,
         ]);
 
@@ -96,6 +105,13 @@ class RappelController extends Controller
         if (!empty($validated['assigned_users'])) {
             $rappel->assignedUsers()->sync($validated['assigned_users']);
         }
+
+        \Log::info('✅ Rappel créé', [
+            'id' => $rappel->id,
+            'titre' => $rappel->titre,
+            'pole' => $rappel->pole,
+            'assigned_users' => $validated['assigned_users'] ?? [],
+        ]);
 
         return response()->json([
             'message' => 'Rappel créé avec succès.',
@@ -136,6 +152,7 @@ class RappelController extends Controller
             ? User::find($validated['assigned_users'][0])
             : ($rappel->assignedUsers()->first());
 
+        // ✅ AMÉLIORATION : Mise à jour intelligente du pôle
         $newPole = $validated['pole']
             ?? $firstAssignedUser?->pole
             ?? $rappel->pole
@@ -156,6 +173,12 @@ class RappelController extends Controller
         if (isset($validated['assigned_users'])) {
             $rappel->assignedUsers()->sync($validated['assigned_users']);
         }
+
+        \Log::info('✅ Rappel mis à jour', [
+            'id' => $rappel->id,
+            'pole' => $rappel->pole,
+            'assigned_users' => $rappel->assignedUsers->pluck('id')->toArray(),
+        ]);
 
         return response()->json([
             'message' => 'Rappel mis à jour avec succès.',
