@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import FicheTabs from '@/components/FicheTabs';
-import { ProspectDetail, StatutCouleur } from '@/types/crm';
+import { ProspectDetail, StatutCouleur } from '@/services/types/crm';
 import {
     ChevronLeft,
     Edit,
@@ -19,10 +19,14 @@ import {
     Mail,
     Phone,
     Calendar,
-    ArrowRight
+    ArrowRight,
+    Loader2
 } from 'lucide-react';
 import Link from 'next/link';
-import { getProspectDetails, convertProspectToClient } from '@/services/data';
+import { getProspectById, convertProspect, updateProspect, addProspectRappel } from '@/services/crm';
+import ProspectEditModal from './components/ProspectEditModal';
+import QuickActionCallModal from '@/components/QuickActionCallModal';
+import ProspectConversionModal from './components/ProspectConversionModal';
 
 // --- COMPOSANTS UI ---
 
@@ -60,40 +64,85 @@ export default function ProspectDetailPage() {
     const [isConverting, setIsConverting] = useState(false);
     const [activeTab, setActiveTab] = useState('informations');
 
-    useEffect(() => {
-        const fetchProspect = async () => {
-            try {
-                const prospectData = await getProspectDetails(Number(prospectId));
-                setProspect(prospectData);
-            } catch (error) {
-                console.error("Erreur de chargement de la fiche prospect.", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Modals State
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showCallModal, setShowCallModal] = useState(false);
+    const [showConversionModal, setShowConversionModal] = useState(false);
 
+    const fetchProspect = async () => {
+        try {
+            const prospectData = await getProspectById(Number(prospectId));
+            setProspect(prospectData);
+        } catch (error) {
+            console.error("Erreur de chargement de la fiche prospect.", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         if (prospectId) {
             fetchProspect();
         }
     }, [prospectId, router]);
 
-    const handleConvert = async () => {
-        if (!prospect || isConverting) return;
+    const handleConvertClick = () => {
+        if (!prospect || isConverting || prospect.statut === 'converti') return;
+        setShowConversionModal(true);
+    };
 
-        if (!window.confirm(`Êtes-vous sûr de vouloir convertir ${prospect.societe} en client ? Cette action est irréversible.`)) {
-            return;
-        }
+    const handleConfirmConversion = async () => {
+        if (!prospect) return;
 
         setIsConverting(true);
         try {
-            const response = await convertProspectToClient(prospect.id);
-            // Notification plus élégante pourrait être ajoutée ici
+            const response = await convertProspect(prospect.id);
+            // Redirection vers la fiche client créée
             router.push(`/clients/${response.client_id}`);
         } catch (error) {
             console.error("Échec de la conversion.", error);
             alert("Échec de la conversion. Vérifiez vos permissions.");
-        } finally {
             setIsConverting(false);
+            setShowConversionModal(false);
+        }
+    };
+
+    const handleUpdateProspect = async (data: Partial<ProspectDetail>) => {
+        if (!prospect) return;
+        try {
+            await updateProspect(prospect.id, data);
+            await fetchProspect(); // Recharger les données
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour du prospect", error);
+            alert("Erreur lors de la mise à jour");
+        }
+    };
+
+    const handleScheduleCall = async (date: string, time: string, notes: string) => {
+        if (!prospect) return;
+        try {
+            await addProspectRappel(prospect.id, {
+                titre: `Appel avec ${prospect.contact}`,
+                description: notes,
+                date_rappel: `${date} ${time}`,
+                fait: false,
+                statut: 'planifie',
+                priorite: 'moyenne'
+            });
+            alert("Appel planifié avec succès !");
+            // Optionnel : rediriger vers l'onglet activité ou recharger
+            await fetchProspect();
+        } catch (error) {
+            console.error("Erreur lors de la planification de l'appel", error);
+            alert("Erreur lors de la planification");
+        }
+    };
+
+    const handleSendEmail = () => {
+        if (prospect?.emails && prospect.emails.length > 0) {
+            window.location.href = `mailto:${prospect.emails[0]}`;
+        } else {
+            alert("Aucune adresse email disponible pour ce prospect.");
         }
     };
 
@@ -192,19 +241,22 @@ export default function ProspectDetailPage() {
 
                         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                             <button
-                                onClick={handleConvert}
+                                onClick={handleConvertClick}
                                 disabled={isConverting || prospect.statut === 'converti'}
                                 className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 rounded-xl transition-all shadow-lg shadow-green-500/20 font-semibold group"
                             >
                                 {isConverting ? (
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
                                     <CheckCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                 )}
                                 <span>{prospect.statut === 'converti' ? 'Déjà Converti' : 'Convertir en Client'}</span>
                             </button>
 
-                            <button className="flex items-center justify-center gap-2 bg-white text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 transition-all shadow-sm border border-slate-200 font-semibold group">
+                            <button
+                                onClick={() => setShowEditModal(true)}
+                                className="flex items-center justify-center gap-2 bg-white text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 transition-all shadow-sm border border-slate-200 font-semibold group"
+                            >
                                 <Edit className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
                                 <span>Modifier</span>
                             </button>
@@ -265,13 +317,19 @@ export default function ProspectDetailPage() {
                             <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
                                 <h3 className="text-lg font-bold mb-4">Actions Rapides</h3>
                                 <div className="space-y-3">
-                                    <button className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm">
+                                    <button
+                                        onClick={() => setShowCallModal(true)}
+                                        className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm group"
+                                    >
                                         <span className="font-medium">Planifier un appel</span>
-                                        <Phone className="w-4 h-4" />
+                                        <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                     </button>
-                                    <button className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm">
+                                    <button
+                                        onClick={handleSendEmail}
+                                        className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm group"
+                                    >
                                         <span className="font-medium">Envoyer un email</span>
-                                        <Mail className="w-4 h-4" />
+                                        <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
                                     </button>
                                 </div>
                             </div>
@@ -284,6 +342,7 @@ export default function ProspectDetailPage() {
                         <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-slate-900">Historique d'activité</h3>
                         <p className="text-slate-500">L'historique des tâches et rappels s'affichera ici.</p>
+                        {/* TODO: Intégrer un composant d'activité similaire à ClientActivityStream */}
                     </div>
                 )}
 
@@ -295,6 +354,29 @@ export default function ProspectDetailPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modals */}
+            <ProspectEditModal
+                open={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                prospect={prospect}
+                onSubmit={handleUpdateProspect}
+            />
+
+            <QuickActionCallModal
+                open={showCallModal}
+                onClose={() => setShowCallModal(false)}
+                onSchedule={handleScheduleCall}
+                entityName={prospect.societe}
+            />
+
+            <ProspectConversionModal
+                open={showConversionModal}
+                onClose={() => setShowConversionModal(false)}
+                onConfirm={handleConfirmConversion}
+                prospectName={prospect.societe}
+                isConverting={isConverting}
+            />
         </DashboardLayout>
     );
 }

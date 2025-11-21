@@ -14,7 +14,7 @@ interface ClientInfoDetailsProps {
   newComment: string;
   setNewComment: React.Dispatch<React.SetStateAction<string>>;
   handleAddComment: () => Promise<void>;
-  
+
   editingCommentId: number | null;
   commentForm: { texte: string };
   startEditComment: (comment: any) => void;
@@ -22,7 +22,7 @@ interface ClientInfoDetailsProps {
   handleUpdateComment: (id: number, texte: string) => Promise<void>;
   handleDeleteComment: (id: number) => Promise<void>;
   savingComment: boolean;
-  
+
   filteredTodos: any[];
   filteredRappels: any[];
   userRole: string;
@@ -94,7 +94,7 @@ export default function ClientInfoDetails({
   ...activityHandlers
 }: ClientInfoDetailsProps) {
   const [showAllComments, setShowAllComments] = useState(false);
-  
+
   // États pour l'édition de la présentation
   const [isEditingPresentation, setIsEditingPresentation] = useState(false);
   const [presentationForm, setPresentationForm] = useState('');
@@ -154,8 +154,8 @@ export default function ClientInfoDetails({
   const handleSavePresentation = async () => {
     try {
       setSavingPresentation(true);
-      await updateClient(Number(client.id), { 
-        description_generale: presentationForm.trim() 
+      await updateClient(Number(client.id), {
+        description_generale: presentationForm.trim()
       });
       await reloadClient();
       setIsEditingPresentation(false);
@@ -204,19 +204,19 @@ export default function ClientInfoDetails({
     try {
       setSavingPrestation(true);
       const currentPrestations = client.prestations || [];
-      
+
       let updatedPrestations;
       if (editingPrestationId) {
         // Modification
         updatedPrestations = currentPrestations.map((p: any) =>
           p.id === editingPrestationId
             ? {
-                ...p,
-                type: prestationForm.type.trim(),
-                description: prestationForm.description.trim(),
-                montant: prestationForm.montant ? parseFloat(prestationForm.montant) : null,
-                frequence: prestationForm.frequence.trim() || null
-              }
+              ...p,
+              type: prestationForm.type.trim(),
+              description: prestationForm.description.trim(),
+              montant: prestationForm.montant ? parseFloat(prestationForm.montant) : null,
+              frequence: prestationForm.frequence.trim() || null
+            }
             : p
         );
       } else {
@@ -277,39 +277,39 @@ export default function ClientInfoDetails({
         <div className="p-8">
           {/* Grille des informations */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-            <ModernInfoCard 
-              icon={Mail} 
-              label="Email Principal" 
-              value={client.emails?.[0] || '—'} 
+            <ModernInfoCard
+              icon={Mail}
+              label="Email Principal"
+              value={client.emails?.[0] || '—'}
             />
-            <ModernInfoCard 
-              icon={Phone} 
-              label="Téléphone" 
-              value={client.telephones?.[0] || '—'} 
+            <ModernInfoCard
+              icon={Phone}
+              label="Téléphone"
+              value={client.telephones?.[0] || '—'}
             />
-            <ModernInfoCard 
-              icon={Globe} 
-              label="Site Web" 
-              value={client.site_web || '—'} 
+            <ModernInfoCard
+              icon={Globe}
+              label="Site Web"
+              value={client.site_web || '—'}
             />
-            <ModernInfoCard 
-              icon={MapPin} 
-              label="Adresse" 
-              value={client.adresse || '—'} 
+            <ModernInfoCard
+              icon={MapPin}
+              label="Adresse"
+              value={client.adresse || '—'}
             />
-            <ModernInfoCard 
-              icon={Map} 
-              label="Ville / Code Postal" 
+            <ModernInfoCard
+              icon={Map}
+              label="Ville / Code Postal"
               value={
                 client.ville || client.code_postal
                   ? `${client.code_postal ?? ''} ${client.ville ?? ''}`.trim() || '—'
                   : '—'
-              } 
+              }
             />
-            <ModernInfoCard 
-              icon={IdCard} 
-              label="SIRET" 
-              value={client.siret || '—'} 
+            <ModernInfoCard
+              icon={IdCard}
+              label="SIRET"
+              value={client.siret || '—'}
             />
           </div>
 
@@ -330,7 +330,7 @@ export default function ClientInfoDetails({
                       Présentation du Client
                     </h3>
                   </div>
-                  
+
                   {canEdit && !isEditingPresentation && (
                     <button
                       onClick={startEditPresentation}
@@ -508,7 +508,7 @@ export default function ClientInfoDetails({
                     {client.prestations.map((prestation: any) => (
                       <div
                         key={prestation.id}
-                        className="group/item relative flex items-start gap-3 bg-white rounded-xl p-4 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                        className="group/item relative flex items-start gap-3 bg-gradient-to-br from-white to-emerald-50/30 rounded-xl p-4 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                       >
                         <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                           <CheckSquare className="w-4 h-4 text-emerald-600" />
@@ -575,7 +575,7 @@ export default function ClientInfoDetails({
 
       {/* Section Tâches et Rappels */}
       <section className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 p-6">
+        <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-6">
           <h3 className="text-2xl font-bold text-white flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
               <FileText className="w-6 h-6" />
@@ -762,7 +762,7 @@ export default function ClientInfoDetails({
                 </div>
                 <h4 className="font-semibold text-gray-800">Ajouter un commentaire</h4>
               </div>
-              
+
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -770,7 +770,7 @@ export default function ClientInfoDetails({
                 className="w-full border-2 border-gray-300 rounded-xl p-4 text-sm placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white resize-none"
                 rows={4}
               />
-              
+
               <div className="flex items-center justify-between mt-4">
                 <p className="text-xs text-gray-500 italic">
                   {newComment.length} caractères

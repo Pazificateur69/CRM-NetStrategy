@@ -133,6 +133,22 @@ export const getProspectById = async (id: number | string): Promise<ProspectDeta
   return response.data.data;
 };
 
+export const updateProspect = async (
+  id: number,
+  prospect: Partial<ProspectDetail>
+): Promise<ProspectDetail> => {
+  const response = await api.put(`/prospects/${id}`, prospect);
+  return response.data.data;
+};
+
+export const addProspectRappel = async (prospectId: number, rappel: Partial<Rappel>): Promise<Rappel> => {
+  const response = await api.post(`/rappels`, {
+    ...rappel,
+    prospect_id: prospectId,
+  });
+  return response.data.data;
+};
+
 // ===============================
 // 🔹 CONVERSION PROSPECT → CLIENT
 // ===============================

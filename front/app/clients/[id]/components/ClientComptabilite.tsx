@@ -1,16 +1,14 @@
 // app/clients/[id]/components/ClientComptabilite.tsx
 import React, { useState } from 'react';
-import { BadgeEuro, ReceiptText, Edit, Trash2, Save, X, Loader2, PlusCircle, Check } from 'lucide-react';
-import { 
-    formatCurrency, 
-    formatEngagement, 
-    formatDate, 
-    formatPeriod, 
-    InfoCard, 
+import { BadgeEuro, ReceiptText, Edit, Trash2, Save, X, Loader2, PlusCircle, Check, Calendar, FileText, CreditCard, TrendingUp, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    formatCurrency,
+    formatEngagement,
+    formatDate,
+    formatPeriod,
     parseNumberField,
-    normaliseDate,
-    normaliseNumeric
-} from '../ClientUtils'; 
+    normaliseDate
+} from '../ClientUtils';
 
 // Définition d'un type simple pour la ligne de prestation
 type Prestation = {
@@ -48,17 +46,34 @@ interface ClientComptabiliteProps {
     reloadClient: () => Promise<void>;
 }
 
-// Composant utilitaire simulant un bouton cliquable (inchangé)
-const ActionButton = ({ onClick, icon: Icon, color, label, disabled = false }: any) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-md border text-${color}-700 border-${color}-300 hover:bg-${color}-50 disabled:opacity-50 transition duration-150`}
-    >
-        <Icon className="w-3 h-3 mr-1" />
-        {label}
-    </button>
-);
+// Composant InfoCard Premium
+const PremiumInfoCard = ({ icon: Icon, label, value, subtext, color = "teal" }: { icon: any; label: string; value: string; subtext?: string; color?: string }) => {
+    const colorClasses: Record<string, string> = {
+        teal: "from-teal-500 to-emerald-600 text-teal-600 bg-teal-50 border-teal-100",
+        blue: "from-blue-500 to-indigo-600 text-blue-600 bg-blue-50 border-blue-100",
+        purple: "from-purple-500 to-violet-600 text-purple-600 bg-purple-50 border-purple-100",
+        amber: "from-amber-500 to-orange-600 text-amber-600 bg-amber-50 border-amber-100",
+    };
+
+    const currentStyle = colorClasses[color] || colorClasses.teal;
+
+    return (
+        <div className={`group relative bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden`}>
+            <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${currentStyle.split(' ')[0]} opacity-5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`} />
+
+            <div className="relative flex items-start justify-between">
+                <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+                    <h3 className="text-xl font-bold text-gray-800 group-hover:text-gray-900 transition-colors">{value}</h3>
+                    {subtext && <p className="text-xs text-gray-400 mt-1">{subtext}</p>}
+                </div>
+                <div className={`p-3 rounded-xl ${currentStyle.split(' ').slice(1).join(' ')} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                    <Icon className="w-5 h-5" />
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // ====================================================================
 // COMPOSANT Formulaire d'Ajout (relié au backend via handleAddPrestation)
@@ -73,7 +88,7 @@ const AddPrestationForm = ({ handleAddPrestation, setShowAddForm, client }: AddP
         tarif_ht: '',
         frequence: '',
         engagement_mois: '',
-        date_debut: normaliseDate(new Date().toISOString()), 
+        date_debut: normaliseDate(new Date().toISOString()),
         date_fin: '',
         notes: '',
     });
@@ -81,8 +96,7 @@ const AddPrestationForm = ({ handleAddPrestation, setShowAddForm, client }: AddP
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Validation minimale
+
         if (!form.type || !form.tarif_ht || !form.frequence) {
             return alert("Le Type, le Tarif HT et la Fréquence sont obligatoires.");
         }
@@ -94,22 +108,18 @@ const AddPrestationForm = ({ handleAddPrestation, setShowAddForm, client }: AddP
                 type: form.type.trim(),
                 frequence: form.frequence.trim(),
                 notes: form.notes.trim() || null,
-                
-                // Champs numériques: utilise parseNumberField pour conversion et validation
                 tarif_ht: parseNumberField(form.tarif_ht),
                 engagement_mois: parseNumberField(form.engagement_mois) || null,
-                
-                // Champs Date: null si vide
                 date_debut: form.date_debut || null,
                 date_fin: form.date_fin || null,
             };
-            
+
             await handleAddPrestation(payload);
-            
-            // Si succès, réinitialiser le formulaire et masquer
             setShowAddForm(false);
-            setForm({ type: '', tarif_ht: '', frequence: '', engagement_mois: '', 
-                      date_debut: normaliseDate(new Date().toISOString()), date_fin: '', notes: '' });
+            setForm({
+                type: '', tarif_ht: '', frequence: '', engagement_mois: '',
+                date_debut: normaliseDate(new Date().toISOString()), date_fin: '', notes: ''
+            });
         } catch (error) {
             console.error("Erreur lors de l'ajout:", error);
             alert("Erreur lors de l'ajout de la prestation.");
@@ -119,120 +129,130 @@ const AddPrestationForm = ({ handleAddPrestation, setShowAddForm, client }: AddP
     };
 
     return (
-        <form onSubmit={handleSubmit} className="p-4 bg-teal-50 border border-teal-200 rounded-lg space-y-3 mt-4">
-            <h5 className="font-semibold text-teal-800 flex items-center">
-                <PlusCircle className="w-4 h-4 mr-2" /> Nouvelle Prestation
-            </h5>
-            
-            <div className="grid md:grid-cols-3 gap-3">
-                {/* 1. Type de Prestation (Prestation) */}
-                <div>
-                    <label className="text-xs font-semibold text-gray-600 uppercase">Type (Ex: SEO, Ads)</label>
-                    <input 
-                        type="text" 
-                        required
-                        value={form.type}
-                        onChange={(e) => setForm({...form, type: e.target.value})}
-                        className="mt-1 w-full p-2 border rounded-md"
-                        placeholder="Ex: SEO, Ads, Dev"
-                    />
-                </div>
-
-                {/* 2. Tarif HT */}
-                <div>
-                    <label className="text-xs font-semibold text-gray-600 uppercase">Tarif HT (€)</label>
-                    <input 
-                        type="text" 
-                        required
-                        value={form.tarif_ht}
-                        onChange={(e) => setForm({...form, tarif_ht: e.target.value})}
-                        className="mt-1 w-full p-2 border rounded-md"
-                        placeholder="Ex: 1500.00"
-                    />
-                </div>
-
-                {/* 3. Fréquence */}
-                <div>
-                    <label className="text-xs font-semibold text-gray-600 uppercase">Fréquence</label>
-                    <input 
-                        type="text" 
-                        required
-                        value={form.frequence}
-                        onChange={(e) => setForm({...form, frequence: e.target.value})}
-                        className="mt-1 w-full p-2 border rounded-md"
-                        placeholder="Ex: Mensuel, Unique"
-                    />
-                </div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-3">
-                {/* 4. Engagement (Mois) */}
-                <div>
-                    <label className="text-xs font-semibold text-gray-600 uppercase">Engagement (Mois)</label>
-                    <input 
-                        type="number" 
-                        min="0"
-                        value={form.engagement_mois}
-                        onChange={(e) => setForm({...form, engagement_mois: e.target.value})}
-                        className="mt-1 w-full p-2 border rounded-md"
-                        placeholder="Ex: 12"
-                    />
-                </div>
-
-                {/* 5. Période (Début) */}
-                <div>
-                    <label className="text-xs font-semibold text-gray-600 uppercase">Date Début</label>
-                    <input 
-                        type="date" 
-                        value={form.date_debut}
-                        onChange={(e) => setForm({...form, date_debut: e.target.value})}
-                        className="mt-1 w-full p-2 border rounded-md"
-                    />
-                </div>
-                
-                {/* 6. Période (Fin) */}
-                <div>
-                    <label className="text-xs font-semibold text-gray-600 uppercase">Date Fin/Échéance</label>
-                    <input 
-                        type="date" 
-                        value={form.date_fin}
-                        onChange={(e) => setForm({...form, date_fin: e.target.value})}
-                        className="mt-1 w-full p-2 border rounded-md"
-                    />
-                </div>
-            </div>
-
-            {/* 7. Notes */}
-            <div>
-                <label className="text-xs font-semibold text-gray-600 uppercase">Notes (Détails du périmètre)</label>
-                <textarea
-                    value={form.notes}
-                    onChange={(e) => setForm({...form, notes: e.target.value})}
-                    className="mt-1 w-full p-2 border rounded-md"
-                    rows={2}
-                />
-            </div>
-
-            {/* Actions du formulaire */}
-            <div className="flex justify-end gap-2">
-                <button 
-                    type="button" 
-                    onClick={() => setShowAddForm(false)} 
-                    className="flex items-center px-4 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold"
-                    disabled={saving}
-                >
-                    <X className="w-4 h-4 mr-2" /> Annuler
-                </button>
-                <button 
-                    type="submit" 
-                    className="flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold disabled:bg-teal-400"
-                    disabled={saving}
-                >
-                    {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-                    {saving ? 'Ajout en cours...' : 'Ajouter la prestation'}
+        <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl border border-teal-100 overflow-hidden shadow-lg animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="bg-white/50 backdrop-blur-sm p-4 border-b border-teal-100 flex justify-between items-center">
+                <h5 className="font-bold text-teal-800 flex items-center gap-2">
+                    <div className="p-1.5 bg-teal-100 rounded-lg">
+                        <PlusCircle className="w-4 h-4 text-teal-600" />
+                    </div>
+                    Nouvelle Prestation
+                </h5>
+                <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <X className="w-5 h-5" />
                 </button>
             </div>
-        </form>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <div className="grid md:grid-cols-3 gap-5">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Type de Service</label>
+                        <input
+                            type="text"
+                            required
+                            value={form.type}
+                            onChange={(e) => setForm({ ...form, type: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all text-sm"
+                            placeholder="Ex: SEO, Ads, Dev..."
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tarif HT (€)</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                required
+                                value={form.tarif_ht}
+                                onChange={(e) => setForm({ ...form, tarif_ht: e.target.value })}
+                                className="w-full pl-4 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all text-sm font-medium"
+                                placeholder="0.00"
+                            />
+                            <span className="absolute right-3 top-2.5 text-gray-400 text-sm">€</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Fréquence</label>
+                        <select
+                            required
+                            value={form.frequence}
+                            onChange={(e) => setForm({ ...form, frequence: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all text-sm"
+                        >
+                            <option value="">Sélectionner...</option>
+                            <option value="Mensuel">Mensuel</option>
+                            <option value="Trimestriel">Trimestriel</option>
+                            <option value="Annuel">Annuel</option>
+                            <option value="Unique">Unique</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-5">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Engagement (Mois)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={form.engagement_mois}
+                            onChange={(e) => setForm({ ...form, engagement_mois: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all text-sm"
+                            placeholder="Ex: 12"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date Début</label>
+                        <input
+                            type="date"
+                            value={form.date_debut}
+                            onChange={(e) => setForm({ ...form, date_debut: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all text-sm"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date Fin</label>
+                        <input
+                            type="date"
+                            value={form.date_fin}
+                            onChange={(e) => setForm({ ...form, date_fin: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Notes & Détails</label>
+                    <textarea
+                        value={form.notes}
+                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all text-sm resize-none"
+                        rows={2}
+                        placeholder="Détails supplémentaires sur la prestation..."
+                    />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setShowAddForm(false)}
+                        className="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors text-sm"
+                        disabled={saving}
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        type="submit"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-teal-700 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        disabled={saving}
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        {saving ? 'Ajout...' : 'Confirmer la prestation'}
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 };
 
@@ -251,14 +271,11 @@ export default function ClientComptabilite({
     const [saving, setSaving] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
 
-
     const startEdit = (prestation: Prestation) => {
         setEditingPrestationId(prestation.id);
         setShowAddForm(false);
-        
         setEditForm({
             ...prestation,
-            // Assure le format YYYY-MM-DD pour input type="date"
             date_debut: prestation.date_debut ? normaliseDate(prestation.date_debut) : '',
             date_fin: prestation.date_fin ? normaliseDate(prestation.date_fin) : '',
         });
@@ -267,7 +284,6 @@ export default function ClientComptabilite({
     const handleSave = async (id: number) => {
         setSaving(true);
         try {
-            // Assurez-vous que les champs non modifiables sont conservés dans la requête si nécessaire.
             const dataToUpdate = {
                 type: editForm.type,
                 tarif_ht: parseNumberField(String(editForm.tarif_ht)),
@@ -277,18 +293,18 @@ export default function ClientComptabilite({
                 date_fin: editForm.date_fin || null,
                 notes: editForm.notes || null,
             };
-            
+
             await handleUpdatePrestation(id, dataToUpdate);
             setEditingPrestationId(null);
             setEditForm({});
         } catch (error) {
-            console.error("Erreur de sauvegarde de prestation:", error);
+            console.error("Erreur de sauvegarde:", error);
             alert("Erreur lors de la sauvegarde.");
         } finally {
             setSaving(false);
         }
     };
-    
+
     const handleCancel = () => {
         setEditingPrestationId(null);
         setEditForm({});
@@ -299,249 +315,283 @@ export default function ClientComptabilite({
     };
 
     return (
-        <section className="bg-white p-8 rounded-2xl shadow-xl border border-teal-200">
-            <h3 className="text-2xl font-bold text-teal-700 border-b-2 border-teal-100 pb-3 mb-6 flex items-center">
-                <BadgeEuro className="w-6 h-6 mr-3" />
-                Synthèse comptable & facturation
-            </h3>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <InfoCard label="Budget mensuel" value={formatCurrency(client.montant_mensuel_total)} icon="💶" />
-                <InfoCard label="Fréquence de facturation" value={client.frequence_facturation || '—'} icon="📅" />
-                <InfoCard label="Mode de paiement" value={client.mode_paiement || '—'} icon="💳" />
-                <InfoCard label="IBAN" value={client.iban || '—'} icon="🏦" />
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6 mb-8">
-                <InfoCard label="Contrat" value={client.contrat || '—'} icon="📄" />
-                <InfoCard label="Date de signature" value={formatDate(client.date_contrat)} icon="🗓️" />
-                <InfoCard label="Échéance" value={formatDate(client.date_echeance)} icon="⏳" />
-            </div>
-
-            <div className="rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-                    <h4 className="text-lg font-semibold text-gray-800 flex items-center">
-                        <ReceiptText className="w-5 h-5 mr-2 text-teal-600" />
-                        Prestations facturées
-                    </h4>
-                    <span className="text-xs uppercase tracking-wide text-gray-500">
-                        {client.prestations?.length || 0} ligne{client.prestations?.length > 1 ? 's' : ''}
-                    </span>
+        <div className="space-y-8">
+            {/* Section Synthèse */}
+            <section>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-teal-100 rounded-xl">
+                        <BadgeEuro className="w-6 h-6 text-teal-700" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800">Synthèse Comptable</h2>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead className="bg-gray-100">
-                            <tr className="text-left text-gray-600 uppercase tracking-wide text-xs">
-                                <th className="px-6 py-3">Prestation</th>
-                                <th className="px-6 py-3">Référent</th>
-                                <th className="px-6 py-3">Tarif HT</th>
-                                <th className="px-6 py-3">Fréquence</th>
-                                <th className="px-6 py-3">Engagement</th>
-                                <th className="px-6 py-3">Période</th>
-                                <th className="px-6 py-3">Notes</th>
-                                <th className="px-6 py-3">Statut</th>
-                                <th className="px-6 py-3">Mise à jour</th>
-                                {canEdit && <th className="px-6 py-3 text-right">Actions</th>}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
-                            {(client.prestations ?? []).map((prestation: Prestation) => {
-                                const isEditing = editingPrestationId === prestation.id;
-                                return (
-                                    <tr key={prestation.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 font-medium text-gray-900">
-                                            {isEditing ? (
-                                                <input 
-                                                    type="text"
-                                                    value={editForm.type ?? ''}
-                                                    onChange={(e) => updateEditForm('type', e.target.value)}
-                                                    className="w-20 p-1 border rounded"
-                                                />
-                                            ) : (
-                                                prestation.type
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-700">
-                                            {prestation.responsable?.name ?? 'Non assigné'}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-700">
-                                            {isEditing ? (
-                                                <input
-                                                    type="number"
-                                                    value={editForm.tarif_ht ?? ''}
-                                                    onChange={(e) => updateEditForm('tarif_ht', e.target.value)}
-                                                    className="w-20 p-1 border rounded"
-                                                />
-                                            ) : (
-                                                formatCurrency(prestation.tarif_ht)
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-700">
-                                            {isEditing ? (
-                                                <input
-                                                    type="text"
-                                                    value={editForm.frequence ?? ''}
-                                                    onChange={(e) => updateEditForm('frequence', e.target.value)}
-                                                    className="w-20 p-1 border rounded"
-                                                />
-                                            ) : (
-                                                prestation.frequence || '—'
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-700">
-                                            {isEditing ? (
-                                                <input
-                                                    type="number"
-                                                    value={editForm.engagement_mois ?? ''}
-                                                    onChange={(e) => updateEditForm('engagement_mois', e.target.value)}
-                                                    className="w-16 p-1 border rounded"
-                                                />
-                                            ) : (
-                                                formatEngagement(prestation.engagement_mois)
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-700">
-                                            {isEditing ? (
-                                                <div className="flex flex-col space-y-1">
-                                                    <input 
-                                                        type="date"
-                                                        value={editForm.date_debut}
-                                                        onChange={(e) => updateEditForm('date_debut', e.target.value)}
-                                                        className="w-32 p-1 border rounded text-xs"
-                                                    />
-                                                    <input 
-                                                        type="date"
-                                                        value={editForm.date_fin}
-                                                        onChange={(e) => updateEditForm('date_fin', e.target.value)}
-                                                        className="w-32 p-1 border rounded text-xs"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                formatPeriod(prestation.date_debut, prestation.date_fin)
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600">
-                                            {isEditing ? (
-                                                <input
-                                                    type="text"
-                                                    value={editForm.notes ?? ''}
-                                                    onChange={(e) => updateEditForm('notes', e.target.value)}
-                                                    className="w-24 p-1 border rounded"
-                                                />
-                                            ) : (
-                                                prestation.notes?.length ? prestation.notes : '—'
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {prestation.statut === 'validee' ? (
-                                                <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                    <Check className="w-3 h-3 mr-1" />
-                                                    Validée
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                    En attente
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-500 text-xs">
-                                            {prestation.updated_at
-                                                ? new Date(prestation.updated_at).toLocaleDateString('fr-FR')
-                                                : '—'}
-                                        </td>
-                                        {/* Actions d'édition */}
-                                        {canEdit && (
-                                            <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                <div className="flex gap-2 justify-end">
-                                                    {isEditing ? (
-                                                        <>
-                                                            <ActionButton
-                                                                onClick={() => handleSave(prestation.id)}
-                                                                icon={saving ? Loader2 : Save}
-                                                                color="teal"
-                                                                label={saving ? 'Sauvegarde' : 'Sauver'}
-                                                                disabled={saving}
-                                                            />
-                                                            <ActionButton
-                                                                onClick={handleCancel}
-                                                                icon={X}
-                                                                color="gray"
-                                                                label="Annuler"
-                                                                disabled={saving}
-                                                            />
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            {prestation.statut === 'en_attente' && (
-                                                                <ActionButton
-                                                                    onClick={() => handleValidatePrestation(prestation.id)}
-                                                                    icon={Check}
-                                                                    color="green"
-                                                                    label="Valider"
-                                                                />
-                                                            )}
-                                                            <ActionButton
-                                                                onClick={() => startEdit(prestation)}
-                                                                icon={Edit}
-                                                                color="teal"
-                                                                label="Modifier"
-                                                            />
-                                                            <ActionButton
-                                                                onClick={() => handleDeletePrestation(prestation.id)}
-                                                                icon={Trash2}
-                                                                color="red"
-                                                                label="Supprimer"
-                                                            />
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        )}
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div className="mt-6 grid gap-4">
-                {/* Bouton pour afficher/masquer le formulaire d'ajout */}
-                {canEdit && (
-                    <button 
-                        onClick={() => {
-                            setShowAddForm(prev => !prev);
-                            setEditingPrestationId(null); // Masquer l'édition si on ajoute
-                        }}
-                        className="bg-teal-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-teal-700 flex items-center justify-center"
-                    >
-                        <PlusCircle className="w-5 h-5 mr-2" /> 
-                        {showAddForm ? "Masquer le formulaire" : "Ajouter une nouvelle prestation"}
-                    </button>
-                )}
-
-                {/* Formulaire d'ajout de prestation (Rendu conditionnel) */}
-                {canEdit && showAddForm && (
-                    <AddPrestationForm 
-                        handleAddPrestation={handleAddPrestation} 
-                        setShowAddForm={setShowAddForm} 
-                        client={client}
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <PremiumInfoCard
+                        label="Budget Mensuel"
+                        value={formatCurrency(client.montant_mensuel_total)}
+                        icon={TrendingUp}
+                        color="teal"
+                        subtext="Total des prestations récurrentes"
                     />
-                )}
+                    <PremiumInfoCard
+                        label="Facturation"
+                        value={client.frequence_facturation || 'Mensuelle'}
+                        icon={Calendar}
+                        color="blue"
+                    />
+                    <PremiumInfoCard
+                        label="Paiement"
+                        value={client.mode_paiement || 'Virement'}
+                        icon={CreditCard}
+                        color="purple"
+                    />
+                    <PremiumInfoCard
+                        label="Contrat"
+                        value={client.contrat || 'Standard'}
+                        icon={FileText}
+                        color="amber"
+                        subtext={client.date_contrat ? `Signé le ${formatDate(client.date_contrat)}` : undefined}
+                    />
+                </div>
+            </section>
 
-                {/* Notes Comptables */}
-                <div className="p-4 bg-white border border-teal-100 rounded-xl shadow-sm">
-                    <h4 className="text-sm font-semibold text-teal-700 uppercase tracking-wide mb-2">Notes comptables internes</h4>
-                    {client.notes_comptables ? (
-                        <p className="text-sm text-gray-700 leading-relaxed">{client.notes_comptables}</p>
-                    ) : (
-                        <p className="text-sm italic text-gray-400">
-                            Aucune note comptable n'a été enregistrée pour ce client.
-                        </p>
+            {/* Section Prestations */}
+            <section className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            <ReceiptText className="w-5 h-5 text-teal-400" />
+                            Prestations & Services
+                        </h3>
+                        <p className="text-gray-400 text-sm mt-1">Gérez les services facturés au client</p>
+                    </div>
+
+                    {canEdit && !showAddForm && (
+                        <button
+                            onClick={() => {
+                                setShowAddForm(true);
+                                setEditingPrestationId(null);
+                            }}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-teal-500 hover:bg-teal-400 text-white rounded-xl font-semibold transition-all shadow-lg shadow-teal-900/20 transform hover:-translate-y-0.5"
+                        >
+                            <PlusCircle className="w-5 h-5" />
+                            Ajouter une prestation
+                        </button>
                     )}
                 </div>
-            </div>
-        </section>
+
+                <div className="p-6">
+                    {canEdit && showAddForm && (
+                        <div className="mb-8">
+                            <AddPrestationForm
+                                handleAddPrestation={handleAddPrestation}
+                                setShowAddForm={setShowAddForm}
+                                client={client}
+                            />
+                        </div>
+                    )}
+
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Service</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tarif HT</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fréquence</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Engagement</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Période</th>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Statut</th>
+                                        {canEdit && <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>}
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-100">
+                                    {(client.prestations ?? []).map((prestation: Prestation) => {
+                                        const isEditing = editingPrestationId === prestation.id;
+                                        return (
+                                            <tr key={prestation.id} className={`group hover:bg-gray-50/80 transition-colors ${isEditing ? 'bg-teal-50/30' : ''}`}>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {isEditing ? (
+                                                        <input
+                                                            type="text"
+                                                            value={editForm.type ?? ''}
+                                                            onChange={(e) => updateEditForm('type', e.target.value)}
+                                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
+                                                            placeholder="Type"
+                                                        />
+                                                    ) : (
+                                                        <div>
+                                                            <div className="font-bold text-gray-900">{prestation.type}</div>
+                                                            {prestation.notes && (
+                                                                <div className="text-xs text-gray-500 mt-0.5 max-w-[200px] truncate">{prestation.notes}</div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {isEditing ? (
+                                                        <input
+                                                            type="number"
+                                                            value={editForm.tarif_ht ?? ''}
+                                                            onChange={(e) => updateEditForm('tarif_ht', e.target.value)}
+                                                            className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
+                                                        />
+                                                    ) : (
+                                                        <span className="font-semibold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg">
+                                                            {formatCurrency(prestation.tarif_ht)}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                    {isEditing ? (
+                                                        <select
+                                                            value={editForm.frequence ?? ''}
+                                                            onChange={(e) => updateEditForm('frequence', e.target.value)}
+                                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
+                                                        >
+                                                            <option value="Mensuel">Mensuel</option>
+                                                            <option value="Trimestriel">Trimestriel</option>
+                                                            <option value="Annuel">Annuel</option>
+                                                            <option value="Unique">Unique</option>
+                                                        </select>
+                                                    ) : (
+                                                        prestation.frequence
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                    {isEditing ? (
+                                                        <input
+                                                            type="number"
+                                                            value={editForm.engagement_mois ?? ''}
+                                                            onChange={(e) => updateEditForm('engagement_mois', e.target.value)}
+                                                            className="w-20 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
+                                                        />
+                                                    ) : (
+                                                        formatEngagement(prestation.engagement_mois)
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {isEditing ? (
+                                                        <div className="flex flex-col gap-1">
+                                                            <input
+                                                                type="date"
+                                                                value={editForm.date_debut}
+                                                                onChange={(e) => updateEditForm('date_debut', e.target.value)}
+                                                                className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                                            />
+                                                            <input
+                                                                type="date"
+                                                                value={editForm.date_fin}
+                                                                onChange={(e) => updateEditForm('date_fin', e.target.value)}
+                                                                className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        formatPeriod(prestation.date_debut, prestation.date_fin)
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {prestation.statut === 'validee' ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                            <Check className="w-3 h-3" />
+                                                            Validée
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                                            <AlertCircle className="w-3 h-3" />
+                                                            En attente
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                {canEdit && (
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {isEditing ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleSave(prestation.id)}
+                                                                        disabled={saving}
+                                                                        className="p-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm"
+                                                                        title="Enregistrer"
+                                                                    >
+                                                                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={handleCancel}
+                                                                        disabled={saving}
+                                                                        className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                                                                        title="Annuler"
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {prestation.statut === 'en_attente' && (
+                                                                        <button
+                                                                            onClick={() => handleValidatePrestation(prestation.id)}
+                                                                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                                            title="Valider"
+                                                                        >
+                                                                            <Check className="w-4 h-4" />
+                                                                        </button>
+                                                                    )}
+                                                                    <button
+                                                                        onClick={() => startEdit(prestation)}
+                                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                        title="Modifier"
+                                                                    >
+                                                                        <Edit className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeletePrestation(prestation.id)}
+                                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                        title="Supprimer"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        );
+                                    })}
+                                    {(!client.prestations || client.prestations.length === 0) && (
+                                        <tr>
+                                            <td colSpan={canEdit ? 7 : 6} className="px-6 py-12 text-center text-gray-500">
+                                                <div className="flex flex-col items-center justify-center gap-3">
+                                                    <div className="p-3 bg-gray-100 rounded-full">
+                                                        <ReceiptText className="w-8 h-8 text-gray-400" />
+                                                    </div>
+                                                    <p className="text-base font-medium">Aucune prestation enregistrée</p>
+                                                    <p className="text-sm text-gray-400">Commencez par ajouter une prestation pour ce client.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Notes Comptables */}
+            <section className="bg-amber-50 rounded-2xl p-6 border border-amber-100">
+                <h4 className="text-sm font-bold text-amber-800 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Notes comptables internes
+                </h4>
+                <div className="bg-white rounded-xl p-4 border border-amber-100 shadow-sm">
+                    {client.notes_comptables ? (
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{client.notes_comptables}</p>
+                    ) : (
+                        <p className="text-gray-400 italic text-sm">Aucune note comptable n'a été enregistrée.</p>
+                    )}
+                </div>
+            </section>
+        </div>
     );
 }

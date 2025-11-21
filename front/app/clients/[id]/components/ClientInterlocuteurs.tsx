@@ -1,7 +1,7 @@
 // app/clients/[id]/components/ClientInterlocuteurs.tsx
 
 import React, { useState } from 'react';
-import { Users, Plus, Edit, Trash2, Save, X, Mail, Phone, Briefcase, FileText } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Save, X, Mail, Phone, Briefcase, FileText, User, Loader2 } from 'lucide-react';
 
 interface Interlocuteur {
   id?: string;
@@ -77,16 +77,16 @@ export default function ClientInterlocuteurs({ interlocuteurs, onUpdate, canEdit
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-2xl p-6 border border-purple-100 overflow-hidden">
-      <div className="absolute top-0 right-0 w-40 h-40 bg-purple-200 rounded-full opacity-10 -mr-20 -mt-20" />
+    <div className="relative bg-gradient-to-br from-orange-50 via-amber-50 to-orange-50 rounded-2xl p-6 border border-orange-100 overflow-hidden group">
+      <div className="absolute top-0 right-0 w-40 h-40 bg-orange-200 rounded-full opacity-10 -mr-20 -mt-20" />
 
       <div className="relative">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-600 rounded-lg">
+            <div className="p-2 bg-orange-500 rounded-lg shadow-sm shadow-orange-200">
               <Users className="w-5 h-5 text-white" />
             </div>
-            <h3 className="text-lg font-bold text-purple-900">
+            <h3 className="text-lg font-bold text-orange-900">
               Interlocuteurs
             </h3>
           </div>
@@ -94,7 +94,7 @@ export default function ClientInterlocuteurs({ interlocuteurs, onUpdate, canEdit
           {canEdit && !editing && (
             <button
               onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-md hover:shadow-lg"
             >
               <Edit className="w-4 h-4" />
               Modifier
@@ -102,155 +102,171 @@ export default function ClientInterlocuteurs({ interlocuteurs, onUpdate, canEdit
           )}
         </div>
 
-        {localInterlocuteurs.length === 0 && !editing ? (
-          <div className="flex items-center gap-3 text-gray-500 italic text-sm">
-            <div className="w-1 h-12 bg-gray-300 rounded-full" />
-            <p>Aucun interlocuteur n'a encore été ajouté.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {localInterlocuteurs.map((interlocuteur) => (
-              <div
-                key={interlocuteur.id}
-                className="bg-white rounded-xl p-4 border border-purple-100 hover:border-purple-300 transition-all"
-              >
-                {editing ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Poste *</label>
-                        <select
+        {editing ? (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="space-y-4">
+              {localInterlocuteurs.map((interlocuteur, index) => (
+                <div key={interlocuteur.id || index} className="bg-white rounded-xl p-5 border-2 border-orange-200 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <h4 className="font-bold text-orange-800 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Contact #{index + 1}
+                    </h4>
+                    <button
+                      onClick={() => handleRemove(interlocuteur.id!)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nom complet <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={interlocuteur.nom}
+                        onChange={(e) => handleChange(interlocuteur.id!, 'nom', e.target.value)}
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-0 transition-colors"
+                        placeholder="Ex: Jean Dupont"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Poste <span className="text-red-500">*</span></label>
+                      <div className="relative">
+                        <input
+                          list={`postes-${interlocuteur.id}`}
                           value={interlocuteur.poste}
                           onChange={(e) => handleChange(interlocuteur.id!, 'poste', e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        >
-                          <option value="">Sélectionner un poste</option>
+                          className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-0 transition-colors"
+                          placeholder="Sélectionner ou saisir..."
+                        />
+                        <datalist id={`postes-${interlocuteur.id}`}>
                           {POSTES_PREDEFINIS.map(p => (
-                            <option key={p.value} value={p.value}>{p.label}</option>
+                            <option key={p.value} value={p.label} />
                           ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Nom *</label>
-                        <input
-                          type="text"
-                          value={interlocuteur.nom}
-                          onChange={(e) => handleChange(interlocuteur.id!, 'nom', e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="Nom complet"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Téléphone</label>
-                        <input
-                          type="tel"
-                          value={interlocuteur.telephone || ''}
-                          onChange={(e) => handleChange(interlocuteur.id!, 'telephone', e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="06 XX XX XX XX"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={interlocuteur.email || ''}
-                          onChange={(e) => handleChange(interlocuteur.id!, 'email', e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="email@exemple.fr"
-                        />
+                        </datalist>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-                      <textarea
-                        value={interlocuteur.notes || ''}
-                        onChange={(e) => handleChange(interlocuteur.id!, 'notes', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        rows={2}
-                        placeholder="Notes complémentaires..."
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={interlocuteur.email}
+                        onChange={(e) => handleChange(interlocuteur.id!, 'email', e.target.value)}
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-0 transition-colors"
+                        placeholder="jean@exemple.com"
                       />
                     </div>
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => handleRemove(interlocuteur.id!)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Supprimer
-                      </button>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Téléphone</label>
+                      <input
+                        type="tel"
+                        value={interlocuteur.telephone}
+                        onChange={(e) => handleChange(interlocuteur.id!, 'telephone', e.target.value)}
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-0 transition-colors"
+                        placeholder="06 12 34 56 78"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Notes (optionnel)</label>
+                      <textarea
+                        value={interlocuteur.notes}
+                        onChange={(e) => handleChange(interlocuteur.id!, 'notes', e.target.value)}
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-orange-500 focus:ring-0 transition-colors resize-none"
+                        rows={2}
+                        placeholder="Informations complémentaires..."
+                      />
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Briefcase className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 text-sm">
-                          {POSTES_PREDEFINIS.find(p => p.value === interlocuteur.poste)?.label || interlocuteur.poste}
-                        </h4>
-                        <p className="text-xs text-gray-600">{interlocuteur.nom}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                      {interlocuteur.email && (
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Mail className="w-3 h-3" />
-                          <a href={`mailto:${interlocuteur.email}`} className="hover:text-purple-600 transition-colors">
-                            {interlocuteur.email}
-                          </a>
-                        </div>
-                      )}
-                      {interlocuteur.telephone && (
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Phone className="w-3 h-3" />
-                          <a href={`tel:${interlocuteur.telephone}`} className="hover:text-purple-600 transition-colors">
-                            {interlocuteur.telephone}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                    {interlocuteur.notes && (
-                      <div className="flex items-start gap-2 text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
-                        <FileText className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                        <p>{interlocuteur.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+                </div>
+              ))}
+            </div>
 
-        {editing && (
-          <div className="mt-4 flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleAdd}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
+              className="w-full py-3 border-2 border-dashed border-orange-300 rounded-xl text-orange-600 font-bold hover:bg-orange-50 hover:border-orange-400 transition-all flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
               Ajouter un interlocuteur
             </button>
-            <div className="flex gap-2 sm:ml-auto">
+
+            <div className="flex gap-3 pt-4 border-t border-orange-200">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors text-sm font-medium"
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-orange-500/30 font-bold"
               >
-                {saving ? <span className="animate-spin">⏳</span> : <Save className="w-4 h-4" />}
+                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                 Enregistrer
               </button>
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                className="px-6 py-3 bg-white text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 font-bold transition-colors"
               >
-                <X className="w-4 h-4" />
                 Annuler
               </button>
             </div>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {localInterlocuteurs.length > 0 ? (
+              localInterlocuteurs.map((interlocuteur, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 group/card"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-lg shadow-inner">
+                      {interlocuteur.nom.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-slate-900 text-base mb-0.5">
+                        {interlocuteur.nom}
+                      </h4>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100">
+                          <Briefcase className="w-3 h-3 mr-1" />
+                          {interlocuteur.poste}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {interlocuteur.email && (
+                          <a href={`mailto:${interlocuteur.email}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-orange-600 transition-colors">
+                            <Mail className="w-3.5 h-3.5" />
+                            {interlocuteur.email}
+                          </a>
+                        )}
+                        {interlocuteur.telephone && (
+                          <a href={`tel:${interlocuteur.telephone}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-orange-600 transition-colors">
+                            <Phone className="w-3.5 h-3.5" />
+                            {interlocuteur.telephone}
+                          </a>
+                        )}
+                      </div>
+
+                      {interlocuteur.notes && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                          <p className="text-xs text-slate-500 italic flex items-start gap-1.5">
+                            <FileText className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            {interlocuteur.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 bg-white/50 rounded-xl border border-orange-100">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full mb-3">
+                  <Users className="w-6 h-6 text-orange-400" />
+                </div>
+                <p className="text-slate-500 text-sm font-medium">Aucun interlocuteur enregistré</p>
+              </div>
+            )}
           </div>
         )}
       </div>

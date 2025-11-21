@@ -5,7 +5,8 @@ import {
   ExternalLink, Globe, BarChart, Search as SearchIcon,
   Facebook, Instagram, Linkedin, Twitter, Edit, Save, X, Youtube,
   Plus, Trash2, FileText, HardDrive, TrendingUp, Image, Palette,
-  BarChart3, MapPin, Video, Music, Mail, Phone, MessageCircle, Loader2
+  BarChart3, MapPin, Video, Music, Mail, Phone, MessageCircle, Loader2,
+  Link as LinkIcon
 } from 'lucide-react';
 
 interface ExternalLink {
@@ -124,11 +125,11 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
       // Ajouter un nouveau lien
       const lienTemplate = liensDisponibles.find(l => l.type === type);
       if (lienTemplate) {
-        setLocalLiens([...localLiens, { 
-          type, 
-          label: lienTemplate.label, 
-          url, 
-          icon: lienTemplate.icon 
+        setLocalLiens([...localLiens, {
+          type,
+          label: lienTemplate.label,
+          url,
+          icon: lienTemplate.icon
         }]);
       }
     }
@@ -167,22 +168,24 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
   }
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <ExternalLink className="w-5 h-5 text-blue-600" />
+    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-50 to-indigo-50/50 px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-indigo-600 rounded-xl shadow-sm shadow-indigo-200">
+            <LinkIcon className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h4 className="font-bold text-gray-900 text-base">Liens Externes</h4>
-            <p className="text-xs text-gray-600">Accès rapides aux outils</p>
+            <h4 className="font-bold text-slate-900 text-lg">Liens Externes</h4>
+            <p className="text-xs font-medium text-slate-500">Accès rapides aux outils & ressources</p>
           </div>
         </div>
         {canEdit && (
           <button
             onClick={handleToggleEdit}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-            title={editing ? 'Annuler' : 'Modifier'}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${editing
+                ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700'
+              }`}
           >
             {editing ? (
               <>
@@ -199,109 +202,129 @@ export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: 
         )}
       </div>
 
-      {editing ? (
-        <div className="space-y-3">
-          <div className="grid gap-3">
-            {liensDisponibles.map((lienTemplate) => {
-              const Icon = ICONS_MAP[lienTemplate.icon] || Globe;
-              const url = getLinkUrl(lienTemplate.type);
-
-              return (
-                <div key={lienTemplate.type} className="bg-white rounded-lg p-4 border border-blue-100 hover:border-blue-300 transition-colors">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <Icon className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <label className="text-sm font-semibold text-gray-800">{lienTemplate.label}</label>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={url}
-                      onChange={(e) => handleChange(lienTemplate.type, e.target.value)}
-                      placeholder={`https://exemple.com/${lienTemplate.type}`}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                    {url && (
-                      <button
-                        onClick={() => handleRemove(lienTemplate.type)}
-                        className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Supprimer ce lien"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex gap-2 pt-3 border-t border-blue-100">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold shadow-md hover:shadow-lg"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Enregistrement...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  Enregistrer
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleToggleEdit}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors text-sm font-medium"
-            >
-              <X className="w-4 h-4" />
-              Annuler
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div>
-          {liensActifs.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {liensActifs.map((lien) => {
-                const Icon = ICONS_MAP[lien.icon || lien.type] || Globe;
+      <div className="p-8">
+        {editing ? (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            <div className="grid gap-4 md:grid-cols-2">
+              {liensDisponibles.map((lienTemplate) => {
+                const Icon = ICONS_MAP[lienTemplate.icon] || Globe;
+                const url = getLinkUrl(lienTemplate.type);
+                const isActive = !!url;
 
                 return (
-                  <a
-                    key={lien.type}
-                    href={lien.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-2 px-4 py-2.5 bg-white text-blue-700 rounded-lg hover:bg-blue-600 hover:text-white hover:shadow-lg transition-all duration-200 text-sm font-semibold border border-blue-200"
-                    title={`Ouvrir ${lien.label}`}
+                  <div
+                    key={lienTemplate.type}
+                    className={`relative group rounded-xl border-2 p-4 transition-all duration-200 ${isActive
+                        ? 'border-indigo-200 bg-indigo-50/30'
+                        : 'border-slate-100 bg-slate-50/30 hover:border-slate-200'
+                      }`}
                   >
-                    <Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                    <span>{lien.label}</span>
-                    <ExternalLink className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100" />
-                  </a>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <label className={`font-bold text-sm ${isActive ? 'text-indigo-900' : 'text-slate-600'}`}>
+                        {lienTemplate.label}
+                      </label>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={(e) => handleChange(lienTemplate.type, e.target.value)}
+                        placeholder={`https://...`}
+                        className={`w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:ring-0 transition-all ${isActive
+                            ? 'border-indigo-200 focus:border-indigo-500 bg-white'
+                            : 'border-slate-200 focus:border-indigo-400 bg-white/50'
+                          }`}
+                      />
+                      {url && (
+                        <button
+                          onClick={() => handleRemove(lienTemplate.type)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Effacer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
+            </div>
 
+            <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-indigo-500/30 font-bold"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    Enregistrer les liens
+                  </>
+                )}
+              </button>
             </div>
-          ) : (
-            <div className="text-center py-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
-                <ExternalLink className="w-6 h-6 text-blue-400" />
+          </div>
+        ) : (
+          <div>
+            {liensActifs.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {liensActifs.map((lien) => {
+                  const Icon = ICONS_MAP[lien.icon || lien.type] || Globe;
+
+                  return (
+                    <a
+                      key={lien.type}
+                      href={lien.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                    >
+                      <div className="p-3 bg-slate-50 text-slate-600 rounded-xl group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-bold text-slate-800 group-hover:text-indigo-700 transition-colors truncate">
+                          {lien.label}
+                        </h5>
+                        <p className="text-xs text-slate-400 truncate group-hover:text-indigo-400 transition-colors">
+                          {lien.url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                        </p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                    </a>
+                  );
+                })}
               </div>
-              <p className="text-gray-500 text-sm">Aucun lien externe configuré</p>
-              {canEdit && (
-                <p className="text-gray-400 text-xs mt-1">Cliquez sur "Modifier" pour en ajouter</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+            ) : (
+              <div className="text-center py-12 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-sm mb-4">
+                  <LinkIcon className="w-8 h-8 text-slate-300" />
+                </div>
+                <p className="text-slate-500 font-medium">Aucun lien externe configuré</p>
+                {canEdit && (
+                  <button
+                    onClick={handleToggleEdit}
+                    className="mt-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                  >
+                    Ajouter des liens
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
