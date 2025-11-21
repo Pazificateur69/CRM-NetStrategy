@@ -2,8 +2,8 @@
 
 'use client';
 
-import React, { ElementType } from 'react';
-import { Download, FileText, PlusCircle } from 'lucide-react';
+import React, { ElementType, useRef } from 'react';
+import { Download, FileText, PlusCircle, UploadCloud, File, X } from 'lucide-react';
 import ClientActivityStream from './ClientActivityStream';
 import ClientExternalLinks from './ClientExternalLinks';
 import { formatDateTime } from '../ClientUtils';
@@ -20,7 +20,7 @@ interface ClientPoleTabProps {
   file: File | null;
   setFile: React.Dispatch<React.SetStateAction<File | null>>;
   handleUpload: (pole: string) => Promise<void>;
-  userRole: string; 
+  userRole: string;
   newTodo: any;
   setNewTodo: any;
   handleAddTodo: any;
@@ -61,8 +61,8 @@ export default function ClientPoleTab({
 }: ClientPoleTabProps) {
   const prestations = getPrestationsByTypes(tab.prestationTypes);
   const IconComponent: ElementType = tab.icon as ElementType;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 4️⃣ CORRIGÉ : Filtrer les fichiers en utilisant tab.id
   const poleDocs =
     client.contenu?.filter(
       (c: any) => c.type === 'Fichier' && c.pole === tab.id
@@ -72,13 +72,12 @@ export default function ClientPoleTab({
     filteredTodos,
     filteredRappels,
     canEdit,
-    activePoleLabel: tab.label, // ActivePoleLabel peut rester le label pour l'affichage
+    activePoleLabel: tab.label,
     userRole,
     formatDateTime,
     ...activityHandlers,
   };
 
-  // Gestion des liens externes
   const handleUpdateLinks = async (liens: any[]) => {
     try {
       await updateClient(Number(client.id), { liens_externes: liens });
@@ -89,102 +88,190 @@ export default function ClientPoleTab({
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <section
-  className={`bg-white p-8 rounded-2xl shadow-xl border ${
-        tab.accent?.border ?? 'border-gray-200'
-      }`}
-    >
-      <h3
-        className={`text-2xl font-bold mb-3 flex items-center ${
-          tab.accent?.title ?? 'text-gray-700'
-        }`}
-      >
-        <IconComponent className="w-6 h-6 mr-3" />
-        {tab.label}
-      </h3>
+    <section className="space-y-8 animate-fade-in">
+      {/* === Header du Pôle === */}
+      <div className={`bg-white p-8 rounded-2xl shadow-xl border ${tab.accent?.border ?? 'border-slate-200'} relative overflow-hidden`}>
+        {/* Background Decoration */}
+        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${tab.accent?.bgGradient || 'from-slate-50 to-slate-100'} opacity-50 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none`} />
 
-      <p className="text-sm text-gray-500 mb-6">{tab.description}</p>
-
-      {/* === Liens externes === */}
-      <div className="mb-6">
-        <ClientExternalLinks
-          liens={client.liens_externes || []}
-          pole={tab.id}
-          onUpdate={handleUpdateLinks}
-          canEdit={canEdit}
-        />
-      </div>
-
-      {/* === Dossier numérique par pôle === */}
-      <div className="mt-6 mb-8">
-        <h4 className="text-xl font-bold text-gray-700 border-b-2 border-gray-100 pb-3 mb-6">
-          Dossier numérique — Pôle {tab.label}
-        </h4>
-
-        {poleDocs.length ? (
-          <ul className="divide-y divide-gray-200">
-            {poleDocs.map((doc: any) => (
-              <li
-                key={doc.id}
-                className="py-4 flex justify-between items-center hover:bg-gray-50 px-2 rounded-lg"
-              >
-                <span className="font-medium text-gray-800 flex items-center">
-                  <FileText className="w-5 h-5 mr-3 text-blue-500" />
-                  {doc.nom_original_fichier}
-                </span>
-                <a
-                  href={`/api/contenu/${doc.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center"
-                >
-                  Télécharger <Download className="w-4 h-4 ml-1" />
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-400 italic text-sm">
-            Aucun document disponible pour ce pôle.
-          </p>
-        )}
-
-        {/* === Upload d’un fichier pour ce pôle === */}
-        {canEdit && (
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <h4 className="font-medium text-gray-700 mb-3">
-              Ajouter un document pour ce pôle :
-            </h4>
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
-              <input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-              />
-              <button
-                // 4️⃣ CORRIGÉ : Utilise tab.id pour l'upload
-                onClick={() => handleUpload(tab.id)}
-                disabled={!file}
-                className={`px-5 py-2 rounded-lg font-semibold flex items-center transition duration-300 shadow-md ${
-                  file
-                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                <PlusCircle className="w-4 h-4 mr-1" /> Envoyer
-              </button>
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`p-3 rounded-xl bg-white shadow-sm border ${tab.accent?.border ?? 'border-slate-200'}`}>
+              <IconComponent className={`w-8 h-8 ${tab.accent?.title ?? 'text-slate-700'}`} />
+            </div>
+            <div>
+              <h3 className={`text-2xl font-bold ${tab.accent?.title ?? 'text-slate-900'}`}>
+                {tab.label}
+              </h3>
+              <p className="text-slate-500 font-medium">Espace de travail dédié</p>
             </div>
           </div>
-        )}
+
+          <p className="text-slate-600 max-w-3xl leading-relaxed">
+            {tab.description}
+          </p>
+        </div>
+      </div>
+
+      {/* === Liens externes === */}
+      <ClientExternalLinks
+        liens={client.liens_externes || []}
+        pole={tab.id}
+        onUpdate={handleUpdateLinks}
+        canEdit={canEdit}
+      />
+
+      {/* === Dossier numérique === */}
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+          <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-indigo-500" />
+            Documents & Fichiers
+          </h4>
+          <span className="text-xs font-semibold bg-slate-200 text-slate-600 px-2.5 py-1 rounded-full">
+            {poleDocs.length} fichier{poleDocs.length > 1 ? 's' : ''}
+          </span>
+        </div>
+
+        <div className="p-8">
+          {poleDocs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {poleDocs.map((doc: any) => (
+                <div
+                  key={doc.id}
+                  className="group relative bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-md transition-all duration-300 flex flex-col"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <a
+                      href={`/api/contenu/${doc.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                      title="Télécharger"
+                    >
+                      <Download className="w-5 h-5" />
+                    </a>
+                  </div>
+
+                  <h5 className="font-semibold text-slate-800 text-sm truncate mb-1" title={doc.nom_original_fichier}>
+                    {doc.nom_original_fichier}
+                  </h5>
+                  <p className="text-xs text-slate-500">
+                    Ajouté le {new Date(doc.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-sm mb-4">
+                <File className="w-8 h-8 text-slate-300" />
+              </div>
+              <p className="text-slate-500 font-medium">Aucun document dans ce dossier</p>
+            </div>
+          )}
+
+          {/* === Upload Area === */}
+          {canEdit && (
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <UploadCloud className="w-5 h-5 text-indigo-500" />
+                Ajouter un document
+              </h4>
+
+              <div className="flex flex-col md:flex-row gap-4 items-stretch">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {!file ? (
+                  <button
+                    onClick={triggerFileInput}
+                    className="flex-1 flex flex-col items-center justify-center py-8 px-4 border-2 border-dashed border-indigo-200 rounded-xl bg-indigo-50/30 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 transition-all cursor-pointer group"
+                  >
+                    <UploadCloud className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
+                    <span className="font-medium">Cliquez pour sélectionner un fichier</span>
+                    <span className="text-xs text-indigo-400 mt-1">PDF, Images, Docs...</span>
+                  </button>
+                ) : (
+                  <div className="flex-1 flex items-center justify-between p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="p-2 bg-white rounded-lg shadow-sm text-indigo-600">
+                        <File className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-indigo-900 truncate">{file.name}</p>
+                        <p className="text-xs text-indigo-600">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={clearFile}
+                      className="p-2 text-indigo-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => handleUpload(tab.id)}
+                  disabled={!file}
+                  className={`md:w-48 flex items-center justify-center gap-2 font-bold rounded-xl transition-all duration-300 shadow-lg ${file
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 shadow-indigo-500/30'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  Envoyer
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* === Tâches / Rappels === */}
-      <div className="mt-10 pt-8 border-t border-gray-100">
-        <h3 className="text-2xl font-bold text-gray-700 border-b-2 border-gray-100 pb-3 mb-6">
-          Tâches et rappels d'activité — {tab.label}
-        </h3>
-        <ClientActivityStream {...activityHandlers} activePoleLabel={tab.label} canEdit={canEdit} filteredRappels={filteredRappels} filteredTodos={filteredTodos} userRole={userRole} />
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+          <h3 className="text-xl font-bold text-slate-800">
+            Activités du Pôle {tab.label}
+          </h3>
+          <p className="text-slate-500 text-sm mt-1">Suivi des tâches et rappels spécifiques</p>
+        </div>
+        <div className="p-8">
+          <ClientActivityStream
+            {...activityHandlers}
+            activePoleLabel={tab.label}
+            canEdit={canEdit}
+            filteredRappels={filteredRappels}
+            filteredTodos={filteredTodos}
+            userRole={userRole}
+          />
+        </div>
       </div>
     </section>
   );

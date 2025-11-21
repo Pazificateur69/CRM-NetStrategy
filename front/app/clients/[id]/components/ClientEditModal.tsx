@@ -1,5 +1,6 @@
 // app/clients/[id]/components/ClientEditModal.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Loader2,
   Save,
@@ -112,42 +113,32 @@ export default function ClientEditModal({
   saving,
   onInterlocuteursChange,
 }: ClientEditModalProps) {
+  const [mounted, setMounted] = useState(false);
 
-  // Hook 1: Gestion du scroll
-  React.useEffect(() => {
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Hook: Gestion du scroll et fermeture
+  useEffect(() => {
     if (open) {
       const scrollY = window.scrollY;
       const body = document.body;
       const originalOverflow = body.style.overflow;
-      const originalPosition = body.style.position;
-      const originalTop = body.style.top;
-      const originalWidth = body.style.width;
 
       body.style.overflow = 'hidden';
-      body.style.position = 'fixed';
-      body.style.top = `-${scrollY}px`;
-      body.style.width = '100%';
+
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      document.addEventListener('keydown', handleEscape);
 
       return () => {
         body.style.overflow = originalOverflow;
-        body.style.position = originalPosition;
-        body.style.top = originalTop;
-        body.style.width = originalWidth;
-        window.scrollTo(0, scrollY);
+        document.removeEventListener('keydown', handleEscape);
       };
     }
-  }, [open]);
-
-  // Hook 2: Fermeture avec touche Escape
-  React.useEffect(() => {
-    if (!open) return;
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
 
   // Fonctions de gestion des interlocuteurs
@@ -175,13 +166,12 @@ export default function ClientEditModal({
     );
   };
 
-  if (!open) {
-    return null;
-  }
+  if (!mounted || !open) return null;
 
-  return (
+  // Utilisation de Portal pour sortir du contexte de stacking (transform/animation)
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -537,6 +527,7 @@ export default function ClientEditModal({
           </div>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
