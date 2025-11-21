@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Todo;
 use App\Models\Client;
 use App\Models\User;
+use App\Http\Resources\TodoResource;
 
 class TodoController extends Controller
 {
@@ -16,22 +17,21 @@ class TodoController extends Controller
     {
         $user = $request->user();
 
-        $todos = $user->hasRole('admin')
-            ? Todo::with(['user.roles', 'client', 'assignedUser.roles'])
-                ->orderBy('ordre')
-                ->orderBy('created_at', 'asc')
-                ->get()
-            : Todo::with(['user.roles', 'client', 'assignedUser.roles'])
-                ->where(function ($query) use ($user) {
-                    $query->where('user_id', $user->id)
-                        ->orWhere('assigned_to', $user->id)
-                        ->orWhere('pole', $user->pole); // ✅ AJOUTÉ : Voir les tâches de son pôle
-                })
-                ->orderBy('ordre')
-                ->orderBy('created_at', 'asc')
-                ->get();
+        $query = Todo::with(['user.roles', 'client', 'assignedUser.roles'])
+            ->orderBy('ordre')
+            ->orderBy('created_at', 'asc');
 
-        return response()->json(['data' => $todos]);
+        if (!$user->hasRole('admin')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhere('assigned_to', $user->id)
+                    ->orWhere('pole', $user->pole);
+            });
+        }
+
+        $todos = $query->get();
+
+        return TodoResource::collection($todos)->response();
     }
 
     /**
@@ -41,26 +41,22 @@ class TodoController extends Controller
     {
         $user = $request->user();
 
-        // ✅ CORRECTION : Admin voit TOUTES les tâches du pôle
-        // Utilisateur normal voit les tâches du pôle où il est créateur, assigné OU qui ont le même pole que lui
-        $todos = ($user->hasRole('admin') || $user->pole === 'admin')
-            ? Todo::with(['user.roles', 'client', 'assignedUser.roles'])
-                ->where('pole', $pole)
-                ->orderBy('ordre', 'asc')
-                ->orderBy('created_at', 'asc')
-                ->get()
-            : Todo::with(['user.roles', 'client', 'assignedUser.roles'])
-                ->where('pole', $pole)
-                ->where(function ($query) use ($user) {
-                    $query->where('user_id', $user->id)
-                        ->orWhere('assigned_to', $user->id)
-                        ->orWhere('pole', $user->pole); // ✅ AJOUTÉ
-                })
-                ->orderBy('ordre', 'asc')
-                ->orderBy('created_at', 'asc')
-                ->get();
+        $query = Todo::with(['user.roles', 'client', 'assignedUser.roles'])
+            ->where('pole', $pole)
+            ->orderBy('ordre', 'asc')
+            ->orderBy('created_at', 'asc');
 
-        return response()->json($todos);
+        if (!$user->hasRole('admin') && $user->pole !== 'admin') {
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhere('assigned_to', $user->id)
+                    ->orWhere('pole', $user->pole);
+            });
+        }
+
+        $todos = $query->get();
+
+        return TodoResource::collection($todos)->response();
     }
 
     /**
@@ -86,10 +82,9 @@ class TodoController extends Controller
             ? User::find($validated['assigned_to'])
             : null;
 
-        // ✅ AMÉLIORATION : Détermine le pôle dans l'ordre de priorité
-        $determinedPole = $validated['pole'] 
-            ?? $assignedUser?->pole 
-            ?? $user->pole 
+        $determinedPole = $validated['pole']
+            ?? $assignedUser?->pole
+            ?? $user->pole
             ?? null;
 
         $todo = new Todo([
@@ -109,18 +104,9 @@ class TodoController extends Controller
 
         $todo->save();
 
-        \Log::info('✅ Tâche créée', [
-            'id' => $todo->id,
-            'titre' => $todo->titre,
-            'pole' => $todo->pole,
-            'assigned_to' => $todo->assigned_to,
-            'user_id' => $todo->user_id,
-        ]);
-
-        return response()->json([
-            'message' => 'Tâche créée avec succès.',
-            'data' => $todo->load(['user.roles', 'client', 'assignedUser.roles']),
-        ], 201);
+        return (new TodoResource($todo->load(['user.roles', 'client', 'assignedUser.roles'])))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -128,17 +114,14 @@ class TodoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        \Log::info('📥 Todo update payload:', $request->all());
-
         $todo = Todo::find($id);
         if (!$todo) {
-            return response()->json(['error' => "Tâche introuvable (id: $id)"], 404);
+            return response()->json(['message' => "Tâche introuvable"], 404);
         }
 
         $user = $request->user();
-        // Autoriser le créateur, l'utilisateur assigné ou un admin
         if ($user->id !== $todo->user_id && $user->id !== $todo->assigned_to && !$user->hasRole('admin')) {
-            return response()->json(['error' => 'Non autorisé'], 403);
+            return response()->json(['message' => 'Non autorisé'], 403);
         }
 
         $validated = $request->validate([
@@ -156,7 +139,6 @@ class TodoController extends Controller
             ? User::find($validated['assigned_to'])
             : $todo->assignedUser;
 
-        // ✅ AMÉLIORATION : Mise à jour intelligente du pôle
         $newPole = $validated['pole']
             ?? ($assignedUser?->pole)
             ?? $todo->pole
@@ -174,16 +156,7 @@ class TodoController extends Controller
             'pole' => $newPole,
         ]));
 
-        \Log::info('✅ Tâche mise à jour', [
-            'id' => $todo->id,
-            'pole' => $todo->pole,
-            'assigned_to' => $todo->assigned_to,
-        ]);
-
-        return response()->json([
-            'message' => 'Tâche mise à jour avec succès.',
-            'data' => $todo->load(['user.roles', 'client', 'assignedUser.roles']),
-        ]);
+        return (new TodoResource($todo->load(['user.roles', 'client', 'assignedUser.roles'])))->response();
     }
 
     /**
@@ -193,9 +166,8 @@ class TodoController extends Controller
     {
         $user = $request->user();
 
-        // Autoriser le créateur, l'utilisateur assigné ou un admin
         if ($user->id !== $todo->user_id && $user->id !== $todo->assigned_to && !$user->hasRole('admin')) {
-            return response()->json(['error' => 'Non autorisé'], 403);
+            return response()->json(['message' => 'Non autorisé'], 403);
         }
 
         $todo->delete();

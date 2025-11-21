@@ -57,7 +57,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     api.get(`/rappels/pole/${pole}`),
   ]);
 
-  const todos: Task[] = todosRes.data.map((t: any) => ({
+  const todos: Task[] = (todosRes.data.data || todosRes.data).map((t: any) => ({
     id: String(t.id),
     title: t.titre,
     client: t.client?.societe || 'N/A',
@@ -70,7 +70,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     ordre: t.ordre || 0,
   }));
 
-  const rappels: Task[] = rappelsRes.data.map((r: any) => ({
+  const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
     id: `r-${r.id}`,
     title: r.titre,
     client: r.client?.societe || 'N/A',

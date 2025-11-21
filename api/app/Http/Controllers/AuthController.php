@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\Password;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -17,9 +18,17 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
+            'password' => [
+                'required',
+                'string',
+                Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+            ],
             'role' => 'nullable|string|in:admin,com,rh,reseaux,user',
-            'pole' => 'nullable|string|max:255', // ✅ si tu veux attribuer un pôle à l’inscription
+            'pole' => 'nullable|string|max:255',
         ]);
 
         $user = User::create([
@@ -49,26 +58,25 @@ class AuthController extends Controller
         $user = User::where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
+            // 🔒 Sécurité : Message générique pour éviter l'énumération d'utilisateurs
             throw ValidationException::withMessages([
-                'email' => ['Identifiants invalides.'],
+                'email' => ['Les identifiants fournis sont incorrects.'],
             ]);
         }
 
         $token = $user->createToken('api_token')->plainTextToken;
 
-        // ✅ On renvoie les infos utiles au front (pôle + rôles Spatie)
         return response()->json([
-    'access_token' => $token,
-    'token_type' => 'Bearer',
-    'user' => [
-        'id' => $user->id,
-        'name' => $user->name,
-        'email' => $user->email,
-        'role' => $user->role,
-        'pole' => $user->pole, // ✅ ajoute ceci
-    ],
-]);
-
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'pole' => $user->pole,
+            ],
+        ]);
     }
 
     /**

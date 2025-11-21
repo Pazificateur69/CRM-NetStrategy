@@ -9,6 +9,8 @@ class ProspectResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
@@ -16,19 +18,15 @@ class ProspectResource extends JsonResource
             'id' => $this->id,
             'societe' => $this->societe,
             'contact' => $this->contact,
-            'emails' => $this->emails ?? [],
-            'telephones' => $this->telephones ?? [],
+            'emails' => $this->emails,
+            'telephones' => $this->telephones,
             'statut' => $this->statut,
-            'couleur_statut' => $this->couleur_statut ?? 'vert',
-
-            // Relations
-            'todos' => $this->whenLoaded('todos'),
-            'rappels' => $this->whenLoaded('rappels'),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            // Relations (chargées conditionnellement)
+            'todos' => TodoResource::collection($this->whenLoaded('todos')),
+            'rappels' => $this->whenLoaded('rappels'), // On pourra faire un RappelResource plus tard
             'contenu' => $this->whenLoaded('contenu'),
-
-            // Dates
-            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

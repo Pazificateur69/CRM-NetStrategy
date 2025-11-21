@@ -6,81 +6,75 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { getClientsList } from '@/services/data';
 import { ClientDetail } from '@/types/crm';
 import Link from 'next/link';
-// Importez LucideIcon pour le typage correct des icônes
-import { PlusCircle, Search, FileText, Users, AlertTriangle, LucideIcon, ChevronRight } from 'lucide-react';
+import {
+    Plus,
+    Search,
+    Users,
+    AlertCircle,
+    ChevronRight,
+    Building2,
+    Mail,
+    Calendar,
+    ArrowUpRight,
+    Filter
+} from 'lucide-react';
 
-// --- 1. TYPAGE POUR CORRIGER LES ERREURS TS (7031) ---
-interface StatCardProps {
-    title: string;
-    value: string | number;
-    icon: LucideIcon;
-    className?: string;
-}
-
-// --- 2. COMPOSANT UTILITAIRE POUR LA CARTE DE STATISTIQUES ---
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, className = '' }) => (
-    <div className={`flex items-center p-5 bg-white rounded-2xl shadow-lg ring-1 ring-gray-100 ${className}`}>
-        <div className="p-3 mr-4 rounded-full bg-indigo-100">
-            <Icon className="w-6 h-6 text-indigo-600" />
-        </div>
-        <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-    </div>
-);
-
-// --- 3. COMPOSANT LIGNE DE CLIENT CLICQUABLE ET STYLISÉE ---
-interface ClientRowProps {
-    client: ClientDetail;
-}
-
-const ClientRow: React.FC<ClientRowProps> = ({ client }) => {
-    // Formatage de la date
-    const formattedDate = client.date_contrat 
+// --- COMPOSANT LIGNE DE CLIENT ---
+const ClientRow = ({ client }: { client: ClientDetail }) => {
+    const formattedDate = client.date_contrat
         ? new Date(client.date_contrat).toLocaleDateString('fr-FR', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-          })
-        : 'N/A';
-
-    const clientLink = `/clients/${client.id}`;
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        })
+        : '—';
 
     return (
         <Link
-            href={clientLink}
-            className="grid grid-cols-12 items-center py-4 px-6 border-b border-gray-100 last:border-b-0 cursor-pointer 
-                        hover:bg-indigo-50 transition duration-150 ease-in-out group focus:outline-none focus:ring-2 
-                        focus:ring-indigo-500 focus:z-10">
+            href={`/clients/${client.id}`}
+            className="group relative grid grid-cols-1 lg:grid-cols-12 gap-4 items-center p-5 hover:bg-gray-50/80 transition-all duration-200 border-b border-gray-100 last:border-0"
+        >
+            {/* Indicateur de survol */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-            {/* Colonne 1: Société et Gérant */}
-            <div className="col-span-12 sm:col-span-4 lg:col-span-3">
-                <p className="text-base font-semibold text-gray-900 truncate">{client.societe}</p>
-                <p className="text-xs text-gray-500 sm:hidden lg:inline-block">Gérant: {client.gerant || 'N/A'}</p>
-            </div>
-            {/* Colonne 2: Gérant (Desktop) */}
-            <div className="hidden lg:col-span-2 lg:block">
-                <p className="text-sm text-gray-700">{client.gerant || 'N/A'}</p>
-            </div>
-            {/* Colonne 3: Email */}
-            <div className="col-span-12 sm:col-span-4 lg:col-span-4 mt-2 sm:mt-0">
-                <p className="text-sm text-indigo-600 truncate">{client.emails[0] || 'N/A'}</p>
-            </div>
-            {/* Colonne 4: Date Contrat */}
-            <div className="col-span-6 sm:col-span-3 lg:col-span-2 mt-2 sm:mt-0">
-                <p className="text-sm font-medium text-gray-500">{formattedDate}</p>
-            </div>
-            {/* Colonne 5: Action (Flèche Cliquable) */}
-            <div className="col-span-6 sm:col-span-1 lg:col-span-1 flex justify-end">
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 transition" />
+            {/* Société */}
+            <div className="lg:col-span-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg shrink-0">
+                    {client.societe.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate group-hover:text-indigo-700 transition-colors">
+                        {client.societe}
+                    </h3>
+                    <p className="text-sm text-gray-500 truncate flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                        {client.gerant || 'Gérant non spécifié'}
+                    </p>
+                </div>
             </div>
 
+            {/* Email */}
+            <div className="lg:col-span-4 hidden lg:flex items-center gap-2 text-sm text-gray-600">
+                <Mail className="w-4 h-4 text-gray-400" />
+                <span className="truncate">{client.emails[0] || '—'}</span>
+            </div>
+
+            {/* Date */}
+            <div className="lg:col-span-3 hidden lg:flex items-center gap-2 text-sm text-gray-500">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <span>{formattedDate}</span>
+            </div>
+
+            {/* Action */}
+            <div className="lg:col-span-1 flex justify-end">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-all">
+                    <ChevronRight className="w-5 h-5" />
+                </div>
+            </div>
         </Link>
     );
 };
 
-// --- 4. COMPOSANT PRINCIPAL ---
 export default function ClientsIndexPage() {
     const [clients, setClients] = useState<ClientDetail[]>([]);
     const [loading, setLoading] = useState(true);
@@ -95,7 +89,7 @@ export default function ClientsIndexPage() {
             setClients(list);
         } catch (err) {
             console.error("Erreur de chargement des clients :", err);
-            setError("Impossible de charger la liste des clients. Veuillez réessayer.");
+            setError("Impossible de charger la liste des clients.");
         } finally {
             setLoading(false);
         }
@@ -106,103 +100,133 @@ export default function ClientsIndexPage() {
     }, [fetchClients]);
 
     const filteredClients = useMemo(() => {
-        if (!searchTerm) {
-            return clients;
-        }
-
-        const lowerCaseSearch = searchTerm.toLowerCase();
-
-        return clients.filter(client =>
-            client.societe.toLowerCase().includes(lowerCaseSearch) ||
-            (client.gerant && client.gerant.toLowerCase().includes(lowerCaseSearch)) ||
-            (client.emails[0] && client.emails[0].toLowerCase().includes(lowerCaseSearch))
+        if (!searchTerm) return clients;
+        const lower = searchTerm.toLowerCase();
+        return clients.filter(c =>
+            c.societe.toLowerCase().includes(lower) ||
+            (c.gerant && c.gerant.toLowerCase().includes(lower)) ||
+            (c.emails[0] && c.emails[0].toLowerCase().includes(lower))
         );
     }, [clients, searchTerm]);
 
     return (
         <DashboardLayout>
-            <div className="p-4 md:p-8 space-y-8">
-                {/* En-tête et Bouton Nouveau Client */}
-                <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 gap-4">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 flex items-center">
-                        <Users className="w-8 h-8 mr-3 text-indigo-600" /> Gestion des Clients
-                    </h1>
+            <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                            Clients
+                        </h1>
+                        <p className="text-gray-500 mt-1">
+                            Gérez votre portefeuille client et accédez aux détails.
+                        </p>
+                    </div>
                     <Link
                         href="/clients/create"
-                        className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-xl shadow-lg transition duration-150 transform hover:scale-[1.02] active:scale-[0.98] text-sm md:text-base"
+                        className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
                     >
-                        <PlusCircle className="w-5 h-5 mr-2" /> Nouveau Client
+                        <Plus className="w-5 h-5" />
+                        <span>Nouveau Client</span>
                     </Link>
-                </header>
-
-                {/* Section Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard 
-                        title="Clients Totaux" 
-                        value={clients.length.toLocaleString('fr-FR')} 
-                        icon={Users} 
-                        className="col-span-1"
-                    />
-                    {/* Ajoutez d'autres cartes ici */}
                 </div>
 
-                {/* Barre de Recherche */}
-                <div className="mt-6">
-                    <div className="relative">
-                        <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                {/* Stats Rapides */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                            <Users className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Total Clients</p>
+                            <p className="text-2xl font-bold text-gray-900">{clients.length}</p>
+                        </div>
+                    </div>
+                    {/* Placeholder pour d'autres stats */}
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 opacity-60">
+                        <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <ArrowUpRight className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Actifs ce mois</p>
+                            <p className="text-2xl font-bold text-gray-900">—</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Barre d'outils */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Rechercher par société, gérant ou email..."
+                            placeholder="Rechercher un client..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl shadow-md focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 text-sm"
+                            className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all shadow-sm"
                         />
                     </div>
+                    <button className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm">
+                        <Filter className="w-5 h-5" />
+                        <span>Filtres</span>
+                    </button>
                 </div>
 
-                {/* Gestion des États */}
-                {loading && <p className="text-center text-lg mt-10 p-4 rounded-xl bg-indigo-50 text-indigo-700 font-medium">Chargement des données...</p>}
-                
-                {error && (
-                    <div className="flex items-center justify-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-10 shadow-md">
-                        <AlertTriangle className="w-5 h-5 mr-3" />
-                        <span className="block sm:inline">{error}</span>
-                        <button onClick={fetchClients} className="ml-4 underline hover:text-red-900 font-medium">Réessayer</button>
-                    </div>
-                )}
-
-                {/* Liste des Clients */}
-                {!loading && !error && (
-                    <div className="bg-white shadow-2xl rounded-2xl overflow-hidden ring-1 ring-gray-200">
-                        {/* En-tête de la grille/table pour les grands écrans */}
-                        <div className="hidden lg:grid grid-cols-12 bg-gray-50 py-3 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
-                            <div className="col-span-3 text-left">Société</div>
-                            <div className="col-span-2 text-left">Gérant</div>
-                            <div className="col-span-4 text-left">Email Principal</div>
-                            <div className="col-span-2 text-left">Date Contrat</div>
-                            <div className="col-span-1 text-right">Fiche</div>
+                {/* Contenu Principal */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    {loading ? (
+                        <div className="p-12 flex flex-col items-center justify-center text-gray-500">
+                            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+                            <p>Chargement de la liste...</p>
                         </div>
-
-                        {filteredClients.length === 0 && (
-                             <p className="text-center text-lg mt-5 text-gray-500 p-8">
-                                <Search className="inline-block w-6 h-6 mr-2 mb-1" />
-                                Aucun client ne correspond à votre recherche.
+                    ) : error ? (
+                        <div className="p-8 text-center">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-4">
+                                <AlertCircle className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Erreur</h3>
+                            <p className="text-gray-500 mb-4">{error}</p>
+                            <button
+                                onClick={fetchClients}
+                                className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline"
+                            >
+                                Réessayer
+                            </button>
+                        </div>
+                    ) : filteredClients.length === 0 ? (
+                        <div className="p-16 text-center">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 text-gray-400 mb-4">
+                                <Search className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Aucun résultat</h3>
+                            <p className="text-gray-500">
+                                Aucun client ne correspond à votre recherche "{searchTerm}"
                             </p>
-                        )}
-                        
-                        {/* Corps de la liste (utilisant ClientRow) */}
-                        <div className="divide-y divide-gray-100">
-                            {filteredClients.map((client) => (
-                                <ClientRow key={client.id} client={client} />
-                            ))}
                         </div>
+                    ) : (
+                        <>
+                            {/* Header Table (Desktop) */}
+                            <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50/50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <div className="col-span-4">Société / Gérant</div>
+                                <div className="col-span-4">Contact</div>
+                                <div className="col-span-3">Date Contrat</div>
+                                <div className="col-span-1 text-right">Action</div>
+                            </div>
+
+                            {/* Liste */}
+                            <div>
+                                {filteredClients.map((client) => (
+                                    <ClientRow key={client.id} client={client} />
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {!loading && !error && (
+                    <div className="text-center text-sm text-gray-500">
+                        Affichage de {filteredClients.length} sur {clients.length} clients
                     </div>
-                )}
-                
-                {!loading && !error && clients.length > 0 && (
-                    <p className="text-sm text-gray-600 mt-4 text-right">
-                        {filteredClients.length} client(s) affiché(s) sur {clients.length} au total.
-                    </p>
                 )}
             </div>
         </DashboardLayout>

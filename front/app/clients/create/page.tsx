@@ -3,19 +3,18 @@
 
 import React, { useState, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { createClient } from '@/services/data'; 
+import { createClient } from '@/services/data';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-    ChevronLeft, Save, Loader2, AlertTriangle, Building2, User, Hash, Globe, MapPin, Mail, Phone, FileText, 
-    CreditCard, Euro, Calendar, Repeat, Wallet, Sparkles, Building, Briefcase, LucideIcon 
+import {
+    ChevronLeft, Save, Loader2, AlertTriangle, Building2, User, Hash, Globe, MapPin, Mail, Phone, FileText,
+    CreditCard, Euro, Calendar, Repeat, Wallet, Sparkles, Building, Briefcase, LucideIcon, CheckCircle2
 } from 'lucide-react';
 
 // =================================================================
-// 🚨 TYPES ET COMPOSANTS UTILITAIRES (Intégrés pour l'unicité du fichier)
+// 🚨 TYPES ET COMPOSANTS UTILITAIRES
 // =================================================================
 
-// --- TYPES SIMPLIFIÉS ---
 type Interlocuteur = {
     id: string;
     poste: string;
@@ -33,8 +32,8 @@ type ClientFormState = {
     adresse: string;
     code_postal: string;
     ville: string;
-    emails: string; // Chaîne séparée par des virgules
-    telephones: string; // Chaîne séparée par des virgules
+    emails: string;
+    telephones: string;
     contrat: string;
     montant_mensuel_total: string;
     date_contrat: string;
@@ -47,7 +46,7 @@ type ClientFormState = {
     notes_comptables: string;
 };
 
-// --- COMPOSANT INPUT FIELD ---
+// --- COMPOSANT INPUT FIELD (PREMIUM) ---
 interface InputFieldProps {
     icon: LucideIcon;
     label: string;
@@ -62,11 +61,11 @@ interface InputFieldProps {
     name?: string;
 }
 
-const InputField: React.FC<InputFieldProps> = ({ 
-    icon: Icon, 
-    label, 
-    value, 
-    onChange, 
+const InputField: React.FC<InputFieldProps> = ({
+    icon: Icon,
+    label,
+    value,
+    onChange,
     type = 'text',
     rows,
     helper,
@@ -81,11 +80,13 @@ const InputField: React.FC<InputFieldProps> = ({
 
     return (
         <div className="group">
-            <label htmlFor={fieldName} className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
-                {Icon && <Icon className="w-3.5 h-3.5 text-indigo-500" />}
+            <label htmlFor={fieldName} className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
             <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Icon className={`w-5 h-5 ${error ? 'text-red-400' : 'text-gray-400'} group-focus-within:text-indigo-500 transition-colors`} />
+                </div>
                 <InputComponent
                     id={fieldName}
                     name={fieldName}
@@ -95,18 +96,23 @@ const InputField: React.FC<InputFieldProps> = ({
                     rows={rows}
                     placeholder={placeholder}
                     required={required}
-                    className={`w-full border-2 ${error ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-indigo-500'} rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-gray-300 bg-white relative z-10`}
+                    className={`
+                        w-full pl-11 pr-4 py-3 
+                        bg-gray-50 border ${error ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-indigo-500 focus:ring-indigo-100'} 
+                        rounded-xl text-gray-900 placeholder-gray-400 
+                        focus:outline-none focus:ring-4 transition-all duration-200 
+                        font-medium
+                    `}
                 />
-                {!isTextarea && (
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity z-0">
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-                    </div>
-                )}
             </div>
-            {error && <p className="text-red-500 text-xs mt-1.5 font-medium">{error}</p>}
+            {error && (
+                <div className="flex items-center gap-1.5 mt-2 text-red-600 text-xs font-medium animate-in slide-in-from-top-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {error}
+                </div>
+            )}
             {helper && !error && (
-                <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                    <span className="inline-block w-1 h-1 bg-gray-400 rounded-full" />
+                <p className="mt-2 text-xs text-gray-500 ml-1">
                     {helper}
                 </p>
             )}
@@ -114,20 +120,24 @@ const InputField: React.FC<InputFieldProps> = ({
     );
 };
 
-// --- COMPOSANT SECTION ---
+// --- COMPOSANT SECTION (PREMIUM) ---
 interface SectionProps {
     icon: LucideIcon;
     title: string;
+    description?: string;
     children: React.ReactNode;
 }
 
-const Section: React.FC<SectionProps> = ({ icon: Icon, title, children }) => (
-    <div className="space-y-4">
-        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
-            <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg">
-                <Icon className="w-5 h-5 text-indigo-600" />
+const Section: React.FC<SectionProps> = ({ icon: Icon, title, description, children }) => (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8">
+        <div className="flex items-start gap-4 mb-8 border-b border-gray-100 pb-6">
+            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
+                <Icon className="w-6 h-6" />
             </div>
-            <h4 className="text-base font-bold text-gray-800">{title}</h4>
+            <div>
+                <h4 className="text-lg font-bold text-gray-900">{title}</h4>
+                {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+            </div>
         </div>
         {children}
     </div>
@@ -140,25 +150,23 @@ const Section: React.FC<SectionProps> = ({ icon: Icon, title, children }) => (
 
 const initialInterlocuteur: Interlocuteur = {
     id: Date.now().toString(),
-    poste: 'gerant', 
-    nom: '', 
-    telephone: undefined, 
+    poste: 'gerant',
+    nom: '',
+    telephone: undefined,
     email: undefined,
     notes: undefined,
 };
 
 const initialFormState: ClientFormState = {
-    // Champs Requis pour la création de base
     societe: '',
     gerant: '',
-    emails: '', 
-    // Champs Optionnels (laissés vides par défaut)
+    emails: '',
     siret: '',
     site_web: '',
     adresse: '',
     code_postal: '',
     ville: '',
-    telephones: '', 
+    telephones: '',
     contrat: '',
     montant_mensuel_total: '',
     date_contrat: '',
@@ -168,7 +176,7 @@ const initialFormState: ClientFormState = {
     iban: '',
     description_generale: '',
     notes_comptables: '',
-    interlocuteurs: [initialInterlocuteur], // Initialisation du gérant comme interlocuteur
+    interlocuteurs: [initialInterlocuteur],
 };
 
 
@@ -176,52 +184,46 @@ export default function CreateClientPage() {
     const router = useRouter();
     const [formData, setFormData] = useState<ClientFormState>(initialFormState);
     const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string[]>>({}); 
+    const [errors, setErrors] = useState<Record<string, string[]>>({});
     const [success, setSuccess] = useState('');
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        
-        // Effacer l'erreur lors de la saisie si elle existe
+
         if (errors[name]) {
-             setErrors(prev => ({ ...prev, [name]: [] })); 
+            setErrors(prev => ({ ...prev, [name]: [] }));
         }
 
-        // Mise à jour du formulaire ET de l'interlocuteur en un seul appel
         setFormData(prev => {
             const updatedData = { ...prev, [name as keyof ClientFormState]: value };
-            
-            // Mise à jour de l'interlocuteur principal (le gérant) en temps réel
+
             if (name === 'gerant' || name === 'emails' || name === 'telephones') {
-                updatedData.interlocuteurs = prev.interlocuteurs.map(i => 
-                    i.poste === 'gerant' ? { 
-                        ...i, 
+                updatedData.interlocuteurs = prev.interlocuteurs.map(i =>
+                    i.poste === 'gerant' ? {
+                        ...i,
                         nom: name === 'gerant' ? value : (prev.gerant || i.nom),
-                        email: name === 'emails' ? value.split(',')[0]?.trim() || undefined : i.email, 
-                        telephone: name === 'telephones' ? value.split(',')[0]?.trim() || undefined : i.telephone, 
+                        email: name === 'emails' ? value.split(',')[0]?.trim() || undefined : i.email,
+                        telephone: name === 'telephones' ? value.split(',')[0]?.trim() || undefined : i.telephone,
                     } : i
                 );
             }
-            
+
             return updatedData;
         });
     }, [errors]);
-    
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
         setSuccess('');
-        
-        // Préparation du payload avec garantie des champs obligatoires
+
         const payload = {
-            // Champs obligatoires (toujours présents)
             societe: formData.societe,
             gerant: formData.gerant,
             emails: formData.emails.split(',').map(s => s.trim()).filter(s => s),
             telephones: formData.telephones.split(',').map(s => s.trim()).filter(s => s),
-            // Champs optionnels (ajoutés seulement s'ils ont une valeur)
             ...(formData.siret.trim() && { siret: formData.siret.trim() }),
             ...(formData.site_web.trim() && { site_web: formData.site_web.trim() }),
             ...(formData.adresse.trim() && { adresse: formData.adresse.trim() }),
@@ -238,7 +240,6 @@ export default function CreateClientPage() {
             ...(formData.notes_comptables.trim() && { notes_comptables: formData.notes_comptables.trim() }),
         };
 
-        // Interlocuteurs (gérant + autres)
         const validInterlocuteurs = formData.interlocuteurs.filter(i => i.nom && i.poste);
         if (validInterlocuteurs.length > 0) {
             (payload as any).interlocuteurs = validInterlocuteurs;
@@ -246,10 +247,7 @@ export default function CreateClientPage() {
 
         try {
             const newClient = await createClient(payload as any);
-            
             setSuccess(`Client "${newClient.societe}" créé avec succès !`);
-            
-            // Redirection après succès
             setTimeout(() => {
                 router.push(`/clients/${newClient.id}`);
             }, 1000);
@@ -257,7 +255,6 @@ export default function CreateClientPage() {
         } catch (err: any) {
             console.error("Erreur de création de client:", err);
             if (err.response && err.response.status === 422) {
-                // Gestion des erreurs de validation (ex: 'emails.0', 'societe')
                 setErrors(err.response.data.errors);
             } else {
                 setErrors({ general: [err.response?.data?.message || "Une erreur inattendue est survenue lors de la création."] });
@@ -267,276 +264,281 @@ export default function CreateClientPage() {
         }
     };
 
-    // Fonction pour récupérer l'erreur, gérant les formats du backend ('field' ou 'field.0')
     const getError = (field: keyof ClientFormState | 'general') => errors[field]?.[0] || errors[`${field}.0`]?.[0] || '';
 
 
     return (
         <DashboardLayout>
-            <div className="max-w-5xl mx-auto p-4 md:p-8">
-                <Link href="/clients" className="flex items-center text-indigo-600 hover:text-indigo-800 mb-6 transition duration-150 font-medium">
-                    <ChevronLeft className="w-5 h-5 mr-2" /> Retour à la liste
-                </Link>
+            <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
 
-                <div className="bg-white shadow-2xl rounded-2xl p-6 md:p-10 border border-gray-100">
-                    <h1 className="text-3xl font-extrabold text-gray-900 border-b pb-4 mb-8 flex items-center gap-3">
-                        <Building2 className="w-7 h-7 text-indigo-600" />
-                        Nouvelle Fiche Client
-                    </h1>
-                    
-                    {/* Messages de feedback */}
-                    {success && (
-                        <div className="flex items-center gap-2 p-4 mb-6 text-sm font-medium text-green-800 bg-green-100 rounded-xl border border-green-300">
-                            <Sparkles className="w-5 h-5" />
-                            {success}
-                        </div>
-                    )}
-                    {getError('general') && (
-                        <div className="flex items-center gap-2 p-4 mb-6 text-sm font-medium text-red-800 bg-red-100 rounded-xl border border-red-300">
-                            <AlertTriangle className="w-5 h-5" />
-                            {getError('general')}
-                        </div>
-                    )}
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <Link href="/clients" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-2">
+                            <ChevronLeft className="w-4 h-4 mr-1" /> Retour aux clients
+                        </Link>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                            Nouveau Client
+                        </h1>
+                        <p className="text-gray-500 mt-1">
+                            Remplissez les informations ci-dessous pour créer une nouvelle fiche client.
+                        </p>
+                    </div>
+                </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-10">
-                        
-                        {/* Section 1: Informations Générales (Clés) */}
-                        <Section icon={Building2} title="Informations Clés (Requis)">
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {/* Société (REQUIRED) */}
+                {/* Messages */}
+                {success && (
+                    <div className="flex items-center gap-3 p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 animate-in fade-in slide-in-from-top-2">
+                        <CheckCircle2 className="w-5 h-5 shrink-0" />
+                        <span className="font-medium">{success}</span>
+                    </div>
+                )}
+                {getError('general') && (
+                    <div className="flex items-center gap-3 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 animate-in fade-in slide-in-from-top-2">
+                        <AlertTriangle className="w-5 h-5 shrink-0" />
+                        <span className="font-medium">{getError('general')}</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-8">
+
+                    {/* Section 1: Informations Générales */}
+                    <Section
+                        icon={Building2}
+                        title="Identité de l'entreprise"
+                        description="Les informations légales et principales de la structure."
+                    >
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <InputField
+                                icon={Building}
+                                label="Raison Sociale"
+                                name="societe"
+                                value={formData.societe}
+                                onChange={handleChange}
+                                placeholder="Ex: NetStrategy"
+                                required
+                                error={getError('societe')}
+                            />
+                            <InputField
+                                icon={User}
+                                label="Nom du Gérant"
+                                name="gerant"
+                                value={formData.gerant}
+                                onChange={handleChange}
+                                placeholder="Ex: Jean Dupont"
+                                required
+                                error={getError('gerant')}
+                            />
+                            <InputField
+                                icon={Hash}
+                                label="Numéro SIRET"
+                                name="siret"
+                                value={formData.siret}
+                                onChange={handleChange}
+                                placeholder="14 chiffres"
+                                error={getError('siret')}
+                            />
+                            <InputField
+                                icon={Globe}
+                                label="Site Internet"
+                                name="site_web"
+                                value={formData.site_web}
+                                onChange={handleChange}
+                                placeholder="https://"
+                            />
+                        </div>
+                    </Section>
+
+                    {/* Section 2: Contact */}
+                    <Section
+                        icon={Mail}
+                        title="Coordonnées"
+                        description="Moyens de contact principaux pour ce client."
+                    >
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <InputField
+                                icon={Mail}
+                                label="Adresses Email"
+                                name="emails"
+                                value={formData.emails}
+                                onChange={handleChange}
+                                helper="Séparez les multiples adresses par une virgule"
+                                placeholder="contact@exemple.com"
+                                required
+                                error={getError('emails')}
+                            />
+                            <InputField
+                                icon={Phone}
+                                label="Téléphones"
+                                name="telephones"
+                                value={formData.telephones}
+                                onChange={handleChange}
+                                helper="Séparez les multiples numéros par une virgule"
+                                placeholder="06 12 34 56 78"
+                                error={getError('telephones')}
+                            />
+                        </div>
+                    </Section>
+
+                    {/* Section 3: Adresse */}
+                    <Section icon={MapPin} title="Localisation">
+                        <div className="grid md:grid-cols-12 gap-6">
+                            <div className="md:col-span-12">
                                 <InputField
-                                    icon={Building}
-                                    label="Société"
-                                    name="societe"
-                                    value={formData.societe}
+                                    icon={MapPin}
+                                    label="Adresse Postale"
+                                    name="adresse"
+                                    value={formData.adresse}
                                     onChange={handleChange}
-                                    placeholder="Nom de l'entreprise"
-                                    required
-                                    error={getError('societe')}
-                                />
-                                {/* Gérant (REQUIRED) */}
-                                <InputField
-                                    icon={User}
-                                    label="Gérant"
-                                    name="gerant"
-                                    value={formData.gerant}
-                                    onChange={handleChange}
-                                    placeholder="Nom du gérant"
-                                    required
-                                    error={getError('gerant')}
-                                />
-                                {/* SIRET (Optional) */}
-                                <InputField
-                                    icon={Hash}
-                                    label="SIRET"
-                                    name="siret"
-                                    value={formData.siret}
-                                    onChange={handleChange}
-                                    placeholder="XXX XXX XXX XXXXX"
-                                    error={getError('siret')}
-                                />
-                                {/* Site Web (Optional) */}
-                                <InputField
-                                    icon={Globe}
-                                    label="Site Web"
-                                    name="site_web"
-                                    value={formData.site_web}
-                                    onChange={handleChange}
-                                    placeholder="https://www.exemple.com"
+                                    placeholder="N° et nom de rue"
                                 />
                             </div>
-                        </Section>
-
-                        {/* Section 2: Contact */}
-                        <Section icon={Mail} title="Contacts">
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {/* Emails (REQUIRED) */}
-                                <InputField
-                                    icon={Mail}
-                                    label="Adresses Email"
-                                    name="emails"
-                                    value={formData.emails}
-                                    onChange={handleChange}
-                                    rows={2}
-                                    helper="Séparez plusieurs adresses par une virgule"
-                                    placeholder="contact@exemple.com, info@exemple.com"
-                                    required
-                                    error={getError('emails')} 
-                                />
-                                {/* Téléphones (Optional) */}
-                                <InputField
-                                    icon={Phone}
-                                    label="Numéros de Téléphone"
-                                    name="telephones"
-                                    value={formData.telephones}
-                                    onChange={handleChange}
-                                    rows={2}
-                                    helper="Séparez plusieurs numéros par une virgule"
-                                    placeholder="01 23 45 67 89, 06 12 34 56 78"
-                                    error={getError('telephones')}
-                                />
-                            </div>
-                        </Section>
-
-                        {/* Section 3: Adresse (Optionnel) */}
-                        <Section icon={MapPin} title="Adresse (Optionnel)">
-                            <div className="grid md:grid-cols-3 gap-6">
-                                {/* Adresse */}
-                                <div className="md:col-span-2">
-                                    <InputField
-                                        icon={MapPin}
-                                        label="Adresse"
-                                        name="adresse"
-                                        value={formData.adresse}
-                                        onChange={handleChange}
-                                        placeholder="123 Rue Exemple"
-                                    />
-                                </div>
-                                {/* Code Postal */}
+                            <div className="md:col-span-4">
                                 <InputField
                                     icon={Hash}
                                     label="Code Postal"
                                     name="code_postal"
                                     value={formData.code_postal}
                                     onChange={handleChange}
-                                    placeholder="69000"
-                                />
-                                {/* Ville */}
-                                <div className="md:col-span-3">
-                                    <InputField
-                                        icon={Building}
-                                        label="Ville"
-                                        name="ville"
-                                        value={formData.ville}
-                                        onChange={handleChange}
-                                        placeholder="Lyon"
-                                    />
-                                </div>
-                            </div>
-                        </Section>
-
-                        {/* Section 4: Financier & Contrat (Optionnel) */}
-                        <Section icon={CreditCard} title="Informations Financières & Contrat (Optionnel)">
-                            <div className="grid md:grid-cols-3 gap-6">
-                                {/* Type de Contrat */}
-                                <InputField
-                                    icon={FileText}
-                                    label="Type de Contrat"
-                                    name="contrat"
-                                    value={formData.contrat}
-                                    onChange={handleChange}
-                                    placeholder="Ex: Maintenance, Abonnement..."
-                                />
-                                {/* Montant Mensuel Total */}
-                                <InputField
-                                    icon={Euro}
-                                    label="Montant Mensuel Total (€)"
-                                    name="montant_mensuel_total"
-                                    value={formData.montant_mensuel_total}
-                                    onChange={handleChange}
-                                    placeholder="1500"
-                                    type="number"
-                                />
-                                {/* Fréquence de Facturation */}
-                                <InputField
-                                    icon={Repeat}
-                                    label="Fréquence de Facturation"
-                                    name="frequence_facturation"
-                                    value={formData.frequence_facturation}
-                                    onChange={handleChange}
-                                    placeholder="Ex: Mensuelle, Trimestrielle..."
-                                />
-                                {/* Date de Signature */}
-                                <InputField
-                                    icon={Calendar}
-                                    label="Date de Contrat"
-                                    name="date_contrat"
-                                    value={formData.date_contrat}
-                                    onChange={handleChange}
-                                    type="date"
-                                    error={getError('date_contrat')}
-                                />
-                                {/* Date d'Échéance */}
-                                <InputField
-                                    icon={Calendar}
-                                    label="Date d'Échéance"
-                                    name="date_echeance"
-                                    value={formData.date_echeance}
-                                    onChange={handleChange}
-                                    type="date"
-                                />
-                                {/* Mode de Paiement */}
-                                <InputField
-                                    icon={Wallet}
-                                    label="Mode de Paiement"
-                                    name="mode_paiement"
-                                    value={formData.mode_paiement}
-                                    onChange={handleChange}
-                                    placeholder="Ex: Virement, Prélèvement..."
-                                />
-                                {/* IBAN */}
-                                <div className="md:col-span-3">
-                                    <InputField
-                                        icon={CreditCard}
-                                        label="IBAN"
-                                        name="iban"
-                                        value={formData.iban}
-                                        onChange={handleChange}
-                                        placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX"
-                                    />
-                                </div>
-                            </div>
-                        </Section>
-
-                         {/* Section 5: Descriptions & Notes (Optionnel) */}
-                        <Section icon={Briefcase} title="Descriptions & Notes (Optionnel)">
-                            <div className="space-y-6">
-                                <InputField
-                                    icon={FileText}
-                                    label="Description Générale"
-                                    name="description_generale"
-                                    value={formData.description_generale}
-                                    onChange={handleChange}
-                                    rows={4}
-                                    placeholder="Décrivez l'activité du client, ses besoins, son contexte..."
-                                />
-                                <InputField
-                                    icon={Euro}
-                                    label="Notes Comptables"
-                                    name="notes_comptables"
-                                    value={formData.notes_comptables}
-                                    onChange={handleChange}
-                                    rows={4}
-                                    placeholder="Ajoutez des notes concernant la facturation, les paiements, les particularités comptables..."
+                                    placeholder="Ex: 75001"
                                 />
                             </div>
-                        </Section>
-
-
-                        {/* --- BOUTON DE SOUMISSION --- */}
-                        <div className="pt-6 border-t border-gray-200">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className={`w-full flex justify-center items-center py-3 px-4 rounded-xl shadow-lg text-lg font-bold text-white transition duration-200 ease-in-out transform hover:-translate-y-0.5 ${
-                                    loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700'
-                                }`}
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-6 h-6 mr-3 animate-spin" />
-                                        Création en cours...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="w-6 h-6 mr-3" />
-                                        Sauvegarder la Fiche Client
-                                    </>
-                                )}
-                            </button>
+                            <div className="md:col-span-8">
+                                <InputField
+                                    icon={Building}
+                                    label="Ville"
+                                    name="ville"
+                                    value={formData.ville}
+                                    onChange={handleChange}
+                                    placeholder="Ex: Paris"
+                                />
+                            </div>
                         </div>
-                    </form>
-                </div>
+                    </Section>
+
+                    {/* Section 4: Financier */}
+                    <Section icon={CreditCard} title="Contrat & Facturation">
+                        <div className="grid md:grid-cols-3 gap-6">
+                            <InputField
+                                icon={FileText}
+                                label="Type de Contrat"
+                                name="contrat"
+                                value={formData.contrat}
+                                onChange={handleChange}
+                                placeholder="Ex: Maintenance"
+                            />
+                            <InputField
+                                icon={Euro}
+                                label="Montant Mensuel"
+                                name="montant_mensuel_total"
+                                value={formData.montant_mensuel_total}
+                                onChange={handleChange}
+                                placeholder="0.00"
+                                type="number"
+                            />
+                            <InputField
+                                icon={Repeat}
+                                label="Fréquence"
+                                name="frequence_facturation"
+                                value={formData.frequence_facturation}
+                                onChange={handleChange}
+                                placeholder="Ex: Mensuel"
+                            />
+                            <InputField
+                                icon={Calendar}
+                                label="Date de début"
+                                name="date_contrat"
+                                value={formData.date_contrat}
+                                onChange={handleChange}
+                                type="date"
+                                error={getError('date_contrat')}
+                            />
+                            <InputField
+                                icon={Calendar}
+                                label="Date de fin"
+                                name="date_echeance"
+                                value={formData.date_echeance}
+                                onChange={handleChange}
+                                type="date"
+                            />
+                            <InputField
+                                icon={Wallet}
+                                label="Mode de Paiement"
+                                name="mode_paiement"
+                                value={formData.mode_paiement}
+                                onChange={handleChange}
+                                placeholder="Ex: Virement"
+                            />
+                            <div className="md:col-span-3">
+                                <InputField
+                                    icon={CreditCard}
+                                    label="IBAN"
+                                    name="iban"
+                                    value={formData.iban}
+                                    onChange={handleChange}
+                                    placeholder="FR76 ..."
+                                />
+                            </div>
+                        </div>
+                    </Section>
+
+                    {/* Section 5: Notes */}
+                    <Section icon={Briefcase} title="Notes & Compléments">
+                        <div className="space-y-6">
+                            <InputField
+                                icon={FileText}
+                                label="Description Générale"
+                                name="description_generale"
+                                value={formData.description_generale}
+                                onChange={handleChange}
+                                rows={4}
+                                placeholder="Contexte du client, besoins spécifiques..."
+                            />
+                            <InputField
+                                icon={Euro}
+                                label="Notes Comptables"
+                                name="notes_comptables"
+                                value={formData.notes_comptables}
+                                onChange={handleChange}
+                                rows={4}
+                                placeholder="Informations de facturation spécifiques..."
+                            />
+                        </div>
+                    </Section>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+                        <Link
+                            href="/clients"
+                            className="px-6 py-3 rounded-xl text-gray-700 font-medium hover:bg-gray-100 transition-colors"
+                        >
+                            Annuler
+                        </Link>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className={`
+                                flex items-center gap-2 px-8 py-3 rounded-xl text-white font-bold shadow-lg shadow-indigo-500/25 transition-all
+                                ${loading
+                                    ? 'bg-indigo-400 cursor-wait'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0'
+                                }
+                            `}
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>Création...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-5 h-5" />
+                                    <span>Créer le Client</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
             </div>
         </DashboardLayout>
     );

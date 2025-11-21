@@ -74,12 +74,12 @@ export interface Prestation {
   id: number;
   client_id: number;
   type:
-    | 'Dev'
-    | 'SEO'
-    | 'Ads'
-    | 'Social Media'
-    | 'Branding'
-    | 'Comptabilite';
+  | 'Dev'
+  | 'SEO'
+  | 'Ads'
+  | 'Social Media'
+  | 'Branding'
+  | 'Comptabilite';
   notes: string | null;
   tarif_ht: number | null; // Ajouté pour correspondre à l'usage dans page.tsx
   frequence: string | null; // Ajouté pour correspondre à l'usage dans page.tsx
@@ -101,6 +101,8 @@ export interface BaseEntity {
   telephones: string[]; // JSON décodé
   date_contrat: string | null;
   date_echeance: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // --- TABLEAU DE BORD ---

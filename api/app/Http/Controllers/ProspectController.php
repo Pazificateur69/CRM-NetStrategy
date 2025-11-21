@@ -22,7 +22,9 @@ class ProspectController extends Controller
             throw UnauthorizedException::forPermissions(['view prospects']);
         }
 
-        return ProspectResource::collection(Prospect::all())->response();
+        $prospects = Prospect::orderBy('created_at', 'desc')->get();
+
+        return ProspectResource::collection($prospects)->response();
     }
 
     /**
@@ -59,6 +61,7 @@ class ProspectController extends Controller
         }
 
         $prospect->load(['contenu', 'todos', 'rappels']);
+
         return (new ProspectResource($prospect))->response();
     }
 
@@ -71,7 +74,16 @@ class ProspectController extends Controller
             throw UnauthorizedException::forPermissions(['manage prospects']);
         }
 
-        $prospect->update($request->all());
+        $validated = $request->validate([
+            'societe' => 'sometimes|required|string|max:255',
+            'contact' => 'sometimes|required|string|max:255',
+            'emails' => 'nullable|array',
+            'telephones' => 'nullable|array',
+            'statut' => 'sometimes|required|in:en_attente,relance,perdu,converti',
+        ]);
+
+        $prospect->update($validated);
+
         return (new ProspectResource($prospect))->response();
     }
 
@@ -85,7 +97,8 @@ class ProspectController extends Controller
         }
 
         $prospect->delete();
-        return response()->json(null, 204);
+
+        return response()->json(['message' => 'Prospect supprimé avec succès.'], 200);
     }
 
     /**
@@ -108,8 +121,8 @@ class ProspectController extends Controller
             $client = Client::create([
                 'societe' => $prospect->societe,
                 'gerant' => $prospect->contact,
-                'emails' => $prospect->emails,
-                'telephones' => $prospect->telephones,
+                'emails' => $prospect->emails ?? [],
+                'telephones' => $prospect->telephones ?? [],
                 'contrat' => 'Conversion depuis Prospect',
                 'date_contrat' => now(),
             ]);

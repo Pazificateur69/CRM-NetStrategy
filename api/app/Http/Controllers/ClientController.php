@@ -18,27 +18,13 @@ class ClientController extends Controller
         $this->authorize('view clients');
 
         $clients = Client::with([
-            'prestations.contenu.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'prestations.responsable' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'todos.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'todos.assignedUser' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'rappels.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'rappels.assignedUsers' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'contenu.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            }
+            'prestations.contenu.user',
+            'prestations.responsable',
+            'todos.user',
+            'todos.assignedUser',
+            'rappels.user',
+            'rappels.assignedUsers',
+            'contenu.user'
         ])->orderBy('created_at', 'desc')->get();
 
         return ClientResource::collection($clients)->response();
@@ -55,13 +41,10 @@ class ClientController extends Controller
             'societe' => 'required|string|max:255',
             'gerant' => 'required|string|max:255',
             'siret' => 'nullable|string|max:14',
-
             'emails' => 'required|array|min:1',
             'emails.*' => 'email|max:255',
-
             'telephones' => 'nullable|array',
             'telephones.*' => 'string|max:50',
-
             'contrat' => 'nullable|string',
             'date_contrat' => 'nullable|date',
             'date_echeance' => 'nullable|date',
@@ -93,34 +76,17 @@ class ClientController extends Controller
         $this->authorize('view clients');
 
         $client = Client::with([
-            'prestations.contenu.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'prestations.responsable' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'todos.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'todos.assignedUser' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
+            'prestations.contenu.user',
+            'prestations.responsable',
+            'todos.user',
+            'todos.assignedUser',
             'todos.client:id,societe',
-            'rappels.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'rappels.assignedUsers' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'contenu.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            }
+            'rappels.user',
+            'rappels.assignedUsers',
+            'contenu.user'
         ])->findOrFail($id);
 
-        return response()->json([
-            'message' => 'Client récupéré avec succès.',
-            'data' => $client
-        ]);
+        return (new ClientResource($client))->response();
     }
 
     /**
@@ -130,40 +96,36 @@ class ClientController extends Controller
     {
         $this->authorize('manage clients');
 
-        // Mise à jour avec toutes les données du formulaire
-        $client->update($request->all());
-        
-        // ✅ Recharger le client pour avoir toutes les données à jour
-        $client->refresh();
-        
-        // ✅ Charger les relations pour le retour complet
-        $client->load([
-            'prestations.contenu.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'prestations.responsable' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'todos.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'todos.assignedUser' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'todos.client:id,societe',
-            'rappels.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'rappels.assignedUsers' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            },
-            'contenu.user' => function($query) {
-                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-            }
+        $validated = $request->validate([
+            'societe' => 'sometimes|required|string|max:255',
+            'gerant' => 'sometimes|required|string|max:255',
+            'siret' => 'nullable|string|max:14',
+            'emails' => 'sometimes|required|array|min:1',
+            'emails.*' => 'email|max:255',
+            'telephones' => 'nullable|array',
+            'telephones.*' => 'string|max:50',
+            'contrat' => 'nullable|string',
+            'date_contrat' => 'nullable|date',
+            'date_echeance' => 'nullable|date',
         ]);
 
-        // ✅ Retourner le client complet mis à jour
-        return response()->json($client);
+        $client->update($validated);
+
+        // ✅ Recharger le client pour avoir toutes les données à jour
+        $client->refresh();
+
+        $client->load([
+            'prestations.contenu.user',
+            'prestations.responsable',
+            'todos.user',
+            'todos.assignedUser',
+            'todos.client:id,societe',
+            'rappels.user',
+            'rappels.assignedUsers',
+            'contenu.user'
+        ]);
+
+        return (new ClientResource($client))->response();
     }
 
     /**
