@@ -24,8 +24,7 @@ class TodoController extends Controller
         if (!$user->hasRole('admin')) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                    ->orWhere('assigned_to', $user->id)
-                    ->orWhere('pole', $user->pole);
+                    ->orWhere('assigned_to', $user->id);
             });
         }
 
@@ -46,11 +45,10 @@ class TodoController extends Controller
             ->orderBy('ordre', 'asc')
             ->orderBy('created_at', 'asc');
 
-        if (!$user->hasRole('admin') && $user->pole !== 'admin') {
+        if (!$user->hasRole('admin')) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                    ->orWhere('assigned_to', $user->id)
-                    ->orWhere('pole', $user->pole);
+                    ->orWhere('assigned_to', $user->id);
             });
         }
 

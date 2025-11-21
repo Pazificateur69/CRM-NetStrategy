@@ -37,11 +37,11 @@ interface ClientEditModalProps {
 }
 
 // Composant Input modernisé avec icône
-const InputField = ({ 
-  icon: Icon, 
-  label, 
-  value, 
-  onChange, 
+const InputField = ({
+  icon: Icon,
+  label,
+  value,
+  onChange,
   type = 'text',
   rows,
   helper,
@@ -52,7 +52,7 @@ const InputField = ({
 
   return (
     <div className="group">
-      <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+      <label className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
         {Icon && <Icon className="w-3.5 h-3.5 text-indigo-500" />}
         {label}
       </label>
@@ -63,7 +63,7 @@ const InputField = ({
           onChange={onChange}
           rows={rows}
           placeholder={placeholder}
-          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 hover:border-gray-300 bg-white"
+          className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 hover:border-slate-300 bg-white"
         />
         {!isTextarea && (
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity">
@@ -72,8 +72,8 @@ const InputField = ({
         )}
       </div>
       {helper && (
-        <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-          <span className="inline-block w-1 h-1 bg-gray-400 rounded-full" />
+        <p className="mt-1.5 text-xs text-slate-500 flex items-center gap-1">
+          <span className="inline-block w-1 h-1 bg-slate-400 rounded-full" />
           {helper}
         </p>
       )}
@@ -84,11 +84,11 @@ const InputField = ({
 // Section avec titre
 const Section = ({ icon: Icon, title, children }: any) => (
   <div className="space-y-4">
-    <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
-      <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg">
+    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+      <div className="p-2 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg">
         <Icon className="w-5 h-5 text-indigo-600" />
       </div>
-      <h4 className="text-base font-bold text-gray-800">{title}</h4>
+      <h4 className="text-base font-bold text-slate-800">{title}</h4>
     </div>
     {children}
   </div>
@@ -112,26 +112,22 @@ export default function ClientEditModal({
   saving,
   onInterlocuteursChange,
 }: ClientEditModalProps) {
-  // ✅ 1. TOUS LES HOOKS EN PREMIER (avant tout return conditionnel)
-  
+
   // Hook 1: Gestion du scroll
   React.useEffect(() => {
     if (open) {
-      // Sauvegarde l'état initial
       const scrollY = window.scrollY;
       const body = document.body;
       const originalOverflow = body.style.overflow;
       const originalPosition = body.style.position;
       const originalTop = body.style.top;
       const originalWidth = body.style.width;
-      
-      // Bloque le scroll
+
       body.style.overflow = 'hidden';
       body.style.position = 'fixed';
       body.style.top = `-${scrollY}px`;
       body.style.width = '100%';
 
-      // Cleanup: restaure l'état original
       return () => {
         body.style.overflow = originalOverflow;
         body.style.position = originalPosition;
@@ -179,34 +175,32 @@ export default function ClientEditModal({
     );
   };
 
-  // ✅ 2. RETURN CONDITIONNEL EN DERNIER (après tous les hooks)
   if (!open) {
     return null;
   }
 
-  // ✅ 3. RETURN PRINCIPAL
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 animate-in fade-in duration-200"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
-      <div 
-        className="w-full max-w-5xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-300"
+      <div
+        className="w-full max-w-5xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-300 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Premium avec Gradient */}
-        <header className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-6 overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24" />
-          
+        <header className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-6 shrink-0">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 blur-3xl" />
+
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-inner">
                 <Building2 className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white">Modifier la fiche client</h3>
-                <p className="text-indigo-100 text-sm mt-1">Mettez à jour les informations de votre client</p>
+                <h3 className="text-2xl font-bold text-white tracking-tight">Modifier la fiche client</h3>
+                <p className="text-indigo-100 text-sm mt-1 font-medium">Mettez à jour les informations de votre client</p>
               </div>
             </div>
             <button
@@ -220,12 +214,12 @@ export default function ClientEditModal({
         </header>
 
         {/* Contenu avec scroll */}
-        <div className="overflow-y-auto max-h-[calc(90vh-180px)] px-8 py-6">
-          <div className="space-y-8">
-            
+        <div className="overflow-y-auto flex-1 px-8 py-8 bg-slate-50/50">
+          <div className="space-y-10 max-w-4xl mx-auto">
+
             {/* Section 1: Informations Générales */}
             <Section icon={Building2} title="Informations Générales">
-              <div className="grid md:grid-cols-2 gap-5">
+              <div className="grid md:grid-cols-2 gap-6">
                 <InputField
                   icon={Building}
                   label="Société"
@@ -259,7 +253,7 @@ export default function ClientEditModal({
 
             {/* Section 2: Adresse & Contact */}
             <Section icon={MapPin} title="Adresse & Contact">
-              <div className="grid md:grid-cols-3 gap-5">
+              <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
                   <InputField
                     icon={MapPin}
@@ -292,7 +286,7 @@ export default function ClientEditModal({
                     value={form.emails}
                     onChange={(e: any) => onChange('emails', e.target.value)}
                     rows={2}
-                    helper="Séparez plusieurs adresses par une virgule (ex: contact@exemple.com, support@exemple.com)"
+                    helper="Séparez plusieurs adresses par une virgule"
                     placeholder="contact@exemple.com, info@exemple.com"
                   />
                 </div>
@@ -303,7 +297,7 @@ export default function ClientEditModal({
                     value={form.telephones}
                     onChange={(e: any) => onChange('telephones', e.target.value)}
                     rows={2}
-                    helper="Séparez plusieurs numéros par une virgule (ex: 01 23 45 67 89, 06 12 34 56 78)"
+                    helper="Séparez plusieurs numéros par une virgule"
                     placeholder="01 23 45 67 89, 06 12 34 56 78"
                   />
                 </div>
@@ -312,7 +306,7 @@ export default function ClientEditModal({
 
             {/* Section 3: Informations Financières */}
             <Section icon={CreditCard} title="Informations Financières & Contrat">
-              <div className="grid md:grid-cols-2 gap-5">
+              <div className="grid md:grid-cols-2 gap-6">
                 <InputField
                   icon={FileText}
                   label="Type de Contrat"
@@ -372,8 +366,8 @@ export default function ClientEditModal({
             <Section icon={Users} title="Interlocuteurs">
               <div className="space-y-4">
                 {form.interlocuteurs.length === 0 ? (
-                  <div className="flex items-center gap-3 text-gray-500 italic text-sm bg-gray-50 rounded-xl p-4">
-                    <div className="w-1 h-12 bg-gray-300 rounded-full" />
+                  <div className="flex items-center gap-3 text-slate-500 italic text-sm bg-slate-100 rounded-xl p-6 border border-dashed border-slate-300 justify-center">
+                    <Users className="w-5 h-5 text-slate-400" />
                     <p>Aucun interlocuteur n'a encore été ajouté.</p>
                   </div>
                 ) : (
@@ -381,19 +375,19 @@ export default function ClientEditModal({
                     {form.interlocuteurs.map((interlocuteur) => (
                       <div
                         key={interlocuteur.id}
-                        className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-5 border-2 border-purple-100"
+                        className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                              <label className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
                                 <Briefcase className="w-3.5 h-3.5 text-purple-500" />
                                 Poste *
                               </label>
                               <select
                                 value={interlocuteur.poste}
                                 onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'poste', e.target.value)}
-                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                                className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
                               >
                                 <option value="">Sélectionner un poste</option>
                                 {POSTES_PREDEFINIS.map(p => (
@@ -402,7 +396,7 @@ export default function ClientEditModal({
                               </select>
                             </div>
                             <div>
-                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                              <label className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
                                 <User className="w-3.5 h-3.5 text-purple-500" />
                                 Nom *
                               </label>
@@ -410,12 +404,12 @@ export default function ClientEditModal({
                                 type="text"
                                 value={interlocuteur.nom}
                                 onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'nom', e.target.value)}
-                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                                className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
                                 placeholder="Nom complet"
                               />
                             </div>
                             <div>
-                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                              <label className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
                                 <Phone className="w-3.5 h-3.5 text-purple-500" />
                                 Téléphone
                               </label>
@@ -423,12 +417,12 @@ export default function ClientEditModal({
                                 type="tel"
                                 value={interlocuteur.telephone || ''}
                                 onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'telephone', e.target.value)}
-                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                                className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
                                 placeholder="06 XX XX XX XX"
                               />
                             </div>
                             <div>
-                              <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                              <label className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
                                 <Mail className="w-3.5 h-3.5 text-purple-500" />
                                 Email
                               </label>
@@ -436,20 +430,20 @@ export default function ClientEditModal({
                                 type="email"
                                 value={interlocuteur.email || ''}
                                 onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'email', e.target.value)}
-                                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                                className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
                                 placeholder="email@exemple.fr"
                               />
                             </div>
                           </div>
                           <div>
-                            <label className="flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
                               <FileText className="w-3.5 h-3.5 text-purple-500" />
                               Notes
                             </label>
                             <textarea
                               value={interlocuteur.notes || ''}
                               onChange={(e) => handleChangeInterlocuteur(interlocuteur.id!, 'notes', e.target.value)}
-                              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
+                              className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white"
                               rows={2}
                               placeholder="Notes complémentaires..."
                             />
@@ -473,9 +467,9 @@ export default function ClientEditModal({
                 <button
                   type="button"
                   onClick={handleAddInterlocuteur}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition-colors text-sm font-semibold border-2 border-dashed border-purple-300 hover:border-purple-400"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 transition-colors text-sm font-semibold border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:text-indigo-600 group"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   Ajouter un interlocuteur
                 </button>
               </div>
@@ -483,7 +477,7 @@ export default function ClientEditModal({
 
             {/* Section 5: Descriptions */}
             <Section icon={FileText} title="Descriptions & Notes">
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <InputField
                   icon={FileText}
                   label="Description Générale"
@@ -507,17 +501,17 @@ export default function ClientEditModal({
         </div>
 
         {/* Footer avec Actions */}
-        <footer className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-t border-gray-200">
+        <footer className="bg-white px-8 py-6 border-t border-slate-200 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-10">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm text-gray-600 flex items-center gap-2">
-              <span className="inline-block w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+            <p className="text-sm text-slate-500 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               Les modifications seront enregistrées immédiatement
             </p>
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={onClose}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X className="w-4 h-4" />
                 Annuler
@@ -525,7 +519,7 @@ export default function ClientEditModal({
               <button
                 onClick={onSubmit}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-xl hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-0.5"
               >
                 {saving ? (
                   <>

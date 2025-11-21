@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Rappel;
 use App\Models\Client;
 use App\Models\User;
+use App\Http\Resources\RappelResource;
 
 class RappelController extends Controller
 {
@@ -13,47 +14,41 @@ class RappelController extends Controller
     {
         $user = $request->user();
 
-        $rappels = $user->hasRole('admin')
-            ? Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
-                ->orderBy('ordre')
-                ->orderBy('created_at', 'asc')
-                ->get()
-            : Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
-                ->where(function ($query) use ($user) {
-                    $query->where('user_id', $user->id)
-                          ->orWhereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id))
-                          ->orWhere('pole', $user->pole); // ✅ AJOUTÉ : Voir les rappels de son pôle
-                })
-                ->orderBy('ordre')
-                ->orderBy('created_at', 'asc')
-                ->get();
+        $query = Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
+            ->orderBy('ordre')
+            ->orderBy('created_at', 'asc');
 
-        return response()->json(['data' => $rappels]);
+        if (!$user->hasRole('admin')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('assignedUsers', fn($subQ) => $subQ->where('user_id', $user->id));
+            });
+        }
+
+        $rappels = $query->get();
+
+        return RappelResource::collection($rappels)->response();
     }
 
     public function getByPole(Request $request, string $pole)
     {
         $user = $request->user();
 
-        // ✅ CORRECTION : Admin voit TOUS les rappels du pôle
-        $rappels = ($user->hasRole('admin') || $user->pole === 'admin')
-            ? Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
-                ->where('pole', $pole)
-                ->orderBy('ordre', 'asc')
-                ->orderBy('created_at', 'asc')
-                ->get()
-            : Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
-                ->where('pole', $pole)
-                ->where(function ($query) use ($user) {
-                    $query->where('user_id', $user->id)
-                          ->orWhereHas('assignedUsers', fn($q) => $q->where('user_id', $user->id))
-                          ->orWhere('pole', $user->pole); // ✅ AJOUTÉ
-                })
-                ->orderBy('ordre', 'asc')
-                ->orderBy('created_at', 'asc')
-                ->get();
+        $query = Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
+            ->where('pole', $pole)
+            ->orderBy('ordre', 'asc')
+            ->orderBy('created_at', 'asc');
 
-        return response()->json($rappels);
+        if (!$user->hasRole('admin')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('assignedUsers', fn($subQ) => $subQ->where('user_id', $user->id));
+            });
+        }
+
+        $rappels = $query->get();
+
+        return RappelResource::collection($rappels)->response();
     }
 
     public function store(Request $request)
@@ -76,10 +71,9 @@ class RappelController extends Controller
             ? User::find($validated['assigned_users'][0])
             : null;
 
-        // ✅ AMÉLIORATION : Détermine le pôle dans l'ordre de priorité
-        $determinedPole = $validated['pole'] 
-            ?? $firstAssignedUser?->pole 
-            ?? $user->pole 
+        $determinedPole = $validated['pole']
+            ?? $firstAssignedUser?->pole
+            ?? $user->pole
             ?? null;
 
         $rappel = new Rappel([
@@ -106,33 +100,23 @@ class RappelController extends Controller
             $rappel->assignedUsers()->sync($validated['assigned_users']);
         }
 
-        \Log::info('✅ Rappel créé', [
-            'id' => $rappel->id,
-            'titre' => $rappel->titre,
-            'pole' => $rappel->pole,
-            'assigned_users' => $validated['assigned_users'] ?? [],
-        ]);
-
-        return response()->json([
-            'message' => 'Rappel créé avec succès.',
-            'data' => $rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles']),
-        ], 201);
+        return (new RappelResource($rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles'])))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function update(Request $request, $id)
     {
-        \Log::info('📥 Rappel update payload:', $request->all());
-
         $rappel = Rappel::find($id);
         if (!$rappel) {
-            return response()->json(['error' => "Rappel introuvable (id: $id)"], 404);
+            return response()->json(['message' => "Rappel introuvable"], 404);
         }
 
         $user = $request->user();
-        // Autoriser le créateur, un utilisateur assigné ou un admin
         $isAssigned = $rappel->assignedUsers()->where('user_id', $user->id)->exists();
+
         if ($user->id !== $rappel->user_id && !$isAssigned && !$user->hasRole('admin')) {
-            return response()->json(['error' => 'Non autorisé'], 403);
+            return response()->json(['message' => 'Non autorisé'], 403);
         }
 
         $validated = $request->validate([
@@ -152,7 +136,6 @@ class RappelController extends Controller
             ? User::find($validated['assigned_users'][0])
             : ($rappel->assignedUsers()->first());
 
-        // ✅ AMÉLIORATION : Mise à jour intelligente du pôle
         $newPole = $validated['pole']
             ?? $firstAssignedUser?->pole
             ?? $rappel->pole
@@ -174,26 +157,16 @@ class RappelController extends Controller
             $rappel->assignedUsers()->sync($validated['assigned_users']);
         }
 
-        \Log::info('✅ Rappel mis à jour', [
-            'id' => $rappel->id,
-            'pole' => $rappel->pole,
-            'assigned_users' => $rappel->assignedUsers->pluck('id')->toArray(),
-        ]);
-
-        return response()->json([
-            'message' => 'Rappel mis à jour avec succès.',
-            'data' => $rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles']),
-        ]);
+        return (new RappelResource($rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles'])))->response();
     }
 
     public function destroy(Request $request, Rappel $rappel)
     {
         $user = $request->user();
-
-        // Autoriser le créateur, un utilisateur assigné ou un admin
         $isAssigned = $rappel->assignedUsers()->where('user_id', $user->id)->exists();
+
         if ($user->id !== $rappel->user_id && !$isAssigned && !$user->hasRole('admin')) {
-            return response()->json(['error' => 'Non autorisé'], 403);
+            return response()->json(['message' => 'Non autorisé'], 403);
         }
 
         $rappel->assignedUsers()->detach();
@@ -202,9 +175,6 @@ class RappelController extends Controller
         return response()->json(['message' => 'Rappel supprimé avec succès.']);
     }
 
-    /**
-     * Décaler un rappel de X jours
-     */
     public function decaler(Request $request, $id)
     {
         $validated = $request->validate([
@@ -212,24 +182,19 @@ class RappelController extends Controller
         ]);
 
         $rappel = Rappel::findOrFail($id);
-
         $user = $request->user();
-        // Autoriser le créateur, un utilisateur assigné ou un admin
         $isAssigned = $rappel->assignedUsers()->where('user_id', $user->id)->exists();
+
         if ($user->id !== $rappel->user_id && !$isAssigned && !$user->hasRole('admin')) {
-            return response()->json(['error' => 'Non autorisé'], 403);
+            return response()->json(['message' => 'Non autorisé'], 403);
         }
 
-        // Décaler la date du rappel
         if ($rappel->date_rappel) {
             $newDate = \Carbon\Carbon::parse($rappel->date_rappel)->addDays($validated['jours']);
             $rappel->date_rappel = $newDate;
             $rappel->save();
         }
 
-        return response()->json([
-            'message' => "Rappel décalé de {$validated['jours']} jour(s) avec succès.",
-            'data' => $rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles']),
-        ]);
+        return (new RappelResource($rappel->load(['user.roles', 'rappelable', 'assignedUsers.roles'])))->response();
     }
 }

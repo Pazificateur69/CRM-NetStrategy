@@ -1,48 +1,60 @@
+// app/prospects/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
-import FicheTabs from '@/components/FicheTabs'; // Assurez-vous que ce composant existe
-import api from '@/services/api';
-import { ProspectDetail, StatutCouleur } from '@/types/crm'; 
-import { ChevronLeft, Edit, Zap, FileText, Clock, CheckCircle, Download, LucideIcon } from 'lucide-react';
+import FicheTabs from '@/components/FicheTabs';
+import { ProspectDetail, StatutCouleur } from '@/types/crm';
+import {
+    ChevronLeft,
+    Edit,
+    FileText,
+    Clock,
+    CheckCircle,
+    Download,
+    LucideIcon,
+    Building2,
+    User,
+    Mail,
+    Phone,
+    Calendar,
+    ArrowRight
+} from 'lucide-react';
 import Link from 'next/link';
-import { getProspectDetails, convertProspectToClient } from '@/services/data'; // Assurez-vous d'importer convertProspectToClient
+import { getProspectDetails, convertProspectToClient } from '@/services/data';
 
-// --------------------------- UTILS INTERNES (Styles et Composants) ---------------------------
+// --- COMPOSANTS UI ---
 
-// 🚨 FIX 1: Initialisation correcte de l'objet de couleur (résout l'erreur 2739)
-const couleurClasses: Record<StatutCouleur, string> = {
-    rouge: 'bg-red-100 text-red-800 border-red-500',
-    jaune: 'bg-yellow-100 text-yellow-800 border-yellow-500',
-    vert: 'bg-green-100 text-green-800 border-green-500',
-};
-
-const StatutBadge: React.FC<{ statut: StatutCouleur }> = ({ statut }) => (
-    <span
-        className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border-2 ${couleurClasses[statut]} shadow-sm`}
-    >
-        <span className="capitalize">{statut}</span>
-    </span>
-);
-
-const DetailCard: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
-    <div className="bg-white p-6 shadow-xl rounded-xl border border-gray-100">
-        <h3 className="text-xl font-semibold text-indigo-700 border-b pb-2 mb-4">{title}</h3>
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 text-gray-700">
+const DetailCard: React.FC<{ title: string, children: React.ReactNode, icon?: LucideIcon }> = ({ title, children, icon: Icon }) => (
+    <div className="bg-white p-6 lg:p-8 shadow-sm rounded-2xl border border-slate-100 h-full">
+        <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+            {Icon && <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Icon className="w-5 h-5" /></div>}
+            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+        </div>
+        <dl className="space-y-6">
             {children}
         </dl>
     </div>
 );
 
-// --------------------------- COMPOSANT PRINCIPAL ---------------------------
+const DetailItem: React.FC<{ label: string, value: React.ReactNode, icon?: LucideIcon }> = ({ label, value, icon: Icon }) => (
+    <div className="flex items-start gap-4">
+        {Icon && <Icon className="w-5 h-5 text-slate-400 mt-0.5" />}
+        <div className="flex-1">
+            <dt className="text-sm font-medium text-slate-500 mb-1">{label}</dt>
+            <dd className="text-base font-medium text-slate-900 break-words">{value || '—'}</dd>
+        </div>
+    </div>
+);
+
+// --- PAGE PRINCIPALE ---
 
 export default function ProspectDetailPage() {
     const params = useParams();
     const router = useRouter();
     const prospectId = params.id as string;
-    
+
     const [prospect, setProspect] = useState<ProspectDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [isConverting, setIsConverting] = useState(false);
@@ -51,7 +63,6 @@ export default function ProspectDetailPage() {
     useEffect(() => {
         const fetchProspect = async () => {
             try {
-                // Utilisation du service typé (résout l'erreur 18046 si le service est correct)
                 const prospectData = await getProspectDetails(Number(prospectId));
                 setProspect(prospectData);
             } catch (error) {
@@ -76,113 +87,214 @@ export default function ProspectDetailPage() {
         setIsConverting(true);
         try {
             const response = await convertProspectToClient(prospect.id);
-            
-            alert(`Le prospect ${prospect.societe} a été converti en client !`);
-            router.push(`/clients/${response.client_id}`); // Redirection vers la nouvelle Fiche Client créée
+            // Notification plus élégante pourrait être ajoutée ici
+            router.push(`/clients/${response.client_id}`);
         } catch (error) {
             console.error("Échec de la conversion.", error);
-            alert("Échec de la conversion. Vérifiez le log ou la permission 'manage prospects'.");
+            alert("Échec de la conversion. Vérifiez vos permissions.");
         } finally {
             setIsConverting(false);
         }
     };
 
-
     if (loading) {
-        return <DashboardLayout><p className="p-8 text-center text-xl">Chargement de la fiche prospect...</p></DashboardLayout>;
+        return (
+            <DashboardLayout>
+                <div className="flex flex-col items-center justify-center h-[60vh]">
+                    <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+                    <p className="text-lg text-slate-500 font-medium animate-pulse">Chargement du prospect...</p>
+                </div>
+            </DashboardLayout>
+        );
     }
 
     if (!prospect) {
-        return <DashboardLayout><p className="p-8 text-center text-xl text-red-600">Fiche prospect introuvable ou erreur de chargement.</p></DashboardLayout>;
+        return (
+            <DashboardLayout>
+                <div className="flex flex-col items-center justify-center h-[60vh]">
+                    <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-6">
+                        <FileText className="w-10 h-10" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Prospect introuvable</h2>
+                    <p className="text-slate-500 mb-8">Ce prospect n'existe pas ou a été supprimé.</p>
+                    <Link href="/prospects" className="px-6 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/20">
+                        Retour à la liste
+                    </Link>
+                </div>
+            </DashboardLayout>
+        );
     }
 
-    const documentCount = prospect.contenu.filter(c => c.type === 'Fichier').length;
+    const documentCount = prospect.contenu?.filter(c => c.type === 'Fichier').length || 0;
 
     const tabs = [
-        { id: 'informations', label: 'Informations Prospect', icon: FileText as LucideIcon },
-        { id: 'activite', label: `Activité (${prospect.todos.length + prospect.rappels.length})`, icon: Clock as LucideIcon },
+        { id: 'informations', label: 'Informations', icon: FileText as LucideIcon },
+        { id: 'activite', label: `Activité (${(prospect.todos?.length || 0) + (prospect.rappels?.length || 0)})`, icon: Clock as LucideIcon },
         { id: 'documents', label: `Documents (${documentCount})`, icon: Download as LucideIcon },
     ];
 
-    const renderTabContent = (tabId: string) => {
-        switch (tabId) {
-            case 'informations':
-                return (
-                    // 🚨 FIX 3: Appel de DetailCard avec le contenu (children) (résout l'erreur 2741)
-                    <DetailCard title="Détails du Contact">
-                        <div>
-                            <dt className="text-sm font-medium text-gray-500">Contact Principal</dt>
-                            <dd className="mt-1 text-lg font-medium text-gray-900">{prospect.contact}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-sm font-medium text-gray-500">Statut</dt>
-                            <dd className="mt-1 capitalize">{prospect.statut.replace('_', ' ')}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-sm font-medium text-gray-500">Email Principal</dt>
-                            <dd className="mt-1 hover:text-indigo-600"><a href={`mailto:${prospect.emails[0]}`}>{prospect.emails[0]}</a></dd>
-                        </div>
-                        <div>
-                            <dt className="text-sm font-medium text-gray-500">Téléphone Principal</dt>
-                            <dd className="mt-1">{prospect.telephones[0]}</dd>
-                        </div>
-                    </DetailCard>
-                );
-
-            case 'activite':
-                return <p>Section Activité à implémenter...</p>;
-            
-            case 'documents':
-                return <p>Section Documents à implémenter...</p>;
+    const getStatusBadge = (statut: string) => {
+        switch (statut) {
+            case 'converti':
+                return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-green-100 text-green-700 border border-green-200 uppercase tracking-wide">Converti</span>;
+            case 'relance':
+                return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-yellow-100 text-yellow-700 border border-yellow-200 uppercase tracking-wide">Relance</span>;
+            case 'en_attente':
+                return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-wide">En attente</span>;
+            case 'perdu':
+                return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-red-100 text-red-700 border border-red-200 uppercase tracking-wide">Perdu</span>;
             default:
-                return null;
+                return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 uppercase tracking-wide">{statut}</span>;
         }
     };
 
-
     return (
         <DashboardLayout>
-            {/* Header / Titre */}
-            <header className="mb-8 p-6 bg-white shadow-lg rounded-xl">
-                <Link href="/prospects" className="flex items-center text-indigo-600 hover:text-indigo-800 mb-4 transition duration-150">
-                    <ChevronLeft className="w-5 h-5 mr-1" /> Retour à la liste
-                </Link>
+            {/* === HEADER PROSPECT === */}
+            <div className="relative mb-8 rounded-3xl overflow-hidden bg-white shadow-xl border border-slate-100">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-10"></div>
+                <div className="absolute top-0 right-0 p-12 opacity-5">
+                    <Building2 className="w-64 h-64" />
+                </div>
 
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h1 className="text-5xl font-extrabold text-gray-900 leading-tight">
-                            {prospect.societe} (PROSPECT)
-                        </h1>
-                        <p className="text-xl text-gray-500 mt-2">Contact : {prospect.contact}</p>
-                    </div>
-                    
-                    <div className="flex flex-col items-end space-y-3">
-                        <StatutBadge statut={prospect.couleur_statut} /> 
-                        <div className="flex space-x-2">
-                             <button 
-                                onClick={handleConvert}
-                                disabled={isConverting}
-                                className="flex items-center bg-green-600 text-white py-2 px-3 rounded-lg hover:bg-green-700 transition duration-150 text-sm disabled:opacity-50"
+                <div className="relative p-8 lg:p-10">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                        <div>
+                            <Link
+                                href="/prospects"
+                                className="inline-flex items-center text-purple-600 hover:text-purple-800 font-medium transition-colors mb-4 group"
                             >
-                                <CheckCircle className="w-4 h-4 mr-1" /> 
-                                {isConverting ? 'Conversion en cours...' : 'Convertir en Client'}
+                                <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center mr-2 group-hover:bg-purple-100 transition-colors">
+                                    <ChevronLeft className="w-5 h-5" />
+                                </div>
+                                Retour à la liste
+                            </Link>
+
+                            <div className="flex items-center gap-4 mb-2">
+                                <h1 className="text-4xl font-heading font-bold text-slate-900 tracking-tight">
+                                    {prospect.societe}
+                                </h1>
+                                {getStatusBadge(prospect.statut)}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-6 text-slate-500 mt-4">
+                                <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4 text-purple-500" />
+                                    <span className="font-medium text-slate-700">{prospect.contact}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-purple-500" />
+                                    <span>Créé le {new Date(prospect.created_at || Date.now()).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                            <button
+                                onClick={handleConvert}
+                                disabled={isConverting || prospect.statut === 'converti'}
+                                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 rounded-xl transition-all shadow-lg shadow-green-500/20 font-semibold group"
+                            >
+                                {isConverting ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <CheckCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                )}
+                                <span>{prospect.statut === 'converti' ? 'Déjà Converti' : 'Convertir en Client'}</span>
                             </button>
-                             <button className="flex items-center bg-yellow-500 text-white py-2 px-3 rounded-lg hover:bg-yellow-600 transition duration-150 text-sm">
-                                <Edit className="w-4 h-4 mr-1" /> Modifier
+
+                            <button className="flex items-center justify-center gap-2 bg-white text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 transition-all shadow-sm border border-slate-200 font-semibold group">
+                                <Edit className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
+                                <span>Modifier</span>
                             </button>
                         </div>
                     </div>
                 </div>
-            </header>
+            </div>
 
-            {/* Corps de la Fiche (Tabs) */}
-            <main className="mt-8">
+            {/* === Onglets === */}
+            <div className="mb-8">
                 <FicheTabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+            </div>
 
-                <div className="mt-6">
-                    {renderTabContent(activeTab)}
-                </div>
-            </main>
+            <div className="animate-fade-in">
+                {activeTab === 'informations' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Colonne Gauche : Infos Principales */}
+                        <div className="lg:col-span-2 space-y-8">
+                            <DetailCard title="Coordonnées" icon={Building2}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <DetailItem
+                                        label="Contact Principal"
+                                        value={prospect.contact}
+                                        icon={User}
+                                    />
+                                    <DetailItem
+                                        label="Email"
+                                        value={
+                                            prospect.emails?.[0] ? (
+                                                <a href={`mailto:${prospect.emails[0]}`} className="text-purple-600 hover:underline">
+                                                    {prospect.emails[0]}
+                                                </a>
+                                            ) : null
+                                        }
+                                        icon={Mail}
+                                    />
+                                    <DetailItem
+                                        label="Téléphone"
+                                        value={prospect.telephones?.[0]}
+                                        icon={Phone}
+                                    />
+                                    <DetailItem
+                                        label="Date de création"
+                                        value={new Date(prospect.created_at || Date.now()).toLocaleDateString()}
+                                        icon={Calendar}
+                                    />
+                                </div>
+                            </DetailCard>
+
+                            {/* Placeholder pour d'autres infos */}
+                            <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-8 text-center">
+                                <p className="text-slate-500">D'autres informations personnalisées pourront être ajoutées ici.</p>
+                            </div>
+                        </div>
+
+                        {/* Colonne Droite : Actions Rapides / Notes */}
+                        <div className="space-y-8">
+                            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
+                                <h3 className="text-lg font-bold mb-4">Actions Rapides</h3>
+                                <div className="space-y-3">
+                                    <button className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm">
+                                        <span className="font-medium">Planifier un appel</span>
+                                        <Phone className="w-4 h-4" />
+                                    </button>
+                                    <button className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm">
+                                        <span className="font-medium">Envoyer un email</span>
+                                        <Mail className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'activite' && (
+                    <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
+                        <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-slate-900">Historique d'activité</h3>
+                        <p className="text-slate-500">L'historique des tâches et rappels s'affichera ici.</p>
+                    </div>
+                )}
+
+                {activeTab === 'documents' && (
+                    <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
+                        <Download className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-slate-900">Documents</h3>
+                        <p className="text-slate-500">La gestion documentaire sera disponible bientôt.</p>
+                    </div>
+                )}
+            </div>
         </DashboardLayout>
     );
 }

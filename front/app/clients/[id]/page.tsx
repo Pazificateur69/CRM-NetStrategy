@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronLeft, Edit } from 'lucide-react';
+import { ChevronLeft, Edit, Building2, User, MapPin, Globe, FileText, CreditCard, Calendar, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import FicheTabs, { type TabDefinition } from '@/components/FicheTabs';
@@ -106,8 +106,9 @@ export default function ClientDetailPage() {
   if (loading)
     return (
       <DashboardLayout>
-        <div className="p-12 text-center text-xl font-semibold text-indigo-700 animate-pulse">
-          🚀 Préparation de la Fiche Client...
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+          <p className="text-lg text-slate-500 font-medium animate-pulse">Chargement du dossier client...</p>
         </div>
       </DashboardLayout>
     );
@@ -115,8 +116,15 @@ export default function ClientDetailPage() {
   if (!client)
     return (
       <DashboardLayout>
-        <div className="p-12 text-center text-2xl font-bold text-red-600 bg-red-50 rounded-xl shadow-lg">
-          ❌ Client introuvable. Veuillez vérifier l'identifiant.
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-6">
+            <FileText className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Client introuvable</h2>
+          <p className="text-slate-500 mb-8">Le client que vous recherchez n'existe pas ou a été supprimé.</p>
+          <Link href="/clients" className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20">
+            Retour à la liste
+          </Link>
         </div>
       </DashboardLayout>
     );
@@ -153,36 +161,74 @@ export default function ClientDetailPage() {
   return (
     <DashboardLayout>
       {/* === HEADER CLIENT === */}
-      <header className="bg-white p-8 rounded-2xl shadow-2xl mb-8 flex justify-between items-start border-t-4 border-indigo-600">
-        <div>
-          <Link
-            href="/clients"
-            className="flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition duration-300 mb-4"
-          >
-            <ChevronLeft className="w-5 h-5 mr-2" /> Retour à la liste clients
-          </Link>
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-            {client.societe}
-          </h1>
-          <p className="text-xl text-gray-500 mt-2 font-light">
-            Gérant : <span className="font-semibold text-gray-700">{client.gerant}</span>
-          </p>
+      <div className="relative mb-8 rounded-3xl overflow-hidden bg-white shadow-xl border border-slate-100">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-10"></div>
+        <div className="absolute top-0 right-0 p-12 opacity-5">
+          <Building2 className="w-64 h-64" />
         </div>
 
-        {canEdit && (
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="bg-amber-500 text-white px-6 py-3 rounded-full hover:bg-amber-600 transition duration-300 transform hover:scale-105 flex items-center shadow-lg font-semibold uppercase text-sm"
-          >
-            <Edit className="w-4 h-4 mr-2" /> Modifier Fiche
-          </button>
-        )}
-      </header>
+        <div className="relative p-8 lg:p-10">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div>
+              <Link
+                href="/clients"
+                className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors mb-4 group"
+              >
+                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-2 group-hover:bg-indigo-100 transition-colors">
+                  <ChevronLeft className="w-5 h-5" />
+                </div>
+                Retour à la liste
+              </Link>
+
+              <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-4xl font-heading font-bold text-slate-900 tracking-tight">
+                  {client.societe}
+                </h1>
+                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">
+                  Client Actif
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-6 text-slate-500 mt-4">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-indigo-500" />
+                  <span className="font-medium text-slate-700">{client.gerant}</span>
+                </div>
+                {client.ville && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-indigo-500" />
+                    <span>{client.ville}</span>
+                  </div>
+                )}
+                {client.site_web && (
+                  <a href={client.site_web} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-indigo-600 transition-colors">
+                    <Globe className="w-4 h-4 text-indigo-500" />
+                    <span>Site Web</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {canEdit && (
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-2 bg-white text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 transition-all shadow-sm border border-slate-200 font-semibold group"
+              >
+                <Edit className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+                <span>Modifier la fiche</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* === Onglets === */}
-      <FicheTabs tabs={accessibleTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="mb-8">
+        <FicheTabs tabs={accessibleTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
 
-      <div className="mt-8 space-y-10">
+      <div className="animate-fade-in">
         {/* 1️⃣ Onglet Informations */}
         {activeTab === 'informations' && (
           <ClientInfoDetails

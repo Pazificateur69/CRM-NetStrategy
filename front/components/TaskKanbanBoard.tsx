@@ -1,6 +1,7 @@
+// front/components/TaskKanbanBoard.tsx
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Task, updateTaskStatus } from '@/services/tasks';
 import api from '@/services/api';
 import {
@@ -11,7 +12,8 @@ import {
   PlayCircle,
   ListTodo,
   AlertCircle,
-  MoreHorizontal
+  MoreHorizontal,
+  UserCircle2
 } from 'lucide-react';
 
 // ===========================================
@@ -97,6 +99,7 @@ interface TaskCardProps {
     targetIndex: number,
     columnStatus: Task['status']
   ) => void;
+  isAdmin: boolean;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -104,6 +107,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   index,
   onDragStart,
   onDragEnter,
+  isAdmin,
 }) => {
   const { badge, border } = getPriorityStyles(task.priorite || 'moyenne');
   const isOverdue =
@@ -132,7 +136,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       onDragEnter={(e) => onDragEnter(e, index, task.status)}
     >
       <div className="flex justify-between items-start mb-3">
-        <h4 className="text-sm font-semibold text-gray-900 leading-snug flex-1 mr-2">
+        <h4 className="text-sm font-semibold text-gray-900 leading-snug flex-1 mr-2 line-clamp-2">
           {task.title}
         </h4>
         <button className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -144,6 +148,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${badge} uppercase tracking-wide`}>
           {task.priorite || 'moyenne'}
         </span>
+        {isAdmin && task.assignedTo && (
+          <div className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 font-medium" title={task.assignedTo.email}>
+            <UserCircle2 className="w-3 h-3" />
+            <span className="truncate max-w-[80px]">{task.assignedTo.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between text-xs pt-3 border-t border-gray-50">
@@ -194,6 +204,7 @@ interface TaskSectionProps {
     newStatus: Task['status']
   ) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  isAdmin: boolean;
 }
 
 const TaskSection: React.FC<TaskSectionProps> = ({
@@ -204,6 +215,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({
   onDragEnter,
   onDrop,
   onDragOver,
+  isAdmin,
 }) => {
   const tasksByStatus = useMemo(() => {
     return TASK_STATUSES.reduce((acc: Record<Task['status'], Task[]>, status) => {
@@ -278,6 +290,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({
                     index={index}
                     onDragStart={onDragStart}
                     onDragEnter={onDragEnter}
+                    isAdmin={isAdmin}
                   />
                 ))}
 
@@ -312,6 +325,13 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
   tasks,
   setTasks,
 }) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setIsAdmin(role === 'admin');
+  }, []);
+
   const dragItem = React.useRef<{
     id: string;
     fromStatus: Task['status'];
@@ -416,6 +436,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        isAdmin={isAdmin}
       />
 
       <TaskSection
@@ -426,6 +447,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        isAdmin={isAdmin}
       />
     </div>
   );

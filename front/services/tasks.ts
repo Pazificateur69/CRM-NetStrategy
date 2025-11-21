@@ -15,6 +15,7 @@ export interface Task {
   pole?: string;
   dueDate?: string | null;
   responsible?: string;
+  assignedTo?: { id: number; name: string; email: string } | null; // Ajouté
   ordre?: number;
 }
 
@@ -64,6 +65,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     pole: t.pole || pole,
     dueDate: t.date_echeance || null,
     responsible: t.user?.name || '—',
+    assignedTo: t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null,
     type: 'todo',
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
@@ -77,6 +79,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     pole: r.pole || pole,
     dueDate: r.date_rappel || null,
     responsible: r.user?.name || '—',
+    assignedTo: r.assigned_users?.[0] ? { id: r.assigned_users[0].id, name: r.assigned_users[0].name, email: r.assigned_users[0].email } : null,
     type: 'reminder',
     status: mapBackendToFrontendStatus(r.statut ?? 'planifie'),
     priorite: r.priorite || 'moyenne',
@@ -116,6 +119,9 @@ export async function updateTaskStatus(
       pole: t.pole || '—',
       dueDate: t.date_echeance || t.date_rappel || null,
       responsible: t.user?.name || '—',
+      assignedTo: type === 'todo'
+        ? (t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null)
+        : (t.assigned_users?.[0] ? { id: t.assigned_users[0].id, name: t.assigned_users[0].name, email: t.assigned_users[0].email } : null),
       type,
       status: mapBackendToFrontendStatus(t.statut),
       priorite: t.priorite || 'moyenne',
