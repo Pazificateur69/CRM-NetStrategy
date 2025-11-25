@@ -57,6 +57,7 @@ ${crmData.clients.map(c => `
   * Phone: ${c.phone}
   * City: ${c.ville}
   * Revenue: ${c.revenue}€/month
+  * Services: ${c.prestations.length > 0 ? c.prestations.map(p => `${p.type} (${p.montant}€/${p.frequence})`).join(', ') : 'None'}
 `).join('')}
 
 --- PROSPECTS ---

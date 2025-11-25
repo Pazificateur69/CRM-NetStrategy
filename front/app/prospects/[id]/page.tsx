@@ -42,6 +42,7 @@ import ProspectConversionModal from './components/ProspectConversionModal';
 import ProspectActivityStream from './components/ProspectActivityStream';
 import ProspectDocuments from './components/ProspectDocuments';
 import { TodoFormState, RappelFormState } from '@/app/clients/[id]/ClientUtils';
+import { useWebLLM } from '@/hooks/useWebLLM';
 
 // --- COMPOSANTS UI ---
 
@@ -319,16 +320,69 @@ export default function ProspectDetailPage() {
     };
 
     // --- AI ---
+    const { engine, initEngine, isReady } = useWebLLM();
     const [analyzing, setAnalyzing] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState<any>(null);
 
+    // Ensure engine is ready if we want to analyze
+    // Removed auto-init to prevent performance issues
+    // useEffect(() => {
+    //     if (!isReady && !analyzing) {
+    //         initEngine();
+    //     }
+    // }, []);
+
     const handleAnalyzeAI = async () => {
-        if (!prospect) return;
+        if (!prospect || !engine) {
+            if (!isReady) initEngine();
+            return;
+        }
+
         setAnalyzing(true);
         try {
-            const { analyzeProspect } = await import('@/services/crm');
-            const result = await analyzeProspect(prospect.id);
-            setAiAnalysis(result);
+            const prompt = `
+You are an expert CRM assistant. Analyze this prospect and provide a strategic summary.
+PROSPECT DATA:
+- Company: ${prospect.societe}
+- Contact: ${prospect.contact}
+- Email: ${prospect.emails?.[0] || 'N/A'}
+- Status: ${prospect.statut}
+- Score: ${prospect.score || 'N/A'}
+- Interactions: ${prospect.todos?.length || 0} tasks, ${prospect.rappels?.length || 0} reminders.
+
+OUTPUT FORMAT:
+Respond ONLY with a valid JSON object (no markdown, no code blocks) with this structure:
+{
+  "summary": "Short strategic summary of the prospect situation (max 2 sentences).",
+  "sentiment": "Positif" | "Neutre" | "Négatif",
+  "next_steps": ["Action 1", "Action 2", "Action 3"],
+  "talking_points": ["Point 1", "Point 2", "Point 3"]
+}
+`;
+
+            const reply = await engine.chat.completions.create({
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.7,
+            });
+
+            const content = reply.choices[0].message.content || "{}";
+            // Clean up potential markdown code blocks if the model adds them
+            const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            try {
+                const result = JSON.parse(cleanJson);
+                setAiAnalysis(result);
+            } catch (e) {
+                console.error("Failed to parse AI JSON", e);
+                // Fallback if JSON parsing fails
+                setAiAnalysis({
+                    summary: cleanJson,
+                    sentiment: "Neutre",
+                    next_steps: ["Vérifier les données", "Contacter le prospect"],
+                    talking_points: []
+                });
+            }
+
         } catch (error) {
             console.error("AI Error", error);
             alert("Erreur lors de l'analyse IA");

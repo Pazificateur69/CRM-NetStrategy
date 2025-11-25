@@ -91,5 +91,6 @@ export function useWebLLM() {
         sendMessage,
         isGenerating,
         isReady: !!engine,
+        engine,
     };
 }

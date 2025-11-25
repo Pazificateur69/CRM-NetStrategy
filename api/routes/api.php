@@ -22,7 +22,8 @@ use App\Http\Controllers\{
 // ===================================================
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:6,1'); // Max 6 tentatives par minute
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register'])
+    ->middleware('throttle:3,1'); // Max 3 inscriptions par minute
 
 // ===================================================
 // 🔒 2. ROUTES PROTÉGÉES PAR SANCTUM

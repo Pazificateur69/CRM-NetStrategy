@@ -12,6 +12,12 @@ export interface CrmData {
         phone: string;
         ville: string;
         revenue: number;
+        prestations: {
+            type: string;
+            montant: number;
+            frequence: string;
+            statut: string;
+        }[];
     }[];
     prospects: {
         id: number;
@@ -68,7 +74,13 @@ export function useCrmData() {
                         email: c.emails?.[0] || 'N/A',
                         phone: c.telephones?.[0] || 'N/A',
                         ville: c.ville || 'N/A',
-                        revenue: Number(c.montant_mensuel_total) || 0
+                        revenue: Number(c.montant_mensuel_total) || 0,
+                        prestations: (c.prestations || []).map((p: any) => ({
+                            type: p.type,
+                            montant: Number(p.tarif_ht) || 0,
+                            frequence: p.frequence || 'N/A',
+                            statut: p.statut || 'en_attente'
+                        }))
                     })),
                     prospects: prospects.map((p: any) => ({
                         id: p.id,

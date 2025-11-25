@@ -36,5 +36,23 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// 🔒 Intercepteur de réponses : gestion des erreurs d'authentification
+api.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    // Si 401 Unauthorized, le token est invalide ou expiré
+    if (error.response?.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        // Rediriger vers login si pas déjà sur la page de login
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 
 export default api;
