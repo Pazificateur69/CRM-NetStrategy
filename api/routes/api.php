@@ -12,7 +12,9 @@ use App\Http\Controllers\{
     ComptabiliteController,
     PrestationController,
     ContenuFicheController,
-    UserController
+
+    UserController,
+    AIController
 };
 
 // ===================================================
@@ -34,14 +36,14 @@ Route::middleware('auth:sanctum')->group(function () {
         $user = $request->user();
 
         return response()->json([
-            'id'    => $user->id,
-            'name'  => $user->name,
+            'id' => $user->id,
+            'name' => $user->name,
             'email' => $user->email,
-            'role'  => $user->role,
+            'role' => $user->role,
             'roles' => method_exists($user, 'getRoleNames')
                 ? $user->getRoleNames()
                 : [$user->role],
-            'pole'  => $user->pole ?? 'non_defini',
+            'pole' => $user->pole ?? 'non_defini',
         ]);
     });
 
@@ -127,4 +129,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     Route::get('/users/by-pole/{pole}', [UserController::class, 'getByPole'])
         ->middleware('role:admin');
+    // ===================================================
+    // 🤖 INTELLIGENCE ARTIFICIELLE
+    // ===================================================
+    Route::post('/ai/analyze-prospect/{id}', [AIController::class, 'analyzeProspect']);
 });

@@ -151,6 +151,8 @@ export interface ProspectDetail extends BaseEntity {
   contact: string;
   statut: 'en_attente' | 'relance' | 'signé' | 'converti';
   couleur_statut: StatutCouleur;
+  score?: number;
+  score_details?: string[];
   todos: Todo[];
   rappels: Rappel[];
   contenu: ContenuFiche[];

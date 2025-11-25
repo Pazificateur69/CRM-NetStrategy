@@ -149,11 +149,47 @@ export const addProspectRappel = async (prospectId: number, rappel: Partial<Rapp
   return response.data.data;
 };
 
+export const addProspectTodo = async (prospectId: number, todo: Partial<Todo>): Promise<Todo> => {
+  const response = await api.post(`/todos`, {
+    ...todo,
+    prospect_id: prospectId,
+  });
+  return response.data.data;
+};
+
+export const uploadProspectDocument = async (
+  prospectId: number,
+  file: File,
+  pole?: string
+): Promise<ContenuFiche> => {
+  const formData = new FormData();
+  formData.append('type', 'Fichier');
+  formData.append('prospect_id', prospectId.toString());
+  formData.append('fichier', file);
+
+  if (pole) {
+    formData.append('pole', pole);
+  }
+
+  const response = await api.post(`/contenu`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data.data;
+};
+
 // ===============================
 // 🔹 CONVERSION PROSPECT → CLIENT
 // ===============================
 export const convertProspect = async (id: number): Promise<ConversionResponse> => {
   const response = await api.post(`/prospects/${id}/convert`);
+  return response.data;
+};
+
+// ===============================
+// 🤖 AI FEATURES
+// ===============================
+export const analyzeProspect = async (id: number): Promise<any> => {
+  const response = await api.post(`/ai/analyze-prospect/${id}`);
   return response.data;
 };
 

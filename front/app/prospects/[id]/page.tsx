@@ -146,6 +146,25 @@ export default function ProspectDetailPage() {
         }
     };
 
+    // AI State
+    const [analyzing, setAnalyzing] = useState(false);
+    const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+
+    const handleAnalyzeAI = async () => {
+        if (!prospect) return;
+        setAnalyzing(true);
+        try {
+            const { analyzeProspect } = await import('@/services/crm');
+            const result = await analyzeProspect(prospect.id);
+            setAiAnalysis(result);
+        } catch (error) {
+            console.error("AI Error", error);
+            alert("Erreur lors de l'analyse IA");
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
     if (loading) {
         return (
             <DashboardLayout>
@@ -225,6 +244,14 @@ export default function ProspectDetailPage() {
                                     {prospect.societe}
                                 </h1>
                                 {getStatusBadge(prospect.statut)}
+                                {prospect.score !== undefined && (
+                                    <div className={`px-3 py-1 rounded-full text-sm font-bold border ${prospect.score >= 70 ? 'bg-green-100 text-green-700 border-green-200' :
+                                        prospect.score >= 30 ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                            'bg-red-100 text-red-700 border-red-200'
+                                        }`}>
+                                        Score: {prospect.score}/100
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-wrap items-center gap-6 text-slate-500 mt-4">
@@ -312,27 +339,118 @@ export default function ProspectDetailPage() {
                             </div>
                         </div>
 
-                        {/* Colonne Droite : Actions Rapides / Notes */}
                         <div className="space-y-8">
-                            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
-                                <h3 className="text-lg font-bold mb-4">Actions Rapides</h3>
-                                <div className="space-y-3">
-                                    <button
-                                        onClick={() => setShowCallModal(true)}
-                                        className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm group"
-                                    >
-                                        <span className="font-medium">Planifier un appel</span>
-                                        <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                    </button>
-                                    <button
-                                        onClick={handleSendEmail}
-                                        className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm group"
-                                    >
-                                        <span className="font-medium">Envoyer un email</span>
-                                        <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                    </button>
+
+                            {/* AI Analysis Widget */}
+                            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg mb-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
+                                        <span className="text-2xl">✨</span>
+                                        Analyse IA
+                                    </h3>
+                                    {aiAnalysis && (
+                                        <button
+                                            onClick={() => setAiAnalysis(null)}
+                                            className="text-white/70 hover:text-white text-sm"
+                                        >
+                                            Fermer
+                                        </button>
+                                    )}
+                                </div>
+
+                                {!aiAnalysis ? (
+                                    <div>
+                                        <p className="text-indigo-100 mb-4 text-sm">
+                                            Obtenez un résumé intelligent et des conseils de conversion générés par l'IA.
+                                        </p>
+                                        <button
+                                            onClick={handleAnalyzeAI}
+                                            disabled={analyzing}
+                                            className="w-full py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-sm disabled:opacity-70 flex items-center justify-center gap-2"
+                                        >
+                                            {analyzing ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Analyse en cours...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>Lancer l'analyse</span>
+                                                    <ArrowRight className="w-4 h-4" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 animate-fade-in">
+                                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                                            <h4 className="font-semibold mb-1 text-indigo-100 text-xs uppercase tracking-wider">Résumé</h4>
+                                            <p className="text-sm leading-relaxed">{aiAnalysis.summary}</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                                                <h4 className="font-semibold mb-1 text-indigo-100 text-xs uppercase tracking-wider">Sentiment</h4>
+                                                <div className="font-bold">{aiAnalysis.sentiment}</div>
+                                            </div>
+                                            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                                                <h4 className="font-semibold mb-1 text-indigo-100 text-xs uppercase tracking-wider">Potentiel</h4>
+                                                <div className="font-bold">Élevé</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                                            <h4 className="font-semibold mb-2 text-indigo-100 text-xs uppercase tracking-wider">Prochaines étapes</h4>
+                                            <ul className="space-y-2">
+                                                {aiAnalysis.next_steps?.map((step: string, i: number) => (
+                                                    <li key={i} className="flex items-start gap-2 text-sm">
+                                                        <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                                                        <span>{step}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Actions Rapides */}
+                            <div className="space-y-8">
+                                <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
+                                    <h3 className="text-lg font-bold mb-4">Actions Rapides</h3>
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={() => setShowCallModal(true)}
+                                            className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm group"
+                                        >
+                                            <span className="font-medium">Planifier un appel</span>
+                                            <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        </button>
+                                        <button
+                                            onClick={handleSendEmail}
+                                            className="w-full flex items-center justify-between p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-sm group"
+                                        >
+                                            <span className="font-medium">Envoyer un email</span>
+                                            <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Score Details */}
+                            {prospect.score_details && prospect.score_details.length > 0 && (
+                                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                                    <h3 className="text-lg font-bold mb-4 text-slate-800">Détails du Score</h3>
+                                    <ul className="space-y-2">
+                                        {prospect.score_details.map((detail, index) => (
+                                            <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
+                                                <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                                                <span>{detail}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -377,6 +495,6 @@ export default function ProspectDetailPage() {
                 prospectName={prospect.societe}
                 isConverting={isConverting}
             />
-        </DashboardLayout>
+        </DashboardLayout >
     );
 }

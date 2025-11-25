@@ -59,6 +59,7 @@ class RappelController extends Controller
             'date_rappel' => 'nullable|date',
             'priorite' => 'nullable|string|in:basse,moyenne,haute',
             'client_id' => 'nullable|integer|exists:clients,id',
+            'prospect_id' => 'nullable|integer|exists:prospects,id',
             'pole' => 'nullable|string|max:100',
             'assigned_users' => 'nullable|array',
             'assigned_users.*' => 'integer|exists:users,id',
@@ -92,6 +93,9 @@ class RappelController extends Controller
         if (!empty($validated['client_id'])) {
             $rappel->rappelable_type = Client::class;
             $rappel->rappelable_id = $validated['client_id'];
+        } elseif (!empty($validated['prospect_id'])) {
+            $rappel->rappelable_type = \App\Models\Prospect::class;
+            $rappel->rappelable_id = $validated['prospect_id'];
         }
 
         $rappel->save();

@@ -219,7 +219,7 @@ function NavLink({
       `}
     >
       <span className={`transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
-        {React.cloneElement(icon as React.ReactElement, {
+        {React.cloneElement(icon as React.ReactElement<any>, {
           size: 20,
           strokeWidth: active ? 2.5 : 2
         })}

@@ -10,12 +10,24 @@ use Illuminate\Support\Facades\Storage;
 class ContenuFicheController extends Controller
 {
     // ✅ Lister les contenus d'un client
-    public function index($clientId)
+    // ✅ Lister les contenus d'un client ou prospect
+    public function index(Request $request, $clientId = null)
     {
-        $client = Client::findOrFail($clientId);
-        $contenus = $client->contenu()->with(['user' => function($query) {
-            $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-        }])->latest()->get();
+        $prospectId = $request->query('prospect_id');
+
+        if ($clientId) {
+            $model = Client::findOrFail($clientId);
+        } elseif ($prospectId) {
+            $model = \App\Models\Prospect::findOrFail($prospectId);
+        } else {
+            return response()->json(['message' => 'ID requis.'], 400);
+        }
+
+        $contenus = $model->contenu()->with([
+            'user' => function ($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ])->latest()->get();
 
         return response()->json([
             'message' => 'Contenus récupérés avec succès.',
@@ -30,11 +42,19 @@ class ContenuFicheController extends Controller
             'type' => 'required|string|in:Commentaire,Fichier,NoteCommerciale',
             'pole' => 'nullable|string',
             'texte' => 'nullable|string',
-            'client_id' => 'required|exists:clients,id',
+            'client_id' => 'nullable|exists:clients,id',
+            'prospect_id' => 'nullable|exists:prospects,id',
             'fichier' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls,txt,csv',
         ]);
 
-        $client = Client::findOrFail($validated['client_id']);
+        $model = null;
+        if (!empty($validated['client_id'])) {
+            $model = Client::findOrFail($validated['client_id']);
+        } elseif (!empty($validated['prospect_id'])) {
+            $model = \App\Models\Prospect::findOrFail($validated['prospect_id']);
+        } else {
+            return response()->json(['message' => 'Client ou Prospect requis.'], 400);
+        }
 
         $data = [
             'type' => $validated['type'],
@@ -49,10 +69,12 @@ class ContenuFicheController extends Controller
             $data['nom_original_fichier'] = $request->file('fichier')->getClientOriginalName();
         }
 
-        $contenu = $client->contenu()->create($data);
-        $contenu->load(['user' => function($query) {
-            $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-        }]);
+        $contenu = $model->contenu()->create($data);
+        $contenu->load([
+            'user' => function ($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ]);
 
         return response()->json([
             'message' => 'Contenu ajouté avec succès.',
@@ -80,9 +102,11 @@ class ContenuFicheController extends Controller
             'texte' => $validated['texte'],
         ]);
 
-        $contenu->load(['user' => function($query) {
-            $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
-        }]);
+        $contenu->load([
+            'user' => function ($query) {
+                $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
+            }
+        ]);
 
         return response()->json([
             'message' => 'Commentaire modifié avec succès.',

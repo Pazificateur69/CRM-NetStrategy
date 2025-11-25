@@ -68,7 +68,8 @@ class TodoController extends Controller
             'date_echeance' => 'nullable|date',
             'statut' => 'nullable|string|in:planifie,en_cours,termine,retard',
             'priorite' => 'nullable|string|in:basse,moyenne,haute',
-            'client_id' => 'required|integer|exists:clients,id',
+            'client_id' => 'nullable|integer|exists:clients,id',
+            'prospect_id' => 'nullable|integer|exists:prospects,id',
             'pole' => 'nullable|string|max:100',
             'assigned_to' => 'nullable|integer|exists:users,id',
         ]);
@@ -93,12 +94,18 @@ class TodoController extends Controller
             'priorite' => $validated['priorite'] ?? 'moyenne',
             'ordre' => $maxOrdre + 1,
             'user_id' => $user->id,
-            'client_id' => $validated['client_id'],
+            'client_id' => $validated['client_id'] ?? null,
             'pole' => $determinedPole,
             'assigned_to' => $validated['assigned_to'] ?? null,
-            'todoable_type' => Client::class,
-            'todoable_id' => $validated['client_id'],
         ]);
+
+        if (!empty($validated['client_id'])) {
+            $todo->todoable_type = Client::class;
+            $todo->todoable_id = $validated['client_id'];
+        } elseif (!empty($validated['prospect_id'])) {
+            $todo->todoable_type = \App\Models\Prospect::class;
+            $todo->todoable_id = $validated['prospect_id'];
+        }
 
         $todo->save();
 

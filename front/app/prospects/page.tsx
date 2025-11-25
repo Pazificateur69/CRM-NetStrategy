@@ -69,6 +69,20 @@ const ProspectRow = ({ prospect }: { prospect: ProspectDetail }) => {
                 </div>
             </div>
 
+            {/* Score */}
+            <div className="lg:col-span-2 hidden lg:flex items-center">
+                {prospect.score !== undefined ? (
+                    <div className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${prospect.score >= 70 ? 'bg-green-100 text-green-800 border-green-200' :
+                            prospect.score >= 30 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                                'bg-red-100 text-red-800 border-red-200'
+                        }`}>
+                        {prospect.score} / 100
+                    </div>
+                ) : (
+                    <span className="text-gray-400 text-sm">—</span>
+                )}
+            </div>
+
             {/* Email */}
             <div className="lg:col-span-3 hidden lg:flex items-center gap-2 text-sm text-gray-600">
                 <Mail className="w-4 h-4 text-gray-400" />
@@ -78,12 +92,6 @@ const ProspectRow = ({ prospect }: { prospect: ProspectDetail }) => {
             {/* Statut */}
             <div className="lg:col-span-2 hidden lg:flex items-center">
                 {getStatusBadge(prospect.statut)}
-            </div>
-
-            {/* Date */}
-            <div className="lg:col-span-2 hidden lg:flex items-center gap-2 text-sm text-gray-500">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span>{formattedDate}</span>
             </div>
 
             {/* Action */}
@@ -229,9 +237,9 @@ export default function ProspectsIndexPage() {
                             {/* Header Table (Desktop) */}
                             <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50/50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 <div className="col-span-4">Société / Contact</div>
+                                <div className="col-span-2">Score</div>
                                 <div className="col-span-3">Email</div>
                                 <div className="col-span-2">Statut</div>
-                                <div className="col-span-2">Date Création</div>
                                 <div className="col-span-1 text-right">Action</div>
                             </div>
 
