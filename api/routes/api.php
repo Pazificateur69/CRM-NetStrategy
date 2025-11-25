@@ -106,7 +106,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('permission:view clients');
 
     // Route pour valider une prestation
-    Route::post('/prestations/{prestation}/validate', [PrestationController::class, 'validate'])
+    Route::post('/prestations/{prestation}/validate', [PrestationController::class, 'validatePrestation'])
         ->middleware('permission:manage clients');
 
     // ===================================================

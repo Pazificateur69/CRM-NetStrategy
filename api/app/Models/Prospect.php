@@ -18,6 +18,7 @@ class Prospect extends Model
         'statut',
         'score',
         'score_details',
+        'couleur_statut',
     ];
 
     protected $casts = [

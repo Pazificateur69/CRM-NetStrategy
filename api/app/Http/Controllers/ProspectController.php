@@ -42,6 +42,9 @@ class ProspectController extends Controller
             'emails' => 'nullable|array',
             'telephones' => 'nullable|array',
             'statut' => 'required|in:en_attente,relance,perdu,converti',
+            'score' => 'nullable|integer|min:0|max:100',
+            'score_details' => 'nullable|array',
+            'couleur_statut' => 'nullable|in:vert,orange,rouge',
         ]);
 
         $prospect = Prospect::create($validated);
@@ -80,6 +83,9 @@ class ProspectController extends Controller
             'emails' => 'nullable|array',
             'telephones' => 'nullable|array',
             'statut' => 'sometimes|required|in:en_attente,relance,perdu,converti',
+            'score' => 'nullable|integer|min:0|max:100',
+            'score_details' => 'nullable|array',
+            'couleur_statut' => 'nullable|in:vert,orange,rouge',
         ]);
 
         $prospect->update($validated);

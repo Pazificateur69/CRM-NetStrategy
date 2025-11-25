@@ -19,7 +19,7 @@ class PrestationController extends Controller
 
         $prestations = Prestation::with([
             'client',
-            'responsable' => function($query) {
+            'responsable' => function ($query) {
                 $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
             }
         ])->get();
@@ -36,13 +36,13 @@ class PrestationController extends Controller
         $this->authorize('manage clients');
 
         $validated = $request->validate([
-            'type'             => 'required|string|max:100',
-            'tarif_ht'         => 'required|numeric|min:0',
-            'frequence'        => 'required|string|max:100',
-            'engagement_mois'  => 'nullable|integer|min:0',
-            'date_debut'       => 'nullable|date',
-            'date_fin'         => 'nullable|date|after_or_equal:date_debut',
-            'notes'            => 'nullable|string|max:500',
+            'type' => 'required|string|max:100',
+            'tarif_ht' => 'required|numeric|min:0',
+            'frequence' => 'required|string|max:100',
+            'engagement_mois' => 'nullable|integer|min:0',
+            'date_debut' => 'nullable|date',
+            'date_fin' => 'nullable|date|after_or_equal:date_debut',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $validated['client_id'] = $clientId;
@@ -52,7 +52,7 @@ class PrestationController extends Controller
 
         return (new PrestationResource($prestation->load([
             'client',
-            'responsable' => function($query) {
+            'responsable' => function ($query) {
                 $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
             }
         ])))->response()->setStatusCode(201);
@@ -67,7 +67,7 @@ class PrestationController extends Controller
 
         $prestation->load([
             'client',
-            'responsable' => function($query) {
+            'responsable' => function ($query) {
                 $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
             }
         ]);
@@ -84,20 +84,20 @@ class PrestationController extends Controller
         $this->authorize('manage clients');
 
         $validated = $request->validate([
-            'type'             => 'sometimes|required|string|max:100',
-            'tarif_ht'         => 'sometimes|required|numeric|min:0',
-            'frequence'        => 'sometimes|required|string|max:100',
-            'engagement_mois'  => 'nullable|integer|min:0',
-            'date_debut'       => 'nullable|date',
-            'date_fin'         => 'nullable|date|after_or_equal:date_debut',
-            'notes'            => 'nullable|string|max:500',
+            'type' => 'sometimes|required|string|max:100',
+            'tarif_ht' => 'sometimes|required|numeric|min:0',
+            'frequence' => 'sometimes|required|string|max:100',
+            'engagement_mois' => 'nullable|integer|min:0',
+            'date_debut' => 'nullable|date',
+            'date_fin' => 'nullable|date|after_or_equal:date_debut',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $prestation->update($validated);
 
         return (new PrestationResource($prestation->fresh([
             'client',
-            'responsable' => function($query) {
+            'responsable' => function ($query) {
                 $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
             }
         ])))->response();
@@ -119,7 +119,7 @@ class PrestationController extends Controller
      * ✅ Valider une prestation
      * Change le statut de 'en_attente' à 'validee'
      */
-    public function validate(Prestation $prestation): JsonResponse
+    public function validatePrestation(Prestation $prestation): JsonResponse
     {
         $this->authorize('manage clients');
 
@@ -127,7 +127,7 @@ class PrestationController extends Controller
 
         return (new PrestationResource($prestation->fresh([
             'client',
-            'responsable' => function($query) {
+            'responsable' => function ($query) {
                 $query->select('id', 'name', 'email', 'role', 'pole')->with('roles');
             }
         ])))->response();

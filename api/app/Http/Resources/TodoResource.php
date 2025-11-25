@@ -32,6 +32,13 @@ class TodoResource extends JsonResource
                     'societe' => $this->client->societe,
                 ];
             }),
+            'entity' => $this->whenLoaded('todoable', function () {
+                return [
+                    'type' => class_basename($this->todoable_type),
+                    'id' => $this->todoable->id,
+                    'name' => $this->todoable->societe,
+                ];
+            }),
             'user' => $this->whenLoaded('user', function () {
                 return [
                     'id' => $this->user->id,

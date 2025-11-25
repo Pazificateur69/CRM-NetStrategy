@@ -23,6 +23,7 @@ class PrestationResource extends JsonResource
             'date_debut' => $this->date_debut,
             'date_fin' => $this->date_fin,
             'notes' => $this->notes,
+            'statut' => $this->statut,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];

@@ -5,7 +5,7 @@ import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapP
 import { InfoCard } from '../ClientUtils';
 import ClientActivityStream from './ClientActivityStream';
 import ClientInterlocuteurs from './ClientInterlocuteurs';
-import { updateClient } from '@/services/crm';
+import { updateClient, addPrestation, updatePrestation, deletePrestation } from '@/services/crm';
 
 interface ClientInfoDetailsProps {
   client: any;
@@ -105,8 +105,8 @@ export default function ClientInfoDetails({
   const [editingPrestationId, setEditingPrestationId] = useState<number | null>(null);
   const [prestationForm, setPrestationForm] = useState({
     type: '',
-    description: '',
-    montant: '',
+    notes: '',
+    tarif_ht: '',
     frequence: ''
   });
   const [savingPrestation, setSavingPrestation] = useState(false);
@@ -171,8 +171,8 @@ export default function ClientInfoDetails({
   const resetPrestationForm = () => {
     setPrestationForm({
       type: '',
-      description: '',
-      montant: '',
+      notes: '',
+      tarif_ht: '',
       frequence: ''
     });
     setIsAddingPrestation(false);
@@ -187,8 +187,8 @@ export default function ClientInfoDetails({
   const startEditPrestation = (prestation: any) => {
     setPrestationForm({
       type: prestation.type || '',
-      description: prestation.description || '',
-      montant: prestation.montant?.toString() || '',
+      notes: prestation.notes || '',
+      tarif_ht: prestation.tarif_ht?.toString() || prestation.montant?.toString() || '',
       frequence: prestation.frequence || ''
     });
     setEditingPrestationId(prestation.id);
@@ -203,35 +203,23 @@ export default function ClientInfoDetails({
 
     try {
       setSavingPrestation(true);
-      const currentPrestations = client.prestations || [];
 
-      let updatedPrestations;
+      const prestationData: any = {
+        type: prestationForm.type.trim(),
+        notes: prestationForm.notes.trim(),
+        tarif_ht: prestationForm.tarif_ht ? parseFloat(prestationForm.tarif_ht) : 0,
+        frequence: prestationForm.frequence.trim() || 'Mensuel',
+        client_id: Number(client.id)
+      };
+
       if (editingPrestationId) {
-        // Modification
-        updatedPrestations = currentPrestations.map((p: any) =>
-          p.id === editingPrestationId
-            ? {
-              ...p,
-              type: prestationForm.type.trim(),
-              description: prestationForm.description.trim(),
-              montant: prestationForm.montant ? parseFloat(prestationForm.montant) : null,
-              frequence: prestationForm.frequence.trim() || null
-            }
-            : p
-        );
+        // Modification via l'API dédiée
+        await updatePrestation(editingPrestationId, prestationData);
       } else {
-        // Ajout
-        const newPrestation = {
-          id: Date.now(), // ID temporaire
-          type: prestationForm.type.trim(),
-          description: prestationForm.description.trim(),
-          montant: prestationForm.montant ? parseFloat(prestationForm.montant) : null,
-          frequence: prestationForm.frequence.trim() || null
-        };
-        updatedPrestations = [...currentPrestations, newPrestation];
+        // Ajout via l'API dédiée
+        await addPrestation(Number(client.id), prestationData);
       }
 
-      await updateClient(Number(client.id), { prestations: updatedPrestations });
       await reloadClient();
       resetPrestationForm();
     } catch (error) {
@@ -248,10 +236,7 @@ export default function ClientInfoDetails({
     }
 
     try {
-      const updatedPrestations = (client.prestations || []).filter(
-        (p: any) => p.id !== prestationId
-      );
-      await updateClient(Number(client.id), { prestations: updatedPrestations });
+      await deletePrestation(prestationId);
       await reloadClient();
     } catch (error) {
       console.error('Erreur lors de la suppression de la prestation:', error);
@@ -443,8 +428,8 @@ export default function ClientInfoDetails({
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
                         <textarea
-                          value={prestationForm.description}
-                          onChange={(e) => setPrestationForm({ ...prestationForm, description: e.target.value })}
+                          value={prestationForm.notes}
+                          onChange={(e) => setPrestationForm({ ...prestationForm, notes: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
                           rows={2}
                           placeholder="Détails de la prestation..."
@@ -456,8 +441,8 @@ export default function ClientInfoDetails({
                           <input
                             type="number"
                             step="0.01"
-                            value={prestationForm.montant}
-                            onChange={(e) => setPrestationForm({ ...prestationForm, montant: e.target.value })}
+                            value={prestationForm.tarif_ht}
+                            onChange={(e) => setPrestationForm({ ...prestationForm, tarif_ht: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                             placeholder="0.00"
                           />
@@ -517,18 +502,18 @@ export default function ClientInfoDetails({
                           <h4 className="font-semibold text-gray-900 text-sm mb-1">
                             {prestation.type}
                           </h4>
-                          {prestation.description && (
+                          {prestation.notes && (
                             <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                              {prestation.description}
+                              {prestation.notes}
                             </p>
                           )}
-                          {prestation.montant && (
+                          {prestation.tarif_ht && (
                             <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
                               {new Intl.NumberFormat('fr-FR', {
                                 style: 'currency',
                                 currency: 'EUR'
-                              }).format(prestation.montant)}
+                              }).format(prestation.tarif_ht)}
                               {prestation.frequence && ` / ${prestation.frequence}`}
                             </p>
                           )}

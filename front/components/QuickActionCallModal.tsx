@@ -82,11 +82,11 @@ export default function QuickActionCallModal({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm px-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
-                className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-300 flex flex-col"
+                className="w-full max-w-md bg-card rounded-3xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-bottom-4 zoom-in-95 duration-300 flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -118,51 +118,51 @@ export default function QuickActionCallModal({
                 <div className="p-6 space-y-5">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Date</label>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Date</label>
                             <div className="relative">
                                 <input
                                     type="date"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
-                                    className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-0 transition-colors"
+                                    className="w-full border-2 border-border rounded-xl px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-0 transition-colors bg-background text-foreground"
                                 />
-                                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Heure</label>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Heure</label>
                             <div className="relative">
                                 <input
                                     type="time"
                                     value={time}
                                     onChange={(e) => setTime(e.target.value)}
-                                    className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-0 transition-colors"
+                                    className="w-full border-2 border-border rounded-xl px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-0 transition-colors bg-background text-foreground"
                                 />
-                                <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Notes pour l'appel</label>
+                        <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Notes pour l'appel</label>
                         <div className="relative">
                             <textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 rows={3}
                                 placeholder="Sujet de l'appel, points à aborder..."
-                                className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-0 transition-colors resize-none"
+                                className="w-full border-2 border-border rounded-xl px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-0 transition-colors resize-none bg-background text-foreground"
                             />
-                            <FileText className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                            <FileText className="absolute right-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none" />
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <div className="px-6 py-4 bg-muted border-t border-border flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-200 rounded-xl transition-colors"
+                        className="px-4 py-2.5 text-muted-foreground font-bold text-sm hover:bg-accent rounded-xl transition-colors"
                     >
                         Annuler
                     </button>

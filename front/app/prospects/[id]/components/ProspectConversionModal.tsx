@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle, X, AlertTriangle, ArrowRight, Building2, Loader2 } from 'lucide-react';
+import { CheckCircle2, X, AlertTriangle, ArrowRight, Building2, Loader2 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface ProspectConversionModalProps {
     open: boolean;
@@ -17,6 +18,15 @@ export default function ProspectConversionModal({
     prospectName,
     isConverting
 }: ProspectConversionModalProps) {
+    const handleConfirm = async () => {
+        await onConfirm();
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    };
+
     if (!open) return null;
 
     return createPortal(
@@ -33,7 +43,7 @@ export default function ProspectConversionModal({
                 <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white">
                     <div className="flex items-center justify-between">
                         <h3 className="text-xl font-bold flex items-center gap-2">
-                            <CheckCircle className="w-6 h-6 text-green-100" />
+                            <CheckCircle2 className="w-6 h-6 text-green-100" />
                             Conversion Prospect
                         </h3>
                         <button
@@ -67,19 +77,19 @@ export default function ProspectConversionModal({
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3 text-sm text-slate-600">
                                 <div className="mt-0.5 p-1 bg-green-100 rounded-full">
-                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                    <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
                                 <span>Le prospect sera déplacé vers la liste des <strong>Clients</strong>.</span>
                             </li>
                             <li className="flex items-start gap-3 text-sm text-slate-600">
                                 <div className="mt-0.5 p-1 bg-green-100 rounded-full">
-                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                    <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
                                 <span>Vous pourrez accéder aux fonctionnalités de facturation et de suivi avancé.</span>
                             </li>
                             <li className="flex items-start gap-3 text-sm text-slate-600">
                                 <div className="mt-0.5 p-1 bg-green-100 rounded-full">
-                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                    <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
                                 <span>L'historique des activités sera conservé.</span>
                             </li>
@@ -95,7 +105,7 @@ export default function ProspectConversionModal({
                             Annuler
                         </button>
                         <button
-                            onClick={onConfirm}
+                            onClick={handleConfirm}
                             disabled={isConverting}
                             className="flex-1 py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >

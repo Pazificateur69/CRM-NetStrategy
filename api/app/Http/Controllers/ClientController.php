@@ -192,8 +192,10 @@ class ClientController extends Controller
                     return [
                         'id' => $prestation->id,
                         'type' => $prestation->type,
-                        'montant' => $prestation->montant ?? 0,
+                        'tarif_ht' => $prestation->tarif_ht ?? 0,
+                        'frequence' => $prestation->frequence,
                         'notes' => $prestation->notes,
+                        'statut' => $prestation->statut,
                     ];
                 }),
             ]

@@ -30,9 +30,9 @@ const TASK_STATUSES: {
     {
       id: 'todo',
       title: 'À faire',
-      color: 'text-slate-700',
-      bgColor: 'bg-slate-50',
-      borderColor: 'border-slate-200',
+      color: 'text-muted-foreground',
+      bgColor: 'bg-muted',
+      borderColor: 'border-border',
       icon: ListTodo
     },
     {
@@ -124,9 +124,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <div
       className={`
         group relative
-        bg-white p-4 rounded-xl
-        shadow-sm border border-gray-200
-        hover:shadow-md hover:border-indigo-200
+        bg-card p-4 rounded-xl
+        shadow-sm border border-border
+        hover:shadow-md hover:border-primary/20
         transition-all duration-200
         cursor-grab active:cursor-grabbing 
         border-l-[4px] ${border}
@@ -136,10 +136,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
       onDragEnter={(e) => onDragEnter(e, index, task.status)}
     >
       <div className="flex justify-between items-start mb-3">
-        <h4 className="text-sm font-semibold text-gray-900 leading-snug flex-1 mr-2 line-clamp-2">
+        <h4 className="text-sm font-semibold text-foreground leading-snug flex-1 mr-2 line-clamp-2">
           {task.title}
         </h4>
-        <button className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
           <MoreHorizontal className="w-4 h-4" />
         </button>
       </div>
@@ -156,8 +156,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
       </div>
 
-      <div className="flex items-center justify-between text-xs pt-3 border-t border-gray-50">
-        <div className="flex items-center gap-1.5 text-gray-500">
+      <div className="flex items-center justify-between text-xs pt-3 border-t border-border">
+        <div className="flex items-center gap-1.5 text-muted-foreground">
           <User className="w-3.5 h-3.5" />
           <span className="truncate max-w-[100px]" title={task.client}>
             {task.client || '—'}
@@ -165,7 +165,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         {formattedDueDate && (
-          <div className={`flex items-center gap-1.5 font-medium ${isOverdue ? 'text-red-600' : 'text-gray-500'
+          <div className={`flex items-center gap-1.5 font-medium ${isOverdue ? 'text-destructive' : 'text-muted-foreground'
             }`}>
             {isOverdue ? (
               <AlertCircle className="w-3.5 h-3.5" />
@@ -233,7 +233,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({
   return (
     <div className="mb-12">
       <div className="flex items-center gap-3 mb-6">
-        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
           {type === 'todo' ? (
             <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
               <ListTodo className="w-5 h-5" />
@@ -245,7 +245,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({
           )}
           {title}
         </h3>
-        <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
+        <span className="px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold">
           {tasks.filter(t => t.type === type).length}
         </span>
       </div>
@@ -260,23 +260,23 @@ const TaskSection: React.FC<TaskSectionProps> = ({
               key={status.id}
               className={`
                 flex flex-col h-full min-h-[500px]
-                rounded-2xl border border-gray-200/60
-                bg-gray-50/50
+                rounded-2xl border border-border/60
+                bg-muted/50
               `}
               onDrop={(e) => onDrop(e, status.id)}
               onDragOver={onDragOver}
             >
               {/* Header Colonne */}
               <div className={`
-                p-4 border-b border-gray-100
+                p-4 border-b border-border
                 flex items-center justify-between
-                rounded-t-2xl bg-white
+                rounded-t-2xl bg-card
               `}>
                 <div className="flex items-center gap-2">
                   <Icon className={`w-4 h-4 ${status.color}`} />
-                  <span className="font-semibold text-gray-700 text-sm">{status.title}</span>
+                  <span className="font-semibold text-foreground text-sm">{status.title}</span>
                 </div>
-                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-xs font-medium">
+                <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-md text-xs font-medium">
                   {columnTasks.length}
                 </span>
               </div>
@@ -297,9 +297,9 @@ const TaskSection: React.FC<TaskSectionProps> = ({
                 {columnTasks.length === 0 && (
                   <div className="
                     h-32 flex flex-col items-center justify-center
-                    border-2 border-dashed border-gray-200 rounded-xl
-                    text-gray-400 text-sm
-                    bg-gray-50/50
+                    border-2 border-dashed border-border rounded-xl
+                    text-muted-foreground text-sm
+                    bg-muted/50
                   ">
                     <span className="mb-1">Vide</span>
                   </div>

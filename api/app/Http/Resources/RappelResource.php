@@ -30,7 +30,14 @@ class RappelResource extends JsonResource
             'client' => $this->whenLoaded('rappelable', function () {
                 return $this->rappelable_type === 'App\Models\Client'
                     ? ['id' => $this->rappelable->id, 'societe' => $this->rappelable->societe]
-                    : null; // Gérer d'autres types si nécessaire
+                    : null;
+            }),
+            'entity' => $this->whenLoaded('rappelable', function () {
+                return [
+                    'type' => class_basename($this->rappelable_type),
+                    'id' => $this->rappelable->id,
+                    'name' => $this->rappelable->societe,
+                ];
             }),
             'user' => $this->whenLoaded('user', function () {
                 return [

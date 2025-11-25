@@ -33,7 +33,7 @@ export default function FicheTabs({
 }: FicheTabsProps) {
   return (
     <nav
-      className="flex space-x-4 border-b border-gray-200"
+      className="flex space-x-4 border-b border-border"
       aria-label="Tabs"
     >
       {tabs.map((tab) => (
@@ -41,10 +41,9 @@ export default function FicheTabs({
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
           className={`
-            ${
-              activeTab === tab.id
-                ? 'border-indigo-500 text-indigo-600 font-semibold'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            ${activeTab === tab.id
+              ? 'border-indigo-500 text-indigo-600 font-semibold'
+              : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
             }
             group inline-flex items-center px-4 py-2 border-b-2 text-base transition duration-150
           `}

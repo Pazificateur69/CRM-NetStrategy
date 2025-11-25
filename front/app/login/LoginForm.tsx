@@ -47,7 +47,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-slate-950 relative overflow-hidden transition-colors duration-300">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-100/50 blur-3xl"></div>
@@ -55,24 +55,24 @@ export default function LoginForm() {
       </div>
 
       <div className="w-full max-w-md p-8 relative z-10">
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white p-8 md:p-10">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-white dark:border-slate-800 p-8 md:p-10 transition-colors duration-300">
 
           <div className="text-center mb-10">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 text-white mb-6 shadow-lg shadow-indigo-500/30">
               <Lock className="w-6 h-6" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">
               Bienvenue
             </h1>
-            <p className="text-gray-500">
-              Connectez-vous à votre espace <span className="font-semibold text-indigo-600">NetStrategy</span>
+            <p className="text-gray-500 dark:text-slate-400">
+              Connectez-vous à votre espace <span className="font-semibold text-indigo-600 dark:text-indigo-400">NetStrategy</span>
             </p>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5 ml-1">
                   Adresse Email
                 </label>
                 <div className="relative group">
@@ -85,14 +85,14 @@ export default function LoginForm() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 border-transparent rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 outline-none font-medium"
+                    className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-slate-800 border-transparent rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 outline-none font-medium"
                     placeholder="nom@exemple.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5 ml-1">
                   Mot de passe
                 </label>
                 <div className="relative group">
@@ -105,7 +105,7 @@ export default function LoginForm() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 border-transparent rounded-xl text-gray-900 placeholder-gray-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 outline-none font-medium"
+                    className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-slate-800 border-transparent rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 outline-none font-medium"
                     placeholder="••••••••"
                   />
                 </div>
