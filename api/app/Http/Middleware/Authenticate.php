@@ -19,8 +19,7 @@ class Authenticate extends Middleware
 
         // Pour un accès direct à une page (si ça arrive)
         // On renvoie vers le login du FRONT Next.js
-        return 'http://localhost:3000/login'; 
-        // ↳ à remplacer par ton URL front en prod
+        return env('FRONTEND_URL', 'http://localhost:3000') . '/login';
     }
 
     /**
@@ -33,6 +32,6 @@ class Authenticate extends Middleware
         }
 
         // Redirection vers login du FRONT si non-API
-        return redirect()->guest('http://localhost:3000/login');
+        return redirect()->guest(env('FRONTEND_URL', 'http://localhost:3000') . '/login');
     }
 }

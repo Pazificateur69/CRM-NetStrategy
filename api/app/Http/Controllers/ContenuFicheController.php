@@ -31,7 +31,7 @@ class ContenuFicheController extends Controller
             'pole' => 'nullable|string',
             'texte' => 'nullable|string',
             'client_id' => 'required|exists:clients,id',
-            'fichier' => 'nullable|file|max:10240',
+            'fichier' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls,txt,csv',
         ]);
 
         $client = Client::findOrFail($validated['client_id']);

@@ -22,11 +22,13 @@ return [
     |--------------------------------------------------------------------------
     |
     | IMPORTANT :
-    | - '*' autorise tout, y compris les URL tunnels (ngrok, localtunnel)
-    | - En DEV : c'est ce qu'il faut
+    | - En PRODUCTION : restreindre aux domaines autorisés uniquement
+    | - En DEV : utiliser '*' ou définir FRONTEND_URL dans .env
     |
     */
-    'allowed_origins' => ['*'],
+    'allowed_origins' => env('APP_ENV') === 'production'
+        ? array_filter(explode(',', env('FRONTEND_URL', '')))
+        : ['*'],
 
 
 

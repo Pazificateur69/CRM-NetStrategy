@@ -16,11 +16,14 @@ class Prospect extends Model
         'emails',
         'telephones',
         'statut',
+        'score',
+        'score_details',
     ];
 
     protected $casts = [
         'emails' => 'array',
         'telephones' => 'array',
+        'score_details' => 'array',
     ];
 
     public function todos(): MorphMany
@@ -32,7 +35,7 @@ class Prospect extends Model
     {
         return $this->morphMany(Rappel::class, 'rappelable');
     }
-    
+
     public function contenu(): MorphMany // NOUVEAU
     {
         return $this->morphMany(ContenuFiche::class, 'contenuable');

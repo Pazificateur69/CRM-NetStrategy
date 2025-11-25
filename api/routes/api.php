@@ -18,7 +18,8 @@ use App\Http\Controllers\{
 // ===================================================
 // 🔓 1. ROUTES PUBLIQUES
 // ===================================================
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:6,1'); // Max 6 tentatives par minute
 Route::post('/register', [AuthController::class, 'register']);
 
 // ===================================================
@@ -122,7 +123,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ===================================================
-    // 🧩 NOUVELLE ROUTE : UTILISATEURS PAR PÔLE
+    // 🧩 NOUVELLE ROUTE : UTILISATEURS PAR PÔLE (ADMIN UNIQUEMENT)
     // ===================================================
-    Route::get('/users/by-pole/{pole}', [UserController::class, 'getByPole']);
+    Route::get('/users/by-pole/{pole}', [UserController::class, 'getByPole'])
+        ->middleware('role:admin');
 });
