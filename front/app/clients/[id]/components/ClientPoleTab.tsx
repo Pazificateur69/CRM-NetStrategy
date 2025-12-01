@@ -3,11 +3,13 @@
 'use client';
 
 import React, { ElementType, useRef } from 'react';
-import { Download, FileText, PlusCircle, UploadCloud, File, X } from 'lucide-react';
+import { Download, FileText, PlusCircle, UploadCloud, File, X, Eye } from 'lucide-react';
 import ClientActivityStream from './ClientActivityStream';
 import ClientExternalLinks from './ClientExternalLinks';
 import { formatDateTime } from '../ClientUtils';
 import { updateClient } from '@/services/crm';
+import api from '@/services/api';
+import { toast } from 'sonner';
 
 interface ClientPoleTabProps {
   client: any;
@@ -105,6 +107,38 @@ export default function ClientPoleTab({
     }
   };
 
+  const handlePreview = async (doc: any) => {
+    try {
+      const response = await api.get(`/contenu/${doc.id}/preview`, {
+        responseType: 'blob'
+      });
+      const contentType = (response.headers as any)['content-type'];
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Erreur prévisualisation:', error);
+      toast.error("Impossible de prévisualiser le fichier");
+    }
+  };
+
+  const handleDownload = async (doc: any) => {
+    try {
+      const response = await api.get(`/contenu/${doc.id}/download`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.nom_original_fichier || 'document');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Erreur téléchargement:', error);
+      toast.error("Impossible de télécharger le fichier");
+    }
+  };
+
   return (
     <section className="space-y-8 animate-fade-in">
       {/* === Header du Pôle === */}
@@ -163,15 +197,22 @@ export default function ClientPoleTab({
                     <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
                       <FileText className="w-6 h-6" />
                     </div>
-                    <a
-                      href={`/api/contenu/${doc.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                      title="Télécharger"
-                    >
-                      <Download className="w-5 h-5" />
-                    </a>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handlePreview(doc)}
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        title="Prévisualiser"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDownload(doc)}
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        title="Télécharger"
+                      >
+                        <Download className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
 
                   <h5 className="font-semibold text-slate-800 text-sm truncate mb-1" title={doc.nom_original_fichier}>
@@ -241,8 +282,8 @@ export default function ClientPoleTab({
                   onClick={() => handleUpload(tab.id)}
                   disabled={!file}
                   className={`md:w-48 flex items-center justify-center gap-2 font-bold rounded-xl transition-all duration-300 shadow-lg ${file
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 shadow-indigo-500/30'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 shadow-indigo-500/30'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     }`}
                 >
                   <PlusCircle className="w-5 h-5" />

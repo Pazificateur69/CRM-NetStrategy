@@ -105,7 +105,10 @@ export default function ProspectEditModal({
                 emails: prospect.emails,
                 telephones: prospect.telephones,
                 statut: prospect.statut,
-                // Ajoutez d'autres champs si nécessaire
+                adresse: prospect.adresse,
+                ville: prospect.ville,
+                code_postal: prospect.code_postal,
+                site_web: prospect.site_web,
             });
         }
     }, [prospect]);
@@ -227,6 +230,40 @@ export default function ProspectEditModal({
                                         <option value="perdu">Perdu</option>
                                     </select>
                                 </div>
+                            </div>
+                        </Section>
+
+                        {/* Section 1.5: Localisation & Web */}
+                        <Section icon={MapPin} title="Localisation & Web">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <InputField
+                                    icon={MapPin}
+                                    label="Adresse"
+                                    value={formData.adresse}
+                                    onChange={(e: any) => handleChange('adresse', e.target.value)}
+                                    placeholder="Adresse complète"
+                                />
+                                <InputField
+                                    icon={MapPin}
+                                    label="Ville"
+                                    value={formData.ville}
+                                    onChange={(e: any) => handleChange('ville', e.target.value)}
+                                    placeholder="Ville"
+                                />
+                                <InputField
+                                    icon={Hash}
+                                    label="Code Postal"
+                                    value={formData.code_postal}
+                                    onChange={(e: any) => handleChange('code_postal', e.target.value)}
+                                    placeholder="Code Postal"
+                                />
+                                <InputField
+                                    icon={Globe}
+                                    label="Site Web"
+                                    value={formData.site_web}
+                                    onChange={(e: any) => handleChange('site_web', e.target.value)}
+                                    placeholder="https://..."
+                                />
                             </div>
                         </Section>
 

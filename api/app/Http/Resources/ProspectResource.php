@@ -24,6 +24,10 @@ class ProspectResource extends JsonResource
             'score' => $this->score,
             'score_details' => $this->score_details,
             'couleur_statut' => $this->couleur_statut ?? 'orange',
+            'adresse' => $this->adresse,
+            'ville' => $this->ville,
+            'code_postal' => $this->code_postal,
+            'site_web' => $this->site_web,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             // Relations (chargées conditionnellement)

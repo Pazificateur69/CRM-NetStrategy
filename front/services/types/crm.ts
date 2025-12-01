@@ -153,6 +153,10 @@ export interface ProspectDetail extends BaseEntity {
   couleur_statut: StatutCouleur;
   score?: number;
   score_details?: string[];
+  adresse?: string | null;
+  ville?: string | null;
+  code_postal?: string | null;
+  site_web?: string | null;
   todos: Todo[];
   rappels: Rappel[];
   contenu: ContenuFiche[];
@@ -224,4 +228,21 @@ export interface PrestationInput {
   date_debut?: string | null;
   date_fin?: string | null;
   statut?: 'en_attente' | 'validee';
+}
+
+// --- PROJETS ---
+export interface Project {
+  id: number;
+  title: string;
+  description?: string;
+  status: 'not_started' | 'in_progress' | 'on_hold' | 'completed';
+  start_date?: string;
+  due_date?: string;
+  progress: number;
+  client_id?: number; // Added
+  user_id?: number; // Added
+  budget?: number; // Added
+  client?: { societe: string; gerant: string };
+  manager?: { name: string };
+  tasks_count?: number;
 }

@@ -20,7 +20,10 @@ import {
     Phone,
     Calendar,
     ArrowRight,
-    Loader2
+    Loader2,
+    MapPin,
+    Globe,
+    Hash
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -33,7 +36,10 @@ import {
     deleteTodo,
     updateRappel,
     deleteRappel,
-    uploadProspectDocument
+    uploadProspectDocument,
+    addProspectComment,
+    updateComment,
+    deleteComment
 } from '@/services/crm';
 import api from '@/services/api';
 import ProspectEditModal from './components/ProspectEditModal';
@@ -41,8 +47,8 @@ import QuickActionCallModal from '@/components/QuickActionCallModal';
 import ProspectConversionModal from './components/ProspectConversionModal';
 import ProspectActivityStream from './components/ProspectActivityStream';
 import ProspectDocuments from './components/ProspectDocuments';
+import CommentSection from '@/components/CommentSection';
 import { TodoFormState, RappelFormState } from '@/app/clients/[id]/ClientUtils';
-import { useWebLLM } from '@/hooks/useWebLLM';
 
 // --- COMPOSANTS UI ---
 
@@ -319,77 +325,7 @@ export default function ProspectDetailPage() {
         }
     };
 
-    // --- AI ---
-    const { engine, initEngine, isReady } = useWebLLM();
-    const [analyzing, setAnalyzing] = useState(false);
-    const [aiAnalysis, setAiAnalysis] = useState<any>(null);
 
-    // Ensure engine is ready if we want to analyze
-    // Removed auto-init to prevent performance issues
-    // useEffect(() => {
-    //     if (!isReady && !analyzing) {
-    //         initEngine();
-    //     }
-    // }, []);
-
-    const handleAnalyzeAI = async () => {
-        if (!prospect || !engine) {
-            if (!isReady) initEngine();
-            return;
-        }
-
-        setAnalyzing(true);
-        try {
-            const prompt = `
-You are an expert CRM assistant. Analyze this prospect and provide a strategic summary.
-PROSPECT DATA:
-- Company: ${prospect.societe}
-- Contact: ${prospect.contact}
-- Email: ${prospect.emails?.[0] || 'N/A'}
-- Status: ${prospect.statut}
-- Score: ${prospect.score || 'N/A'}
-- Interactions: ${prospect.todos?.length || 0} tasks, ${prospect.rappels?.length || 0} reminders.
-
-OUTPUT FORMAT:
-Respond ONLY with a valid JSON object (no markdown, no code blocks) with this structure:
-{
-  "summary": "Short strategic summary of the prospect situation (max 2 sentences).",
-  "sentiment": "Positif" | "Neutre" | "Négatif",
-  "next_steps": ["Action 1", "Action 2", "Action 3"],
-  "talking_points": ["Point 1", "Point 2", "Point 3"]
-}
-`;
-
-            const reply = await engine.chat.completions.create({
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.7,
-            });
-
-            const content = reply.choices[0].message.content || "{}";
-            // Clean up potential markdown code blocks if the model adds them
-            const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
-
-            try {
-                const result = JSON.parse(cleanJson);
-                setAiAnalysis(result);
-            } catch (e) {
-                console.error("Failed to parse AI JSON", e);
-                // Fallback if JSON parsing fails
-                setAiAnalysis({
-                    summary: cleanJson,
-                    sentiment: "Neutre",
-                    next_steps: ["Vérifier les données", "Contacter le prospect"],
-                    talking_points: []
-                });
-            }
-
-        } catch (error) {
-            console.error("AI Error", error);
-            alert("Erreur lors de l'analyse IA");
-        } finally {
-            setAnalyzing(false);
-        }
-    };
 
     if (loading) {
         return (
@@ -423,8 +359,8 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
 
     const tabs = [
         { id: 'informations', label: 'Informations', icon: FileText as LucideIcon },
-        { id: 'activite', label: `Activité (${(prospect.todos?.length || 0) + (prospect.rappels?.length || 0)})`, icon: Clock as LucideIcon },
-        { id: 'documents', label: `Documents (${documentCount})`, icon: Download as LucideIcon },
+        { id: 'activite', label: `Activité(${(prospect.todos?.length || 0) + (prospect.rappels?.length || 0)})`, icon: Clock as LucideIcon },
+        { id: 'documents', label: `Documents(${documentCount})`, icon: Download as LucideIcon },
     ];
 
     const getStatusBadge = (statut: string) => {
@@ -506,6 +442,10 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                                     <DetailItem label="Contact Principal" value={prospect.contact} icon={User} />
                                     <DetailItem label="Email" value={prospect.emails?.[0] ? <a href={`mailto:${prospect.emails[0]}`} className="text-purple-600 hover:underline">{prospect.emails[0]}</a> : null} icon={Mail} />
                                     <DetailItem label="Téléphone" value={prospect.telephones?.[0]} icon={Phone} />
+                                    <DetailItem label="Site Web" value={prospect.site_web ? <a href={prospect.site_web} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">{prospect.site_web}</a> : null} icon={Globe} />
+                                    <DetailItem label="Adresse" value={prospect.adresse} icon={MapPin} />
+                                    <DetailItem label="Ville" value={prospect.ville} icon={MapPin} />
+                                    <DetailItem label="Code Postal" value={prospect.code_postal} icon={Hash} />
                                     <DetailItem label="Date de création" value={new Date(prospect.created_at || Date.now()).toLocaleDateString()} icon={Calendar} />
                                 </div>
                             </DetailCard>
@@ -516,50 +456,8 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                         </div>
 
                         <div className="space-y-8">
-                            {/* AI Analysis Widget */}
-                            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg mb-8">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-bold flex items-center gap-2"><span className="text-2xl">✨</span>Analyse IA</h3>
-                                    {aiAnalysis && <button onClick={() => setAiAnalysis(null)} className="text-white/70 hover:text-white text-sm">Fermer</button>}
-                                </div>
 
-                                {!aiAnalysis ? (
-                                    <div>
-                                        <p className="text-indigo-100 mb-4 text-sm">Obtenez un résumé intelligent et des conseils de conversion générés par l'IA.</p>
-                                        <button onClick={handleAnalyzeAI} disabled={analyzing} className="w-full py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-sm disabled:opacity-70 flex items-center justify-center gap-2">
-                                            {analyzing ? <><Loader2 className="w-4 h-4 animate-spin" />Analyse en cours...</> : <><span>Lancer l'analyse</span><ArrowRight className="w-4 h-4" /></>}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 animate-fade-in">
-                                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                                            <h4 className="font-semibold mb-1 text-indigo-100 text-xs uppercase tracking-wider">Résumé</h4>
-                                            <p className="text-sm leading-relaxed">{aiAnalysis.summary}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                                                <h4 className="font-semibold mb-1 text-indigo-100 text-xs uppercase tracking-wider">Sentiment</h4>
-                                                <div className="font-bold">{aiAnalysis.sentiment}</div>
-                                            </div>
-                                            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                                                <h4 className="font-semibold mb-1 text-indigo-100 text-xs uppercase tracking-wider">Potentiel</h4>
-                                                <div className="font-bold">Élevé</div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                                            <h4 className="font-semibold mb-2 text-indigo-100 text-xs uppercase tracking-wider">Prochaines étapes</h4>
-                                            <ul className="space-y-2">
-                                                {aiAnalysis.next_steps?.map((step: string, i: number) => (
-                                                    <li key={i} className="flex items-start gap-2 text-sm">
-                                                        <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
-                                                        <span>{step}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+
 
                             <div className="space-y-8">
                                 <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
@@ -636,6 +534,29 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                         handleUpload={handleUploadDocument}
                     />
                 )}
+
+                {/* Section Commentaires */}
+                <div className="mt-8">
+                    <CommentSection
+                        comments={(prospect.contenu?.filter((c: any) => c.type === 'Commentaire') || []).map((c: any) => ({ ...c, texte: c.texte || '' }))}
+                        canEdit={true}
+                        onAdd={async (text) => {
+                            if (!prospect) return;
+                            await addProspectComment(prospect.id, text);
+                            await fetchProspect();
+                        }}
+                        onUpdate={async (id, text) => {
+                            await updateComment(id, text);
+                            await fetchProspect();
+                        }}
+                        onDelete={async (id) => {
+                            if (!confirm("Supprimer ce commentaire ?")) return;
+                            await deleteComment(id);
+                            await fetchProspect();
+                        }}
+                        currentUserName={userRole === 'admin' ? 'Admin' : undefined} // TODO: Get real user name
+                    />
+                </div>
             </div>
 
             <ProspectEditModal open={showEditModal} onClose={() => setShowEditModal(false)} prospect={prospect} onSubmit={handleUpdateProspect} />

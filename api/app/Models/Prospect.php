@@ -19,6 +19,10 @@ class Prospect extends Model
         'score',
         'score_details',
         'couleur_statut',
+        'adresse',
+        'ville',
+        'code_postal',
+        'site_web',
     ];
 
     protected $casts = [

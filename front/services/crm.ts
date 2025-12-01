@@ -119,9 +119,7 @@ export const uploadDocument = async (
     formData.append('pole', pole);
   }
 
-  const response = await api.post(`/contenu`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const response = await api.post(`/contenu`, formData);
   return response.data.data;
 };
 
@@ -171,8 +169,15 @@ export const uploadProspectDocument = async (
     formData.append('pole', pole);
   }
 
-  const response = await api.post(`/contenu`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  const response = await api.post(`/contenu`, formData);
+  return response.data.data;
+};
+
+export const addProspectComment = async (prospectId: number, texte: string): Promise<ContenuFiche> => {
+  const response = await api.post(`/contenu`, {
+    type: 'Commentaire',
+    texte,
+    prospect_id: prospectId,
   });
   return response.data.data;
 };

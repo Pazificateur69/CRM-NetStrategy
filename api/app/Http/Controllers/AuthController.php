@@ -8,6 +8,8 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use App\Models\User;
 
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+
 class AuthController extends Controller
 {
     /**
@@ -58,13 +60,66 @@ class AuthController extends Controller
         $user = User::where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
-            // 🔒 Sécurité : Message générique pour éviter l'énumération d'utilisateurs
             throw ValidationException::withMessages([
                 'email' => ['Les identifiants fournis sont incorrects.'],
             ]);
         }
 
-        $token = $user->createToken('api_token')->plainTextToken;
+        // 🔐 Vérification 2FA
+        if ($user->hasEnabledTwoFactorAuthentication()) {
+            return response()->json([
+                'two_factor' => true,
+                'temp_token' => $user->createToken('2fa_temp', ['issue:token'])->plainTextToken,
+            ]);
+        }
+
+        $token = $user->createToken('api_token', ['*'])->plainTextToken;
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'pole' => $user->pole,
+            ],
+        ]);
+    }
+
+    /**
+     * Vérification du code 2FA lors de la connexion
+     */
+    public function verifyTwoFactorLogin(Request $request, TwoFactorAuthenticationProvider $provider)
+    {
+        $request->validate([
+            'code' => 'nullable|string',
+            'recovery_code' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+
+        // Vérifier que c'est bien un token temporaire
+        if (!$user->currentAccessToken()->can('issue:token')) {
+            return response()->json(['message' => 'Invalid token capability'], 403);
+        }
+
+        if ($request->code) {
+            if (!$provider->verify(decrypt($user->two_factor_secret), $request->code)) {
+                throw ValidationException::withMessages(['code' => ['Code invalide.']]);
+            }
+        } elseif ($request->recovery_code) {
+            if (!$user->replaceRecoveryCode($request->recovery_code)) {
+                throw ValidationException::withMessages(['recovery_code' => ['Code de récupération invalide.']]);
+            }
+        } else {
+            throw ValidationException::withMessages(['code' => ['Code requis.']]);
+        }
+
+        // 🔥 Brûler le token temporaire et émettre le vrai token
+        $user->currentAccessToken()->delete();
+        $token = $user->createToken('api_token', ['*'])->plainTextToken;
 
         return response()->json([
             'access_token' => $token,

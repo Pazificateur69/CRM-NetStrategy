@@ -30,6 +30,22 @@ class RappelController extends Controller
         return RappelResource::collection($rappels)->response();
     }
 
+    public function myTasks(Request $request)
+    {
+        $user = $request->user();
+
+        $rappels = Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
+            ->whereHas('assignedUsers', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->orderBy('pole')
+            ->orderBy('ordre')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return RappelResource::collection($rappels)->response();
+    }
+
     public function getByPole(Request $request, string $pole)
     {
         $user = $request->user();

@@ -17,11 +17,18 @@ import {
   Menu,
   X,
   ChevronRight,
-  Settings
+  Settings,
+  Sun,
+  Moon,
+  Laptop,
+  Calendar as CalendarIcon,
+  FolderKanban
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Toaster } from '@/components/ui/Toaster';
 import { AiAssistant } from '@/components/AiAssistant';
+import CommandPalette from '@/components/CommandPalette';
+import NotificationCenter from '@/components/NotificationCenter';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -33,9 +40,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch and handle mobile sidebar
   useEffect(() => {
     setMounted(true);
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -117,6 +127,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <NavLink href="/dashboard" icon={<LayoutDashboard />} label="Tableau de bord" active={pathname === '/dashboard'} />
           <NavLink href="/clients" icon={<Briefcase />} label="Clients" active={pathname.startsWith('/clients')} />
           <NavLink href="/prospects" icon={<PhoneCall />} label="Prospects" active={pathname.startsWith('/prospects')} />
+          <NavLink href="/projects" icon={<FolderKanban />} label="Projets" active={pathname.startsWith('/projects')} />
+          <NavLink href="/calendar" icon={<CalendarIcon />} label="Calendrier" active={pathname.startsWith('/calendar')} />
 
           {isAdmin && (
             <>
@@ -128,6 +140,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </>
           )}
         </nav>
+
+
 
         {/* User Profile Bottom */}
         <div className="p-4 border-t border-border bg-muted/30">
@@ -174,30 +188,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {pathname === '/dashboard' ? 'Vue d\'ensemble' :
                   pathname.startsWith('/clients') ? 'Gestion Clients' :
                     pathname.startsWith('/prospects') ? 'Gestion Prospects' :
-                      pathname.startsWith('/users') ? 'Administration' : 'Page'}
+                      pathname.startsWith('/projects') ? 'Gestion Projets' :
+                        pathname.startsWith('/calendar') ? 'Calendrier' :
+                          pathname.startsWith('/users') ? 'Administration' : 'Page'}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Search Bar */}
-            <div className="hidden md:flex items-center relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                className="pl-10 pr-4 py-2 bg-muted border-none rounded-full text-sm w-64 focus:w-80 focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all duration-300 outline-none placeholder-muted-foreground text-foreground"
-              />
+            {/* Search Bar (Trigger for Command Palette) */}
+            <div className="hidden md:flex items-center flex-1 max-w-xl mx-8">
+              <button
+                onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                className="w-full flex items-center gap-3 px-4 py-2.5 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-500/30 dark:hover:border-indigo-400/30 hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg hover:shadow-indigo-500/5 rounded-xl transition-all duration-300 group cursor-text text-left"
+              >
+                <Search className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors duration-300" />
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">Rechercher...</span>
+                <div className="ml-auto flex items-center gap-1">
+                  <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-1.5 font-mono text-[10px] font-medium text-slate-400 group-hover:text-indigo-500 group-hover:border-indigo-200 dark:group-hover:border-indigo-800 transition-colors">
+                    <span className="text-xs">⌘</span>K
+                  </kbd>
+                </div>
+              </button>
             </div>
-
             {/* Theme Toggle */}
             <ThemeToggle />
 
             {/* Notifications */}
-            <button className="relative p-2 rounded-full text-muted-foreground hover:bg-accent hover:text-primary transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+            <NotificationCenter />
           </div>
         </header>
 
@@ -217,6 +235,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
       <Toaster />
+      <CommandPalette />
       <AiAssistant />
     </div>
   );

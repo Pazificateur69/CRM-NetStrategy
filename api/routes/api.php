@@ -14,7 +14,13 @@ use App\Http\Controllers\{
     ContenuFicheController,
 
     UserController,
-    AIController
+    AIController,
+    TwoFactorController,
+    ProfileController,
+    SearchController,
+    EventController,
+    ProjectController,
+    NotificationController
 };
 
 // ===================================================
@@ -45,13 +51,48 @@ Route::middleware('auth:sanctum')->group(function () {
                 ? $user->getRoleNames()
                 : [$user->role],
             'pole' => $user->pole ?? 'non_defini',
+            'two_factor_enabled' => !is_null($user->two_factor_confirmed_at), // ✅ Statut 2FA
+            'notification_preferences' => $user->notification_preferences, // ✅ Préférences
         ]);
     });
 
     // ===================================================
     // 🚪 AUTHENTIFICATION
     // ===================================================
+    // ===================================================
+    // 🚪 AUTHENTIFICATION
+    // ===================================================
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/2fa/verify-login', [AuthController::class, 'verifyTwoFactorLogin']); // 🔐 Vérification OTP à la connexion
+
+    // ===================================================
+    // 🛡️ 2FA SETTINGS
+    // ===================================================
+    Route::post('/user/two-factor-authentication', [TwoFactorController::class, 'enable']);
+    Route::post('/user/confirmed-two-factor-authentication', [TwoFactorController::class, 'confirm']);
+    Route::delete('/user/two-factor-authentication', [TwoFactorController::class, 'disable']);
+    Route::get('/user/two-factor-recovery-codes', [TwoFactorController::class, 'getRecoveryCodes']);
+    Route::get('/user/two-factor-recovery-codes', [TwoFactorController::class, 'getRecoveryCodes']);
+    Route::post('/user/two-factor-recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes']);
+
+    // ===================================================
+    // 👤 PROFILE & SETTINGS
+    // ===================================================
+    Route::put('/user/profile', [ProfileController::class, 'updateProfile']);
+    Route::put('/user/password', [ProfileController::class, 'updatePassword']);
+    Route::put('/user/notifications', [ProfileController::class, 'updateNotifications']);
+
+    // ===================================================
+    // 🔔 NOTIFICATIONS
+    // ===================================================
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+    // ===================================================
+    // 🔍 GLOBAL SEARCH
+    // ===================================================
+    Route::get('/search', [SearchController::class, 'globalSearch']);
 
     // ===================================================
     // 📊 DASHBOARD
@@ -79,6 +120,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ✅ TÂCHES (TODOS) & RAPPELS
     // ===================================================
     Route::get('/todos/pole/{pole}', [TodoController::class, 'getByPole']);
+    Route::get('/todos/me', [TodoController::class, 'myTasks']); // ✅ Mes tâches
+    Route::get('/rappels/me', [RappelController::class, 'myTasks']); // ✅ Mes rappels
     Route::get('/rappels/pole/{pole}', [RappelController::class, 'getByPole']);
 
     // Décaler un rappel de X jours
@@ -94,7 +137,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/contenu/{id}', [ContenuFicheController::class, 'update']); // ✅ NOUVEAU
     Route::get('/contenu/client/{client}', [ContenuFicheController::class, 'index']);
     Route::get('/contenu/{id}/download', [ContenuFicheController::class, 'download']);
+    Route::get('/contenu/{id}/preview', [ContenuFicheController::class, 'preview']); // ✅ NOUVEAU
     Route::delete('/contenu/{id}', [ContenuFicheController::class, 'destroy']);
+
+    // ===================================================
+    // 📅 CALENDRIER / PLANNING
+    // ===================================================
+    Route::apiResource('events', EventController::class);
+
+    // ===================================================
+    // 🚀 GESTION DE PROJETS
+    // ===================================================
+    Route::apiResource('projects', ProjectController::class);
 
     // ===================================================
     // ⚙️ PRESTATIONS (LIAISON AVEC COMPTABILITÉ)
@@ -121,6 +175,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     // 👥 UTILISATEURS (ADMIN UNIQUEMENT)
     // ===================================================
+    Route::get('/users/mentions', [UserController::class, 'listForMentions']); // ✅ Accessible à tous
+
     Route::middleware(['role:admin'])->group(function () {
         Route::apiResource('users', UserController::class);
     });

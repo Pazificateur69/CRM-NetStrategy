@@ -12,10 +12,10 @@ interface DashboardVignetteProps {
 }
 
 const statusStyles: Record<string, { bg: string; text: string; border: string }> = {
-  vert: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  jaune: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-  rouge: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
-  bleu: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  vert: { bg: 'bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-500/20' },
+  jaune: { bg: 'bg-amber-500/10', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-500/20' },
+  rouge: { bg: 'bg-rose-500/10', text: 'text-rose-700 dark:text-rose-400', border: 'border-rose-500/20' },
+  bleu: { bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-500/20' },
 };
 
 export default function DashboardVignette({ entity }: DashboardVignetteProps) {
@@ -52,7 +52,7 @@ export default function DashboardVignette({ entity }: DashboardVignetteProps) {
 
         {/* Contact Info */}
         <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground bg-muted p-2 rounded-lg border border-border">
-          <User className="w-4 h-4 text-indigo-400" />
+          <User className="w-4 h-4 text-primary" />
           <span className="truncate font-medium">{contact || 'Contact non renseigné'}</span>
         </div>
 
@@ -60,12 +60,12 @@ export default function DashboardVignette({ entity }: DashboardVignetteProps) {
         <div className="flex items-center justify-between pt-2 border-t border-border">
           <div className="flex items-center gap-2">
             {todos_en_retard > 0 ? (
-              <div className="flex items-center gap-1.5 text-rose-600 bg-rose-50 px-2 py-1 rounded-md border border-rose-100">
+              <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span className="text-xs font-bold">{todos_en_retard} retard{todos_en_retard > 1 ? 's' : ''}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span className="text-xs font-bold">À jour</span>
               </div>

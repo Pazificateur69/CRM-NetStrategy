@@ -92,14 +92,20 @@ export default function ClientDetailPage() {
       formData.append('client_id', client.id);
       formData.append('pole', pole);
 
-      await api.post('/contenu', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      await api.post('/contenu', formData);
 
       setFile(null);
       await reloadClient();
-    } catch (error) {
-      console.error('Erreur lors de l upload du document :', error);
+    } catch (error: any) {
+      console.error("Erreur upload document", error);
+      if (error.response?.data?.message) {
+        alert(`Erreur: ${error.response.data.message}`);
+        if (error.response.data.errors) {
+          console.error(error.response.data.errors); // Keep logging specific validation errors
+        }
+      } else {
+        alert("Erreur lors de l'envoi du document");
+      }
     }
   };
 

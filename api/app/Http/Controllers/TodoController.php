@@ -17,7 +17,7 @@ class TodoController extends Controller
     {
         $user = $request->user();
 
-        $query = Todo::with(['user.roles', 'client', 'assignedUser.roles'])
+        $query = Todo::with(['user.roles', 'client', 'todoable', 'assignedUser.roles'])
             ->orderBy('ordre')
             ->orderBy('created_at', 'asc');
 
@@ -34,13 +34,30 @@ class TodoController extends Controller
     }
 
     /**
+     * Mes tâches (assignées à l'utilisateur connecté)
+     */
+    public function myTasks(Request $request)
+    {
+        $user = $request->user();
+
+        $todos = Todo::with(['user.roles', 'client', 'todoable', 'assignedUser.roles'])
+            ->where('assigned_to', $user->id)
+            ->orderBy('pole') // Grouping by pole
+            ->orderBy('ordre')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return TodoResource::collection($todos)->response();
+    }
+
+    /**
      * Récupérer les tâches par pôle
      */
     public function getByPole(Request $request, string $pole)
     {
         $user = $request->user();
 
-        $query = Todo::with(['user.roles', 'client', 'assignedUser.roles'])
+        $query = Todo::with(['user.roles', 'client', 'todoable', 'assignedUser.roles'])
             ->where('pole', $pole)
             ->orderBy('ordre', 'asc')
             ->orderBy('created_at', 'asc');
@@ -109,7 +126,7 @@ class TodoController extends Controller
 
         $todo->save();
 
-        return (new TodoResource($todo->load(['user.roles', 'client', 'assignedUser.roles'])))
+        return (new TodoResource($todo->load(['user.roles', 'client', 'todoable', 'assignedUser.roles'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -161,7 +178,7 @@ class TodoController extends Controller
             'pole' => $newPole,
         ]));
 
-        return (new TodoResource($todo->load(['user.roles', 'client', 'assignedUser.roles'])))->response();
+        return (new TodoResource($todo->load(['user.roles', 'client', 'todoable', 'assignedUser.roles'])))->response();
     }
 
     /**

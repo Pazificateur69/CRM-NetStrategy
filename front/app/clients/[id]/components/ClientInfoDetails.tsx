@@ -5,7 +5,10 @@ import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapP
 import { InfoCard } from '../ClientUtils';
 import ClientActivityStream from './ClientActivityStream';
 import ClientInterlocuteurs from './ClientInterlocuteurs';
+import CommentSection from '@/components/CommentSection';
 import { updateClient, addPrestation, updatePrestation, deletePrestation } from '@/services/crm';
+import { useWebLLM } from '@/hooks/useWebLLM';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 
 interface ClientInfoDetailsProps {
   client: any;
@@ -110,6 +113,67 @@ export default function ClientInfoDetails({
     frequence: ''
   });
   const [savingPrestation, setSavingPrestation] = useState(false);
+
+  // --- AI ---
+  const { engine, initEngine, isReady } = useWebLLM();
+  const [analyzing, setAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+
+  const handleAnalyzeAI = async () => {
+    if (!client || !engine) {
+      if (!isReady) initEngine();
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      const prompt = `
+You are an expert CRM assistant. Analyze this client and provide a strategic summary for retention and upsell.
+CLIENT DATA:
+- Company: ${client.societe}
+- Contact: ${client.gerant}
+- Location: ${client.ville || 'N/A'}
+- Services: ${client.prestations?.length || 0} active services
+- Interactions: ${client.todos?.length || 0} tasks, ${client.rappels?.length || 0} reminders.
+
+OUTPUT FORMAT:
+Respond ONLY with a valid JSON object (no markdown, no code blocks) with this structure:
+{
+  "summary": "Short strategic summary of the client situation (max 2 sentences).",
+  "sentiment": "Positif" | "Neutre" | "Risque",
+  "opportunities": ["Upsell Opportunity 1", "Retention Action 2"],
+  "talking_points": ["Point 1", "Point 2"]
+}
+`;
+
+      const reply = await engine.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      });
+
+      const content = reply.choices[0].message.content || "{}";
+      const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      try {
+        const result = JSON.parse(cleanJson);
+        setAiAnalysis(result);
+      } catch (e) {
+        console.error("Failed to parse AI JSON", e);
+        setAiAnalysis({
+          summary: cleanJson,
+          sentiment: "Neutre",
+          opportunities: ["Vérifier la satisfaction", "Proposer un RDV"],
+          talking_points: []
+        });
+      }
+
+    } catch (error) {
+      console.error("AI Error", error);
+      alert("Erreur lors de l'analyse IA");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   const activityProps = {
     filteredTodos,
@@ -250,13 +314,78 @@ export default function ClientInfoDetails({
       <section className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Header avec gradient */}
         <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 p-6">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            Informations Générales de l'Entreprise
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              Informations Générales de l'Entreprise
+            </h2>
+
+            {/* AI Trigger Button */}
+            <button
+              onClick={handleAnalyzeAI}
+              disabled={analyzing}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-sm transition-all text-sm font-medium border border-white/30 ${analyzing ? 'bg-white/10 text-white/80 cursor-wait' : 'bg-white/20 hover:bg-white/30 text-white hover:scale-105 active:scale-95'}`}
+            >
+              {analyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="animate-pulse">Analyse en cours...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Analyse IA</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* AI Analysis Result */}
+        {aiAnalysis && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100 p-6 animate-in slide-in-from-top-4 fade-in duration-500">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-white rounded-xl shadow-sm border border-indigo-100">
+                <Sparkles className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-indigo-900">Analyse Stratégique</h3>
+                  <button onClick={() => setAiAnalysis(null)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-gray-700 mb-4 leading-relaxed">{aiAnalysis.summary}</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                    <h4 className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2">Sentiment</h4>
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${aiAnalysis.sentiment === 'Positif' ? 'bg-green-100 text-green-700' :
+                      aiAnalysis.sentiment === 'Risque' ? 'bg-red-100 text-red-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                      {aiAnalysis.sentiment}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm md:col-span-2">
+                    <h4 className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2">Opportunités & Actions</h4>
+                    <ul className="space-y-1">
+                      {aiAnalysis.opportunities?.map((op: string, i: number) => (
+                        <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          {op}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Contenu */}
         <div className="p-8">
@@ -575,204 +704,14 @@ export default function ClientInfoDetails({
       </section>
 
       {/* Section Commentaires - Design moderne */}
-      <section className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-600 p-6">
-          <h3 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <MessageCircle className="w-6 h-6" />
-            </div>
-            Journal des Événements & Commentaires
-          </h3>
-          <p className="text-gray-100 text-sm mt-2">
-            {allComments.length} {allComments.length > 1 ? 'commentaires' : 'commentaire'}
-            {allComments.length > 3 && !showAllComments && <span className="ml-2 text-white/80">(affichage des 3 plus récents)</span>}
-          </p>
-        </div>
-
-        <div className="p-8">
-          {/* Liste des commentaires */}
-          {allComments.length > 0 ? (
-            <div className="space-y-4 mb-8">
-              {comments.map((c: any, index: number) => (
-                <div
-                  key={c.id}
-                  className="group relative animate-in fade-in slide-in-from-bottom-2 duration-400"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {editingCommentId === c.id ? (
-                    // Mode édition avec design amélioré
-                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-300 rounded-2xl p-6 shadow-lg">
-                      <div className="flex items-center gap-2 mb-3 text-indigo-700 font-semibold text-sm">
-                        <Edit className="w-4 h-4" />
-                        <span>Mode édition</span>
-                      </div>
-                      <textarea
-                        value={commentForm.texte}
-                        onChange={(e) => startEditComment({ ...c, texte: e.target.value })}
-                        className="w-full border-2 border-indigo-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"
-                        rows={4}
-                        placeholder="Modifiez votre commentaire..."
-                      />
-                      <div className="flex gap-3 mt-4">
-                        <button
-                          onClick={() => handleUpdateComment(c.id, commentForm.texte)}
-                          disabled={savingComment}
-                          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                        >
-                          {savingComment ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Save className="w-4 h-4" />
-                          )}
-                          Enregistrer
-                        </button>
-                        <button
-                          onClick={cancelEditComment}
-                          className="flex items-center justify-center gap-2 px-5 py-3 bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-all duration-200"
-                        >
-                          <X className="w-4 h-4" />
-                          Annuler
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Mode affichage avec design carte moderne
-                    <div className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-2xl p-6 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 group-hover:scale-[1.01]">
-                      <div className="flex items-start gap-4">
-                        {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                            {(c.user?.name ?? 'U').charAt(0).toUpperCase()}
-                          </div>
-                        </div>
-
-                        {/* Contenu */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div>
-                              <h4 className="font-semibold text-gray-900 text-base">
-                                {c.user?.name ?? 'Utilisateur inconnu'}
-                              </h4>
-                              <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                                <span className="inline-block w-1 h-1 bg-gray-400 rounded-full" />
-                                {new Date(c.created_at).toLocaleDateString('fr-FR', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
-                            </div>
-
-                            {/* Actions */}
-                            {canEdit && (
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                <button
-                                  onClick={() => startEditComment(c)}
-                                  className="p-2.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 hover:scale-110"
-                                  title="Modifier"
-                                  aria-label="Modifier le commentaire"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteComment(c.id)}
-                                  className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110"
-                                  title="Supprimer"
-                                  aria-label="Supprimer le commentaire"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Texte du commentaire */}
-                          <div className="bg-white rounded-xl p-4 border border-gray-100">
-                            <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-wrap">
-                              {c.texte}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Bouton "Voir plus" / "Voir moins" */}
-              {allComments.length > 3 && (
-                <div className="flex justify-center pt-4">
-                  <button
-                    onClick={() => setShowAllComments(!showAllComments)}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 font-semibold rounded-xl hover:from-indigo-200 hover:to-purple-200 transition-all duration-300 shadow-md hover:shadow-lg"
-                  >
-                    {showAllComments ? (
-                      <>
-                        <span>Voir moins</span>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                        </svg>
-                      </>
-                    ) : (
-                      <>
-                        <span>Voir {allComments.length - 3} commentaire{allComments.length - 3 > 1 ? 's' : ''} de plus</span>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            // État vide moderne
-            <div className="text-center py-16 mb-8">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner">
-                <MessageCircle className="w-10 h-10 text-gray-400" />
-              </div>
-              <h4 className="text-lg font-semibold text-gray-700 mb-2">Aucun commentaire</h4>
-              <p className="text-gray-500 text-sm">Soyez le premier à ajouter un commentaire</p>
-            </div>
-          )}
-
-          {/* Formulaire d'ajout de commentaire */}
-          {canEdit && (
-            <div className="relative bg-gradient-to-br from-gray-50 to-indigo-50 rounded-2xl p-6 border-2 border-dashed border-indigo-200 hover:border-indigo-300 transition-all duration-300">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                  <MessageCircle className="w-5 h-5" />
-                </div>
-                <h4 className="font-semibold text-gray-800">Ajouter un commentaire</h4>
-              </div>
-
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Partagez vos observations, notes importantes ou événements significatifs..."
-                className="w-full border-2 border-gray-300 rounded-xl p-4 text-sm placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white resize-none"
-                rows={4}
-              />
-
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-xs text-gray-500 italic">
-                  {newComment.length} caractères
-                </p>
-                <button
-                  onClick={handleAddComment}
-                  disabled={!newComment.trim()}
-                  className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Publier le Commentaire
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
+      <CommentSection
+        comments={allComments.map((c: any) => ({ ...c, texte: c.texte || '' }))}
+        canEdit={true}
+        onAdd={handleAddComment}
+        onUpdate={handleUpdateComment}
+        onDelete={handleDeleteComment}
+        currentUserName={currentUserName}
+      />
     </div>
   );
 }

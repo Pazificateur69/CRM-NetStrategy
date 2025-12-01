@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation";
 export function AiAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
-    const { initEngine, isLoading, progress, messages, sendMessage, isGenerating, isReady, setMessages } = useWebLLM();
+    const { initEngine, isLoading, progress, messages, sendMessage, clearMessages, isGenerating, isReady, setMessages } = useWebLLM();
     const crmData = useCrmData();
     const [input, setInput] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -31,6 +31,13 @@ export function AiAssistant() {
             initEngine();
         }
     };
+
+    // Listen for custom event to open AI
+    useEffect(() => {
+        const handleCustomOpen = () => handleOpen();
+        window.addEventListener('open-ai-assistant', handleCustomOpen);
+        return () => window.removeEventListener('open-ai-assistant', handleCustomOpen);
+    }, [isReady, isLoading]);
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -85,9 +92,7 @@ INSTRUCTIONS:
     };
 
     const handleClearChat = () => {
-        // We need to expose setMessages from useWebLLM or just reload the page/component
-        // For now, let's assume useWebLLM exports setMessages or we add it
-        window.location.reload(); // Simple brute force for now to clear engine context too
+        clearMessages();
     };
 
     // Use Portal to ensure fixed positioning is relative to viewport
@@ -103,10 +108,10 @@ INSTRUCTIONS:
     const content = !isOpen ? (
         <button
             onClick={handleOpen}
-            className="fixed bottom-6 right-6 p-4 bg-primary text-primary-foreground rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 z-[9999] group"
+            className="fixed bottom-6 right-6 p-4 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full shadow-2xl hover:scale-110 hover:shadow-indigo-500/50 transition-all duration-300 z-[9999] group ring-4 ring-white/10 backdrop-blur-md"
         >
-            <Bot className="w-6 h-6" />
-            <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full" />
+            <Bot className="w-7 h-7" />
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
         </button>
     ) : isMinimized ? (
         <div className="fixed bottom-6 right-6 w-72 bg-card/90 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl z-[9999] overflow-hidden ring-1 ring-black/5 dark:ring-white/5 animate-fade-in-up">
@@ -131,9 +136,9 @@ INSTRUCTIONS:
             </div>
         </div>
     ) : (
-        <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-card/90 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden z-[9999] animate-scale-in ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300">
+        <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-3xl shadow-2xl flex flex-col overflow-hidden z-[9999] animate-scale-in ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300">
             {/* Header */}
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-primary/5">
+            <div className="p-4 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
                         <Bot className="w-5 h-5 text-white" />

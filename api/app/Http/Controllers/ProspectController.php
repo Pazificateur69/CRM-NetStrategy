@@ -45,6 +45,10 @@ class ProspectController extends Controller
             'score' => 'nullable|integer|min:0|max:100',
             'score_details' => 'nullable|array',
             'couleur_statut' => 'nullable|in:vert,orange,rouge',
+            'adresse' => 'nullable|string',
+            'ville' => 'nullable|string|max:255',
+            'code_postal' => 'nullable|string|max:20',
+            'site_web' => 'nullable|string|max:255',
         ]);
 
         $prospect = Prospect::create($validated);
@@ -86,6 +90,10 @@ class ProspectController extends Controller
             'score' => 'nullable|integer|min:0|max:100',
             'score_details' => 'nullable|array',
             'couleur_statut' => 'nullable|in:vert,orange,rouge',
+            'adresse' => 'nullable|string',
+            'ville' => 'nullable|string|max:255',
+            'code_postal' => 'nullable|string|max:20',
+            'site_web' => 'nullable|string|max:255',
         ]);
 
         $prospect->update($validated);

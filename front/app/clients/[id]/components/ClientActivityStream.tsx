@@ -396,11 +396,20 @@ export default function ClientActivityStream({
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-center">
-              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                <CheckSquare className="w-8 h-8 text-blue-300" />
+            <div className="flex flex-col items-center justify-center h-64 text-center p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <CheckSquare className="w-10 h-10 text-blue-500" />
               </div>
-              <p className="text-slate-500 font-medium">Aucune tâche en cours</p>
+              <h4 className="text-slate-900 font-bold text-lg mb-2">Tout est à jour !</h4>
+              <p className="text-slate-500 max-w-xs mx-auto mb-6">Aucune tâche en attente. Profitez-en pour planifier la suite ou prendre une pause.</p>
+              {canEdit && (
+                <button
+                  onClick={() => document.getElementById('new-todo-input')?.focus()}
+                  className="text-blue-600 font-bold text-sm hover:underline"
+                >
+                  Créer une tâche maintenant
+                </button>
+              )}
             </div>
           )}
 
@@ -423,8 +432,8 @@ export default function ClientActivityStream({
                           setTodoValidationError('');
                         }}
                         className={`w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:ring-0 transition-colors ${todoValidationError
-                            ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500'
-                            : 'border-slate-200 focus:border-blue-500'
+                          ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500'
+                          : 'border-slate-200 focus:border-blue-500'
                           }`}
                       >
                         <option value="">Sélectionner un pôle</option>
@@ -442,6 +451,7 @@ export default function ClientActivityStream({
                   )}
 
                   <input
+                    id="new-todo-input"
                     placeholder="Titre de la tâche..."
                     className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-0 transition-colors"
                     value={newTodo.titre}
@@ -698,11 +708,20 @@ export default function ClientActivityStream({
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-center">
-              <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4">
-                <Calendar className="w-8 h-8 text-purple-300" />
+            <div className="flex flex-col items-center justify-center h-64 text-center p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <Calendar className="w-10 h-10 text-purple-500" />
               </div>
-              <p className="text-slate-500 font-medium">Aucun rappel programmé</p>
+              <h4 className="text-slate-900 font-bold text-lg mb-2">Aucun rappel</h4>
+              <p className="text-slate-500 max-w-xs mx-auto mb-6">Rien de prévu pour le moment. Ajoutez un rappel pour ne rien oublier.</p>
+              {canEdit && (
+                <button
+                  onClick={() => document.getElementById('new-rappel-input')?.focus()}
+                  className="text-purple-600 font-bold text-sm hover:underline"
+                >
+                  Programmer un rappel
+                </button>
+              )}
             </div>
           )}
 
@@ -725,8 +744,8 @@ export default function ClientActivityStream({
                           setRappelValidationError('');
                         }}
                         className={`w-full border-2 rounded-xl px-4 py-2.5 text-sm focus:ring-0 transition-colors ${rappelValidationError
-                            ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500'
-                            : 'border-slate-200 focus:border-purple-500'
+                          ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500'
+                          : 'border-slate-200 focus:border-purple-500'
                           }`}
                       >
                         <option value="">Sélectionner un pôle</option>
@@ -744,6 +763,7 @@ export default function ClientActivityStream({
                   )}
 
                   <input
+                    id="new-rappel-input"
                     placeholder="Titre du rappel..."
                     className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
                     value={newRappel.titre}

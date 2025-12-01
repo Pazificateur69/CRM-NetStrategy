@@ -38,17 +38,17 @@ const TASK_STATUSES: {
     {
       id: 'in-progress',
       title: 'En cours',
-      color: 'text-blue-700',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
+      color: 'text-blue-700 dark:text-blue-400',
+      bgColor: 'bg-blue-500/10',
+      borderColor: 'border-blue-500/20',
       icon: PlayCircle
     },
     {
       id: 'done',
       title: 'Terminé',
-      color: 'text-emerald-700',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200',
+      color: 'text-emerald-700 dark:text-emerald-400',
+      bgColor: 'bg-emerald-500/10',
+      borderColor: 'border-emerald-500/20',
       icon: CheckCircle2
     },
   ];
@@ -60,23 +60,23 @@ const getPriorityStyles = (priorite: string) => {
   switch (priorite) {
     case 'haute':
       return {
-        badge: 'bg-rose-100 text-rose-700 border-rose-200',
+        badge: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20',
         border: 'border-l-rose-500'
       };
     case 'moyenne':
       return {
-        badge: 'bg-amber-100 text-amber-700 border-amber-200',
+        badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
         border: 'border-l-amber-500'
       };
     case 'basse':
       return {
-        badge: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20',
         border: 'border-l-emerald-500'
       };
     default:
       return {
-        badge: 'bg-gray-100 text-gray-700 border-gray-200',
-        border: 'border-l-gray-300'
+        badge: 'bg-muted text-muted-foreground border-border',
+        border: 'border-l-border'
       };
   }
 };
@@ -109,27 +109,52 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onDragEnter,
   isAdmin,
 }) => {
-  const { badge, border } = getPriorityStyles(task.priorite || 'moyenne');
+  // 🕒 Calcul de l'urgence dynamique
+  const getDynamicPriority = (task: Task) => {
+    if (!task.dueDate) return task.priorite || 'moyenne';
+
+    const today = new Date();
+    const due = new Date(task.dueDate);
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'haute'; // En retard
+    if (diffDays <= 2) return 'haute'; // Urgent (< 2 jours)
+    if (diffDays <= 7) return 'moyenne'; // Cette semaine
+    return 'basse';
+  };
+
+  const displayPriority = getDynamicPriority(task);
+  const { badge, border } = getPriorityStyles(displayPriority);
+
   const isOverdue =
     task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
 
   const formattedDueDate = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString('fr-FR', {
-      month: 'short',
+      weekday: 'short',
       day: 'numeric',
+      month: 'short',
     })
     : null;
+
+  // 🎨 Couleur de fond subtile selon le statut
+  const statusColors = {
+    'todo': 'bg-card hover:border-slate-300 dark:hover:border-slate-600',
+    'in-progress': 'bg-blue-50/50 dark:bg-blue-900/10 hover:border-blue-300 dark:hover:border-blue-700',
+    'done': 'bg-emerald-50/50 dark:bg-emerald-900/10 hover:border-emerald-300 dark:hover:border-emerald-700'
+  };
 
   return (
     <div
       className={`
         group relative
-        bg-card p-4 rounded-xl
+        p-4 rounded-xl
         shadow-sm border border-border
-        hover:shadow-md hover:border-primary/20
+        hover:shadow-md
         transition-all duration-200
         cursor-grab active:cursor-grabbing 
         border-l-[4px] ${border}
+        ${statusColors[task.status] || 'bg-card'}
       `}
       draggable
       onDragStart={(e) => onDragStart(e, task.id, task.status, index, task.type)}
@@ -144,34 +169,46 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </button>
       </div>
 
-      <div className="flex items-center gap-2 mb-3">
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${badge} uppercase tracking-wide`}>
-          {task.priorite || 'moyenne'}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${badge} uppercase tracking-wide flex items-center gap-1`}>
+          {displayPriority === 'haute' && <AlertCircle className="w-3 h-3" />}
+          {displayPriority}
         </span>
-        {isAdmin && task.assignedTo && (
-          <div className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 font-medium" title={task.assignedTo.email}>
+
+        {/* Affichage Admin Assigné */}
+        {(isAdmin || task.assignedTo) && task.assignedTo && (
+          <div className="flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 font-medium" title={`Assigné à : ${task.assignedTo.email}`}>
             <UserCircle2 className="w-3 h-3" />
-            <span className="truncate max-w-[80px]">{task.assignedTo.name}</span>
+            <span className="truncate max-w-[100px]">{task.assignedTo.name}</span>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between text-xs pt-3 border-t border-border">
+      <div className="flex items-center justify-between text-xs pt-3 border-t border-border/50">
         <div className="flex items-center gap-1.5 text-muted-foreground">
-          <User className="w-3.5 h-3.5" />
-          <span className="truncate max-w-[100px]" title={task.client}>
-            {task.client || '—'}
-          </span>
+          {task.client ? (
+            <>
+              <User className="w-3.5 h-3.5" />
+              <span className="truncate max-w-[100px] font-medium" title={task.client}>
+                {task.client}
+              </span>
+            </>
+          ) : (
+            <span className="text-muted-foreground/50 italic">Aucun client</span>
+          )}
         </div>
 
         {formattedDueDate && (
-          <div className={`flex items-center gap-1.5 font-medium ${isOverdue ? 'text-destructive' : 'text-muted-foreground'
-            }`}>
-            {isOverdue ? (
-              <AlertCircle className="w-3.5 h-3.5" />
-            ) : (
-              <Calendar className="w-3.5 h-3.5" />
-            )}
+          <div className={`
+            flex items-center gap-1.5 font-medium px-2 py-1 rounded-md transition-colors
+            ${isOverdue
+              ? 'bg-red-50 text-red-600 border border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50'
+              : task.type === 'reminder'
+                ? 'bg-purple-50 text-purple-600 border border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/50'
+                : 'text-muted-foreground'
+            }
+          `}>
+            {task.type === 'reminder' ? <Clock className="w-3.5 h-3.5" /> : <Calendar className="w-3.5 h-3.5" />}
             <span>{formattedDueDate}</span>
           </div>
         )}
@@ -235,11 +272,11 @@ const TaskSection: React.FC<TaskSectionProps> = ({
       <div className="flex items-center gap-3 mb-6">
         <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
           {type === 'todo' ? (
-            <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
               <ListTodo className="w-5 h-5" />
             </div>
           ) : (
-            <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
+            <div className="p-2 bg-purple-500/10 rounded-lg text-purple-600 dark:text-purple-400">
               <Clock className="w-5 h-5" />
             </div>
           )}
@@ -282,7 +319,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({
               </div>
 
               {/* Zone de tâches */}
-              <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+              <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 {columnTasks.map((task, index) => (
                   <TaskCard
                     key={task.id}

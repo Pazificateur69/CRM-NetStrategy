@@ -30,7 +30,7 @@ class DashboardController extends Controller
             return [
                 'id' => $client->id,
                 'societe' => $client->societe ?? '—',
-                'contact' => $client->contact ?? '—',
+                'contact' => $client->gerant ?? '—',
                 'type' => 'Client',
                 'couleur_statut' => $todosEnRetard > 0 ? 'rouge' : 'vert',
                 'todos_en_retard' => $todosEnRetard,

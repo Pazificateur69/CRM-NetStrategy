@@ -82,6 +82,13 @@ export function useWebLLM() {
         [engine, messages]
     );
 
+    const clearMessages = useCallback(async () => {
+        setMessages([]);
+        if (engine) {
+            await engine.resetChat();
+        }
+    }, [engine]);
+
     return {
         initEngine,
         isLoading,
@@ -89,6 +96,7 @@ export function useWebLLM() {
         messages,
         setMessages,
         sendMessage,
+        clearMessages,
         isGenerating,
         isReady: !!engine,
         engine,

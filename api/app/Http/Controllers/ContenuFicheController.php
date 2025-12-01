@@ -44,7 +44,7 @@ class ContenuFicheController extends Controller
             'texte' => 'nullable|string',
             'client_id' => 'nullable|exists:clients,id',
             'prospect_id' => 'nullable|exists:prospects,id',
-            'fichier' => 'nullable|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls,txt,csv',
+            'fichier' => 'nullable|file|max:20480|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls,txt,csv,ppt,pptx,zip,rar,webp,svg,gif',
         ]);
 
         $model = null;
@@ -76,10 +76,74 @@ class ContenuFicheController extends Controller
             }
         ]);
 
+        // ✅ Gestion des notifications de mention
+        if ($validated['type'] === 'Commentaire' && !empty($validated['texte'])) {
+            $this->notifyMentions($validated['texte'], $model, $request->user());
+        }
+
         return response()->json([
             'message' => 'Contenu ajouté avec succès.',
             'data' => $contenu
         ]);
+    }
+
+    private function notifyMentions($text, $model, $sender)
+    {
+        // 1. Trouver les mentions @User (supporte espaces, ex: @Jean Paul)
+        // On capture jusqu'à la fin de ligne ou un caractère spécial qui n'est pas un espace dans un nom
+        // Simplification : on prend tout ce qui suit @ jusqu'à un caractère non-word (sauf espace)
+        // Mais attention aux phrases.
+        // Mieux : on se base sur le fait que le frontend insère "@Name " (avec espace après).
+        // Donc on cherche @([a-zA-Z0-9_ ]+)
+        preg_match_all('/@([a-zA-Z0-9_ ]+)/', $text, $matches);
+        $mentionedNames = array_unique(array_map('trim', $matches[1]));
+
+        $link = '';
+        if ($model instanceof Client) {
+            $link = "/clients/{$model->id}?tab=informations";
+        } elseif ($model instanceof \App\Models\Prospect) {
+            $link = "/prospects/{$model->id}?tab=informations";
+        }
+
+        foreach ($mentionedNames as $name) {
+            // Chercher un user
+            $user = \App\Models\User::where('name', 'LIKE', "%{$name}%")->first();
+
+            if ($user && $user->id !== $sender->id) {
+                \App\Models\Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'mention',
+                    'data' => [
+                        'message' => "{$sender->name} vous a mentionné dans un commentaire.",
+                        'sender' => $sender->name,
+                        'preview' => substr($text, 0, 50) . '...'
+                    ],
+                    'link' => $link
+                ]);
+            }
+
+            // Chercher un pôle (si pas user trouvé ou en plus)
+            // On suppose que le pôle est stocké dans la colonne 'pole' de la table users
+            // On notifie tous les users de ce pôle
+            $usersInPole = \App\Models\User::where('pole', 'LIKE', "%{$name}%")->get();
+            foreach ($usersInPole as $poleUser) {
+                if ($poleUser->id !== $sender->id) {
+                    // Éviter doublon si user déjà notifié par nom
+                    // On pourrait vérifier si une notif existe déjà mais c'est lourd.
+                    // Pour l'instant on simplifie.
+                    \App\Models\Notification::create([
+                        'user_id' => $poleUser->id,
+                        'type' => 'mention_pole',
+                        'data' => [
+                            'message' => "{$sender->name} a mentionné le pôle {$name}.",
+                            'sender' => $sender->name,
+                            'preview' => substr($text, 0, 50) . '...'
+                        ],
+                        'link' => $link
+                    ]);
+                }
+            }
+        }
     }
 
     // ✅ NOUVEAU : Mettre à jour un commentaire
@@ -123,7 +187,23 @@ class ContenuFicheController extends Controller
             return response()->json(['message' => 'Aucun fichier associé.'], 404);
         }
 
-        return Storage::disk('public')->download($contenu->chemin_fichier, $contenu->nom_original_fichier);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        return $disk->download($contenu->chemin_fichier, $contenu->nom_original_fichier);
+    }
+
+    // ✅ Prévisualiser un fichier
+    public function preview($id)
+    {
+        $contenu = ContenuFiche::findOrFail($id);
+
+        if (!$contenu->chemin_fichier) {
+            return response()->json(['message' => 'Aucun fichier associé.'], 404);
+        }
+
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        return $disk->response($contenu->chemin_fichier);
     }
 
     // ✅ Supprimer un contenu

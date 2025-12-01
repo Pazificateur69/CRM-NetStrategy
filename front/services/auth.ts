@@ -8,16 +8,18 @@ export const getUserProfile = async () => {
 
 // Définition du type de réponse de l'API Laravel
 interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  user: {
+  access_token?: string;
+  token_type?: string;
+  user?: {
     id: number;
     name: string;
     email: string;
     role: string;
-    roles?: string[];  // si tu utilises Spatie
+    roles?: string[];
     pole?: string;
   };
+  two_factor?: boolean;
+  temp_token?: string;
 }
 
 /**
@@ -25,16 +27,34 @@ interface LoginResponse {
  */
 export const login = async (email: string, password: string) => {
   const response = await api.post<LoginResponse>('/login', { email, password });
-  
-  const { access_token: token, user } = response.data; 
 
-if (token && typeof window !== 'undefined') {
-  localStorage.setItem('authToken', token);
-  localStorage.setItem('userRole', user.role);
-  localStorage.setItem('userPole', user.pole || 'non_defini');
-}
+  if (response.data.two_factor) {
+    return response.data;
+  }
 
+  const { access_token: token, user } = response.data;
 
+  if (token && user && typeof window !== 'undefined') {
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('userRole', user.role);
+    localStorage.setItem('userPole', user.pole || 'non_defini');
+  }
+
+  return user;
+};
+
+export const verify2FA = async (code: string, temp_token: string) => {
+  const response = await api.post('/2fa/verify-login', { code }, {
+    headers: { Authorization: `Bearer ${temp_token}` }
+  });
+
+  const { access_token: token, user } = response.data;
+
+  if (token && user && typeof window !== 'undefined') {
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('userRole', user.role);
+    localStorage.setItem('userPole', user.pole || 'non_defini');
+  }
   return user;
 };
 

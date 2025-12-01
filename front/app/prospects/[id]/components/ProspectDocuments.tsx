@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Eye } from 'lucide-react';
+import api from '@/services/api';
+import { toast } from 'sonner';
 
 interface ProspectDocumentsProps {
     prospect: any;
@@ -24,6 +26,39 @@ export default function ProspectDocuments({
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+    };
+
+    const handlePreview = async (doc: any) => {
+        try {
+            const response = await api.get(`/contenu/${doc.id}/preview`, {
+                responseType: 'blob'
+            });
+            // @ts-ignore
+            const contentType = (response.headers as any)['content-type'];
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
+            window.open(url, '_blank');
+        } catch (error) {
+            console.error('Erreur prévisualisation:', error);
+            toast.error("Impossible de prévisualiser le fichier");
+        }
+    };
+
+    const handleDownload = async (doc: any) => {
+        try {
+            const response = await api.get(`/contenu/${doc.id}/download`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', doc.nom_original_fichier || 'document');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Erreur téléchargement:', error);
+            toast.error("Impossible de télécharger le fichier");
+        }
     };
 
     return (
@@ -77,15 +112,24 @@ export default function ProspectDocuments({
                                 </div>
                             </div>
 
-                            <a
-                                href={`${apiUrl}/api/contenu/${doc.id}/download`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium"
-                            >
-                                <Download className="w-4 h-4" />
-                                Télécharger
-                            </a>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => handlePreview(doc)}
+                                    className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium"
+                                    title="Prévisualiser"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Voir</span>
+                                </button>
+                                <button
+                                    onClick={() => handleDownload(doc)}
+                                    className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium"
+                                    title="Télécharger"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Télécharger</span>
+                                </button>
+                            </div>
                         </li>
                     ))}
                 </ul>

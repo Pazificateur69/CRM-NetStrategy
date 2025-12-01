@@ -15,15 +15,15 @@ class UserController extends Controller
     private function mapRoleToPole(string $role): string
     {
         return match (strtolower($role)) {
-            'admin'            => 'direction',
-            'seo'              => 'seo',
-            'comptabilite'     => 'comptabilite',
-            'reseaux sociaux'  => 'reseaux',
-            'reseaux'          => 'reseaux',
-            'com'              => 'com',
-            'rh'               => 'rh',
-            'dev'              => 'dev',
-            default            => 'general',
+            'admin' => 'direction',
+            'seo' => 'seo',
+            'comptabilite' => 'comptabilite',
+            'reseaux sociaux' => 'reseaux',
+            'reseaux' => 'reseaux',
+            'com' => 'com',
+            'rh' => 'rh',
+            'dev' => 'dev',
+            default => 'general',
         };
     }
 
@@ -67,35 +67,35 @@ class UserController extends Controller
         }
 
         $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'role'     => 'required|string',
+            'role' => 'required|string',
         ]);
 
         $role = $validated['role'];
         $pole = $this->mapRoleToPole($role);
 
         $newUser = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
+            'name' => $validated['name'],
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role'     => $role,
-            'pole'     => $pole,
+            'role' => $role,
+            'pole' => $pole,
         ]);
 
         $newUser->assignRole($role);
 
         Log::info('👤 Nouvel utilisateur créé', [
             'admin_id' => $admin->id,
-            'user_id'  => $newUser->id,
-            'role'     => $role,
-            'pole'     => $pole,
+            'user_id' => $newUser->id,
+            'role' => $role,
+            'pole' => $pole,
         ]);
 
         return response()->json([
             'message' => 'Utilisateur créé avec succès',
-            'user'    => $newUser->load('roles'),
+            'user' => $newUser->load('roles'),
         ], 201);
     }
 
@@ -111,10 +111,10 @@ class UserController extends Controller
         }
 
         $validated = $request->validate([
-            'name'     => 'sometimes|string|max:255',
-            'email'    => 'sometimes|email|unique:users,email,' . $user->id,
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6',
-            'role'     => 'sometimes|string',
+            'role' => 'sometimes|string',
         ]);
 
         // Mettre le mot de passe si présent
@@ -141,7 +141,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Utilisateur mis à jour avec succès',
-            'user'    => $user->load('roles'),
+            'user' => $user->load('roles'),
         ]);
     }
 
@@ -158,7 +158,7 @@ class UserController extends Controller
 
         Log::warning('🗑️ Suppression utilisateur', [
             'admin_id' => $admin->id,
-            'user_id'  => $user->id,
+            'user_id' => $user->id,
         ]);
 
         $user->delete();
@@ -178,11 +178,26 @@ class UserController extends Controller
         }
 
         $users = User::with('roles')
-            ->where('pole', $pole)
+            ->where(function ($query) use ($pole) {
+                $query->where('pole', $pole)
+                    ->orWhere('role', 'admin');
+            })
             ->select('id', 'name', 'email', 'role', 'pole')
             ->orderBy('name')
             ->get();
 
         return response()->json($users);
+    }
+
+    /**
+     * Liste simplifiée pour les mentions (accessible à tous les auth)
+     */
+    public function listForMentions()
+    {
+        return response()->json(
+            User::select('id', 'name', 'pole')
+                ->orderBy('name')
+                ->get()
+        );
     }
 }

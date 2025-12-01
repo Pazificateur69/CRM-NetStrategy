@@ -61,7 +61,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
   const todos: Task[] = (todosRes.data.data || todosRes.data).map((t: any) => ({
     id: String(t.id),
     title: t.titre,
-    client: t.client?.societe || 'N/A',
+    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
     pole: t.pole || pole,
     dueDate: t.date_echeance || null,
     responsible: t.user?.name || '—',
@@ -75,8 +75,45 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
   const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
     id: `r-${r.id}`,
     title: r.titre,
-    client: r.client?.societe || 'N/A',
+    client: r.client?.societe || (r.rappelable ? (r.rappelable.societe || r.rappelable.contact || 'Prospect') : 'N/A'),
     pole: r.pole || pole,
+    dueDate: r.date_rappel || null,
+    responsible: r.user?.name || '—',
+    assignedTo: r.assigned_users?.[0] ? { id: r.assigned_users[0].id, name: r.assigned_users[0].name, email: r.assigned_users[0].email } : null,
+    type: 'reminder',
+    status: mapBackendToFrontendStatus(r.statut ?? 'planifie'),
+    priorite: r.priorite || 'moyenne',
+    ordre: r.ordre || 0,
+  }));
+
+  return [...todos, ...rappels];
+}
+
+export async function getMyTasks(): Promise<Task[]> {
+  const [todosRes, rappelsRes] = await Promise.all([
+    api.get('/todos/me'),
+    api.get('/rappels/me'),
+  ]);
+
+  const todos: Task[] = (todosRes.data.data || todosRes.data).map((t: any) => ({
+    id: String(t.id),
+    title: t.titre,
+    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
+    pole: t.pole || 'Général',
+    dueDate: t.date_echeance || null,
+    responsible: t.user?.name || '—',
+    assignedTo: t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null,
+    type: 'todo',
+    status: mapBackendToFrontendStatus(t.statut),
+    priorite: t.priorite || 'moyenne',
+    ordre: t.ordre || 0,
+  }));
+
+  const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
+    id: `r-${r.id}`,
+    title: r.titre,
+    client: r.client?.societe || (r.rappelable ? (r.rappelable.societe || r.rappelable.contact || 'Prospect') : 'N/A'),
+    pole: r.pole || 'Général',
     dueDate: r.date_rappel || null,
     responsible: r.user?.name || '—',
     assignedTo: r.assigned_users?.[0] ? { id: r.assigned_users[0].id, name: r.assigned_users[0].name, email: r.assigned_users[0].email } : null,
@@ -115,7 +152,7 @@ export async function updateTaskStatus(
     return {
       id: String(t.id),
       title: t.titre,
-      client: t.client?.societe || 'N/A',
+      client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
       pole: t.pole || '—',
       dueDate: t.date_echeance || t.date_rappel || null,
       responsible: t.user?.name || '—',
