@@ -89,14 +89,10 @@ class ContenuFicheController extends Controller
 
     private function notifyMentions($text, $model, $sender)
     {
-        // 1. Trouver les mentions @User (supporte espaces, ex: @Jean Paul)
-        // On capture jusqu'à la fin de ligne ou un caractère spécial qui n'est pas un espace dans un nom
-        // Simplification : on prend tout ce qui suit @ jusqu'à un caractère non-word (sauf espace)
-        // Mais attention aux phrases.
-        // Mieux : on se base sur le fait que le frontend insère "@Name " (avec espace après).
-        // Donc on cherche @([a-zA-Z0-9_ ]+)
+        // 1. Trouver les mentions potentielles (greedy)
+        // On capture large pour gérer les espaces, puis on affinera
         preg_match_all('/@([a-zA-Z0-9_ ]+)/', $text, $matches);
-        $mentionedNames = array_unique(array_map('trim', $matches[1]));
+        $candidates = array_unique(array_map('trim', $matches[1]));
 
         $link = '';
         if ($model instanceof Client) {
@@ -105,13 +101,55 @@ class ContenuFicheController extends Controller
             $link = "/prospects/{$model->id}?tab=informations";
         }
 
-        foreach ($mentionedNames as $name) {
-            // Chercher un user
-            $user = \App\Models\User::where('name', 'LIKE', "%{$name}%")->first();
+        foreach ($candidates as $candidate) {
+            // Algorithme de repli : on essaie "Jean Paul", puis "Jean"
+            $parts = explode(' ', $candidate);
+            $foundUser = null;
 
-            if ($user && $user->id !== $sender->id) {
+            // On essaie de matcher le nom le plus long possible
+            // Ex: "Jean Paul Comment ca va" -> on teste "Jean Paul Comment ca va", "Jean Paul Comment ca", ...
+            // Optimisation : on limite à 3 mots max pour un nom
+            $maxWords = 3;
+            $count = count($parts);
+
+            // On ne teste que les N premiers mots
+            for ($i = min($count, $maxWords); $i >= 1; $i--) {
+                $nameToTest = implode(' ', array_slice($parts, 0, $i));
+
+                // Chercher un user exact
+                $user = \App\Models\User::where('name', $nameToTest)->first();
+                if ($user) {
+                    $foundUser = $user;
+                    break; // Trouvé !
+                }
+
+                // Chercher un pôle exact
+                $usersInPole = \App\Models\User::where('pole', $nameToTest)->get();
+                if ($usersInPole->count() > 0) {
+                    foreach ($usersInPole as $poleUser) {
+                        if ($poleUser->id !== $sender->id) {
+                            \App\Models\Notification::create([
+                                'user_id' => $poleUser->id,
+                                'type' => 'mention_pole',
+                                'data' => [
+                                    'message' => "{$sender->name} a mentionné le pôle {$nameToTest}.",
+                                    'sender' => $sender->name,
+                                    'preview' => substr($text, 0, 50) . '...'
+                                ],
+                                'link' => $link
+                            ]);
+                        }
+                    }
+                    // On considère que si on a trouvé un pôle, c'est bon pour ce préfixe
+                    // Mais on continue peut-être pour voir si c'est aussi un user ?
+                    // Simplification : si pôle trouvé, on arrête
+                    break;
+                }
+            }
+
+            if ($foundUser && $foundUser->id !== $sender->id) {
                 \App\Models\Notification::create([
-                    'user_id' => $user->id,
+                    'user_id' => $foundUser->id,
                     'type' => 'mention',
                     'data' => [
                         'message' => "{$sender->name} vous a mentionné dans un commentaire.",
@@ -120,28 +158,6 @@ class ContenuFicheController extends Controller
                     ],
                     'link' => $link
                 ]);
-            }
-
-            // Chercher un pôle (si pas user trouvé ou en plus)
-            // On suppose que le pôle est stocké dans la colonne 'pole' de la table users
-            // On notifie tous les users de ce pôle
-            $usersInPole = \App\Models\User::where('pole', 'LIKE', "%{$name}%")->get();
-            foreach ($usersInPole as $poleUser) {
-                if ($poleUser->id !== $sender->id) {
-                    // Éviter doublon si user déjà notifié par nom
-                    // On pourrait vérifier si une notif existe déjà mais c'est lourd.
-                    // Pour l'instant on simplifie.
-                    \App\Models\Notification::create([
-                        'user_id' => $poleUser->id,
-                        'type' => 'mention_pole',
-                        'data' => [
-                            'message' => "{$sender->name} a mentionné le pôle {$name}.",
-                            'sender' => $sender->name,
-                            'preview' => substr($text, 0, 50) . '...'
-                        ],
-                        'link' => $link
-                    ]);
-                }
             }
         }
     }

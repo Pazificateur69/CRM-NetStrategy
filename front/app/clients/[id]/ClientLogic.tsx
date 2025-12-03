@@ -482,10 +482,11 @@ export function useClientLogic(): UseClientLogicReturn {
         setCommentForm({ texte: '' });
     }, []);
 
-    const handleAddComment = async () => {
-        if (!newComment.trim() || !client?.id) return;
+    const handleAddComment = async (text?: string) => {
+        const commentText = typeof text === 'string' ? text : newComment;
+        if (!commentText.trim() || !client?.id) return;
         try {
-            await addComment(Number(client.id), newComment);
+            await addComment(Number(client.id), commentText);
             setNewComment('');
             await reloadClient();
         } catch { }

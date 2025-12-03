@@ -13,6 +13,8 @@ import ClientInfoDetails from './components/ClientInfoDetails';
 import ClientPoleTab from './components/ClientPoleTab';
 import ClientComptabilite from './components/ClientComptabilite';
 import api from '@/services/api';
+import { MessageCircle } from 'lucide-react';
+import CommentSection from '@/components/CommentSection';
 
 export default function ClientDetailPage() {
   const {
@@ -229,68 +231,96 @@ export default function ClientDetailPage() {
         </div>
       </div>
 
-      {/* === Onglets === */}
-      <div className="mb-8">
-        <FicheTabs tabs={accessibleTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-      </div>
+      {/* === GRID LAYOUT === */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
 
-      <div className="animate-fade-in">
-        {/* 1️⃣ Onglet Informations */}
-        {activeTab === 'informations' && (
-          <ClientInfoDetails
-            client={client}
-            reloadClient={reloadClient}
-            newComment={newComment}
-            setNewComment={setNewComment}
-            handleAddComment={handleAddComment}
-            editingCommentId={editingCommentId}
-            commentForm={commentForm}
-            startEditComment={startEditComment}
-            cancelEditComment={cancelEditComment}
-            handleUpdateComment={handleUpdateComment}
-            handleDeleteComment={handleDeleteComment}
-            savingComment={savingComment}
-            userRole={userRole}
-            {...sharedActivityProps}
-          />
-        )}
+        {/* COLONNE GAUCHE (CONTENU PRINCIPAL) */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* === Onglets === */}
+          <div className="mb-8">
+            <FicheTabs tabs={accessibleTabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+          </div>
 
-        {/* 2️⃣ Onglets Pôles (avec dossier numérique) */}
-        {accessibleTabs
-          .filter(
-            (tab) => tab.prestationTypes && tab.id.startsWith('pole-') && activeTab === tab.id
-          )
-          .map((tab) => (
-            <ClientPoleTab
-              key={tab.id}
-              client={client}
-              reloadClient={reloadClient}
-              tab={
-                tab as TabDefinition & {
-                  accent: { border: string; badge: string; title: string };
-                }
-              }
-              getPrestationsByTypes={getPrestationsByTypes}
-              file={file}
-              setFile={setFile}
-              handleUpload={handleUpload}
-              userRole={userRole}
-              {...sharedActivityProps}
-            />
-          ))}
+          <div className="animate-fade-in">
+            {/* 1️⃣ Onglet Informations */}
+            {activeTab === 'informations' && (
+              <ClientInfoDetails
+                client={client}
+                reloadClient={reloadClient}
+                // Comment props removed as they are now in sidebar
+                userRole={userRole}
+                currentUserId={undefined} // Add if available
+                currentUserName={undefined} // Add if available
+                {...sharedActivityProps}
+              />
+            )}
 
-        {/* 3️⃣ Onglet Comptabilité */}
-        {activeTab === 'compta' && (
-          <ClientComptabilite
-            client={client}
-            canEdit={canEdit}
-            handleUpdatePrestation={handleUpdatePrestation}
-            handleDeletePrestation={handleDeletePrestation}
-            handleAddPrestation={handleAddPrestation}
-            handleValidatePrestation={handleValidatePrestation}
-            reloadClient={reloadClient}
-          />
-        )}
+            {/* 2️⃣ Onglets Pôles (avec dossier numérique) */}
+            {accessibleTabs
+              .filter(
+                (tab) => tab.prestationTypes && tab.id.startsWith('pole-') && activeTab === tab.id
+              )
+              .map((tab) => (
+                <ClientPoleTab
+                  key={tab.id}
+                  client={client}
+                  reloadClient={reloadClient}
+                  tab={
+                    tab as TabDefinition & {
+                      accent: { border: string; badge: string; title: string };
+                    }
+                  }
+                  getPrestationsByTypes={getPrestationsByTypes}
+                  file={file}
+                  setFile={setFile}
+                  handleUpload={handleUpload}
+                  userRole={userRole}
+                  {...sharedActivityProps}
+                />
+              ))}
+
+            {/* 3️⃣ Onglet Comptabilité */}
+            {activeTab === 'compta' && (
+              <ClientComptabilite
+                client={client}
+                canEdit={canEdit}
+                handleUpdatePrestation={handleUpdatePrestation}
+                handleDeletePrestation={handleDeletePrestation}
+                handleAddPrestation={handleAddPrestation}
+                handleValidatePrestation={handleValidatePrestation}
+                reloadClient={reloadClient}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* COLONNE DROITE (SIDEBAR COMMENTAIRES) */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-24 space-y-6">
+            {/* Section Commentaires - Design moderne */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-indigo-500" />
+                  Commentaires
+                </h3>
+              </div>
+              <div className="flex-1 overflow-y-auto p-0">
+                <CommentSection
+                  comments={(client.contenu?.filter((c: any) => c.type !== 'Fichier') || [])
+                    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .map((c: any) => ({ ...c, texte: c.texte || '' }))}
+                  canEdit={true}
+                  onAdd={handleAddComment}
+                  onUpdate={handleUpdateComment}
+                  onDelete={handleDeleteComment}
+                  currentUserName={undefined} // Add if available
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* === MODALE D'ÉDITION === */}

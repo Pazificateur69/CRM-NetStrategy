@@ -28,7 +28,7 @@ return [
     */
     'allowed_origins' => env('APP_ENV') === 'production'
         ? array_filter(explode(',', env('FRONTEND_URL', '')))
-        : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+        : ['*'], // ✅ Autorise tout le monde en local (y compris Wi-Fi)
 
 
 

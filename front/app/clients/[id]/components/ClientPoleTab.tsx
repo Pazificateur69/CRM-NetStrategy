@@ -112,7 +112,7 @@ export default function ClientPoleTab({
       const response = await api.get(`/contenu/${doc.id}/preview`, {
         responseType: 'blob'
       });
-      const contentType = (response.headers as any)['content-type'];
+      const contentType = (response as any).headers['content-type'];
       const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
       window.open(url, '_blank');
     } catch (error) {

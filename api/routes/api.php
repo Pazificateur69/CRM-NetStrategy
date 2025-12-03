@@ -20,7 +20,9 @@ use App\Http\Controllers\{
     SearchController,
     EventController,
     ProjectController,
-    NotificationController
+    NotificationController,
+    SecurityController,
+    OrganizationController
 };
 
 // ===================================================
@@ -78,9 +80,27 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     // 👤 PROFILE & SETTINGS
     // ===================================================
-    Route::put('/user/profile', [ProfileController::class, 'updateProfile']);
+    Route::put('/user/profile', [ProfileController::class, 'update']);
     Route::put('/user/password', [ProfileController::class, 'updatePassword']);
+    Route::delete('/user/account', [ProfileController::class, 'deleteAccount']);
+    Route::get('/user/export', [ProfileController::class, 'exportData']);
     Route::put('/user/notifications', [ProfileController::class, 'updateNotifications']);
+
+    // ===================================================
+    // 🛡️ SÉCURITÉ AVANCÉE
+    // ===================================================
+    Route::get('/user/login-history', [SecurityController::class, 'getLoginHistory']);
+    Route::get('/user/active-sessions', [SecurityController::class, 'getActiveSessions']);
+    Route::delete('/user/active-sessions/{id}', [SecurityController::class, 'revokeSession']);
+    Route::get('/audit-logs', [SecurityController::class, 'getAuditLogs'])->middleware('role:admin');
+
+    // ===================================================
+    // 🏢 ORGANISATION (ADMIN)
+    // ===================================================
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/organization/settings', [OrganizationController::class, 'getSettings']);
+        Route::put('/organization/settings', [OrganizationController::class, 'updateSettings']);
+    });
 
     // ===================================================
     // 🔔 NOTIFICATIONS
@@ -97,6 +117,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     // 📊 DASHBOARD
     // ===================================================
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
+    Route::put('/dashboard/preferences', [DashboardController::class, 'updatePreferences']);
     Route::get('/dashboard/clients-overview', [DashboardController::class, 'clientOverview']);
 
     // ===================================================
@@ -123,6 +145,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/todos/me', [TodoController::class, 'myTasks']); // ✅ Mes tâches
     Route::get('/rappels/me', [RappelController::class, 'myTasks']); // ✅ Mes rappels
     Route::get('/rappels/pole/{pole}', [RappelController::class, 'getByPole']);
+    Route::get('/todos/user/{userId}', [TodoController::class, 'getByUser'])->middleware('role:admin'); // ✅ Admin voir tâches user
+    Route::get('/rappels/user/{userId}', [RappelController::class, 'getByUser'])->middleware('role:admin'); // ✅ Admin voir rappels user
 
     // Décaler un rappel de X jours
     Route::post('/rappels/{id}/decaler', [RappelController::class, 'decaler']);
@@ -186,6 +210,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     Route::get('/users/by-pole/{pole}', [UserController::class, 'getByPole'])
         ->middleware('role:admin');
+    // ===================================================
+    // 💬 MESSAGERIE INTERNE
+    // ===================================================
+    Route::get('/messages/contacts', [App\Http\Controllers\MessageController::class, 'contacts']);
+    Route::get('/messages/{userId}', [App\Http\Controllers\MessageController::class, 'index']);
+    Route::post('/messages', [App\Http\Controllers\MessageController::class, 'store']);
+
     // ===================================================
     // 🤖 INTELLIGENCE ARTIFICIELLE
     // ===================================================

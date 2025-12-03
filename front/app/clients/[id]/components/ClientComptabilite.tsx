@@ -257,6 +257,8 @@ const AddPrestationForm = ({ handleAddPrestation, setShowAddForm, client }: AddP
 };
 
 
+import QuoteGeneratorModal from './QuoteGeneratorModal';
+
 export default function ClientComptabilite({
     client,
     canEdit,
@@ -270,6 +272,7 @@ export default function ClientComptabilite({
     const [editForm, setEditForm] = useState<Partial<Prestation>>({});
     const [saving, setSaving] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [showQuoteModal, setShowQuoteModal] = useState(false);
 
     const startEdit = (prestation: Prestation) => {
         setEditingPrestationId(prestation.id);
@@ -378,6 +381,14 @@ export default function ClientComptabilite({
                             Ajouter une prestation
                         </button>
                     )}
+
+                    <button
+                        onClick={() => setShowQuoteModal(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 rounded-xl font-semibold transition-all shadow-sm"
+                    >
+                        <FileText className="w-5 h-5 text-indigo-600" />
+                        Générer un Devis
+                    </button>
                 </div>
 
                 <div className="p-6">
@@ -390,6 +401,13 @@ export default function ClientComptabilite({
                             />
                         </div>
                     )}
+
+                    {/* Modal Devis */}
+                    <QuoteGeneratorModal
+                        open={showQuoteModal}
+                        onClose={() => setShowQuoteModal(false)}
+                        client={client}
+                    />
 
                     <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
                         <div className="overflow-x-auto">

@@ -9,6 +9,7 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  pole?: string; // Ajouté pour corriger l'erreur TS
   created_at?: string;
   updated_at?: string;
 }
@@ -149,7 +150,7 @@ export interface ClientDetail extends BaseEntity {
 // --- FICHE PROSPECT DÉTAILLÉE ---
 export interface ProspectDetail extends BaseEntity {
   contact: string;
-  statut: 'en_attente' | 'relance' | 'signé' | 'converti';
+  statut: 'en_attente' | 'relance' | 'converti' | 'perdu';
   couleur_statut: StatutCouleur;
   score?: number;
   score_details?: string[];
@@ -245,4 +246,5 @@ export interface Project {
   client?: { societe: string; gerant: string };
   manager?: { name: string };
   tasks_count?: number;
+  template?: string;
 }

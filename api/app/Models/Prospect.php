@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use App\Traits\Auditable;
 
 class Prospect extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
 
     protected $fillable = [
         'societe',
@@ -16,7 +17,6 @@ class Prospect extends Model
         'emails',
         'telephones',
         'statut',
-        'score',
         'score_details',
         'couleur_statut',
         'adresse',

@@ -75,6 +75,29 @@ class TodoController extends Controller
     }
 
     /**
+     * Récupérer les tâches d'un utilisateur spécifique (Admin)
+     */
+    public function getByUser(Request $request, $userId)
+    {
+        $user = $request->user();
+
+        if (!$user->hasRole('admin')) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
+        $todos = Todo::with(['user.roles', 'client', 'todoable', 'assignedUser.roles'])
+            ->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhere('assigned_to', $userId);
+            })
+            ->orderBy('ordre', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return TodoResource::collection($todos)->response();
+    }
+
+    /**
      * Créer une ToDo
      */
     public function store(Request $request)

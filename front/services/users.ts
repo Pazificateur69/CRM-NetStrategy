@@ -32,3 +32,11 @@ export const updateUserRole = async (id: number, role: string): Promise<User> =>
   const response = await api.put<any>(`/users/${id}`, { role });
   return (response.data?.user ?? response.data) as User;
 };
+
+/** === 6. Récupérer un utilisateur par ID === */
+export const getUser = async (id: number): Promise<User> => {
+  const response = await api.get<any>(`/users/${id}`);
+  return (response.data?.user ?? response.data) as User;
+};
+
+export type { User };

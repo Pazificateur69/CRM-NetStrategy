@@ -194,10 +194,39 @@ class UserController extends Controller
      */
     public function listForMentions()
     {
-        return response()->json(
-            User::select('id', 'name', 'pole')
-                ->orderBy('name')
-                ->get()
-        );
+        $users = User::select('id', 'name', 'pole')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'pole' => $user->pole,
+                    'type' => 'user'
+                ];
+            });
+
+        // Ajouter les pôles comme cibles de mention
+        $poles = [
+            'Direction',
+            'SEO',
+            'Comptabilite',
+            'Reseaux',
+            'Com',
+            'RH',
+            'Dev',
+            'General'
+        ];
+
+        $poleData = collect($poles)->map(function ($pole) {
+            return [
+                'id' => 'pole_' . strtolower($pole),
+                'name' => $pole,
+                'pole' => $pole, // Pour la compatibilité
+                'type' => 'pole'
+            ];
+        });
+
+        return response()->json($users->concat($poleData));
     }
 }

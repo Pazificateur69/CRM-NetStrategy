@@ -15,8 +15,12 @@ import {
   X,
   Search,
   Mail,
-  MoreVertical
+  MoreVertical,
+  Briefcase
 } from 'lucide-react';
+import ProjectModal from '@/components/ProjectModal';
+import api from '@/services/api';
+import { toast } from 'sonner';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -28,6 +32,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [showProjectModal, setShowProjectModal] = useState(false);
 
   // 🔹 Rôles réels dans Spatie
   const availableRoles = ['admin', 'com', 'comptabilite', 'dev', 'reseaux_sociaux', 'seo'];
@@ -148,157 +153,196 @@ export default function UsersPage() {
               </div>
               <span className="font-semibold">Nouvel Utilisateur</span>
             </Link>
-          </div>
-
-          {/* Search Bar */}
-          <div className="mt-8 relative max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Rechercher un utilisateur..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-card border-2 border-border rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-foreground placeholder:text-muted-foreground"
-            />
+            <button
+              onClick={() => setShowProjectModal(true)}
+              className="group flex items-center gap-3 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-500/20 transform hover:-translate-y-0.5"
+            >
+              <div className="p-1 bg-white/20 rounded-lg group-hover:scale-110 transition-transform">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <span className="font-semibold">Onboarding Employé</span>
+            </button>
           </div>
         </div>
 
-        {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive flex items-center gap-3">
-            <X className="w-5 h-5" />
-            {error}
-          </div>
-        )}
+        {/* Search Bar */}
+        <div className="mt-8 relative max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Rechercher un utilisateur..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-card border-2 border-border rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+      </div>
 
-        {/* === TABLEAU === */}
-        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
-          {filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
-                <Users className="w-10 h-10 text-muted-foreground/50" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Aucun utilisateur trouvé</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Essayez de modifier votre recherche ou ajoutez un nouvel utilisateur.
-              </p>
+      {error && (
+        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive flex items-center gap-3">
+          <X className="w-5 h-5" />
+          {error}
+        </div>
+      )}
+
+      {/* === TABLEAU === */}
+      <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+        {filteredUsers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Users className="w-10 h-10 text-muted-foreground/50" />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted/50 border-b border-border">
-                    <th className="py-4 px-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Utilisateur</th>
-                    <th className="py-4 px-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
-                    <th className="py-4 px-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Rôle</th>
-                    <th className="py-4 px-6 text-right text-xs font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="group hover:bg-accent/50 transition-colors duration-200"
-                    >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-primary-foreground font-bold shadow-md shadow-primary/20">
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            {editingUser === user.id ? (
-                              <input
-                                type="text"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                className="border-2 border-primary rounded-lg px-2 py-1 text-sm w-full focus:outline-none bg-background text-foreground"
-                                autoFocus
-                              />
-                            ) : (
-                              <div className="font-semibold text-foreground">{user.name}</div>
-                            )}
-                          </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Aucun utilisateur trouvé</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Essayez de modifier votre recherche ou ajoutez un nouvel utilisateur.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="py-4 px-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Utilisateur</th>
+                  <th className="py-4 px-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
+                  <th className="py-4 px-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Rôle</th>
+                  <th className="py-4 px-6 text-right text-xs font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredUsers.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="group hover:bg-accent/50 transition-colors duration-200"
+                  >
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-primary-foreground font-bold shadow-md shadow-primary/20">
+                          {user.name.charAt(0).toUpperCase()}
                         </div>
-                      </td>
+                        <div>
+                          {editingUser === user.id ? (
+                            <input
+                              type="text"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="border-2 border-primary rounded-lg px-2 py-1 text-sm w-full focus:outline-none bg-background text-foreground"
+                              autoFocus
+                            />
+                          ) : (
+                            <Link href={`/users/${user.id}`} className="font-semibold text-foreground hover:text-primary hover:underline transition-colors">
+                              {user.name}
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </td>
 
-                      <td className="py-4 px-6">
-                        {editingUser === user.id ? (
-                          <input
-                            type="email"
-                            value={editEmail}
-                            onChange={(e) => setEditEmail(e.target.value)}
-                            className="border-2 border-primary rounded-lg px-2 py-1 text-sm w-full focus:outline-none bg-background text-foreground"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                            <Mail className="w-4 h-4 text-muted-foreground/70" />
-                            {user.email}
-                          </div>
-                        )}
-                      </td>
+                    <td className="py-4 px-6">
+                      {editingUser === user.id ? (
+                        <input
+                          type="email"
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          className="border-2 border-primary rounded-lg px-2 py-1 text-sm w-full focus:outline-none bg-background text-foreground"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                          <Mail className="w-4 h-4 text-muted-foreground/70" />
+                          {user.email}
+                        </div>
+                      )}
+                    </td>
 
-                      <td className="py-4 px-6">
-                        <div className="relative">
-                          <select
-                            value={user.role || ''}
-                            onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                            className={`
+                    <td className="py-4 px-6">
+                      <div className="relative">
+                        <select
+                          value={user.role || ''}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                          className={`
                               appearance-none pl-3 pr-8 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide border cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all
                               ${roleColors[user.role] || 'bg-muted text-muted-foreground border-border'}
                             `}
-                          >
-                            {availableRoles.map((r) => (
-                              <option key={r} value={r}>
-                                {r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ')}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <Shield className="w-3 h-3 opacity-50" />
-                          </div>
+                        >
+                          {availableRoles.map((r) => (
+                            <option key={r} value={r}>
+                              {r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ')}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <Shield className="w-3 h-3 opacity-50" />
                         </div>
-                      </td>
+                      </div>
+                    </td>
 
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {editingUser === user.id ? (
-                            <button
-                              onClick={() => handleEditSave(user.id)}
-                              className="p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500/20 transition-colors"
-                              title="Sauvegarder"
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setEditingUser(user.id);
-                                setEditName(user.name);
-                                setEditEmail(user.email);
-                              }}
-                              className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-                              title="Modifier"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                          )}
-
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {editingUser === user.id ? (
                           <button
-                            onClick={() => handleDelete(user.id)}
-                            className="p-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors"
-                            title="Supprimer"
+                            onClick={() => handleEditSave(user.id)}
+                            className="p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500/20 transition-colors"
+                            title="Sauvegarder"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Check className="w-4 h-4" />
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingUser(user.id);
+                              setEditName(user.name);
+                              setEditEmail(user.email);
+                            }}
+                            className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                            title="Modifier"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="p-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-    </DashboardLayout>
+      <ProjectModal
+        open={showProjectModal}
+        onClose={() => setShowProjectModal(false)}
+        onSubmit={async (data) => {
+          try {
+            await api.post('/projects', data);
+            toast.success('Projet d\'onboarding créé avec succès !');
+            setShowProjectModal(false);
+          } catch (err) {
+            console.error(err);
+            toast.error('Erreur lors de la création du projet');
+          }
+        }}
+        clients={[]} // Onboarding is internal usually, or select a dummy client
+        users={users}
+        project={{
+          title: 'Onboarding Nouvel Employé',
+          description: 'Processus d\'intégration pour le nouvel arrivant.',
+          status: 'not_started',
+          start_date: new Date().toISOString().split('T')[0],
+          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +2 weeks
+          progress: 0,
+          template: 'onboarding',
+          id: 0, // Dummy
+          client_id: 0, // Dummy
+          user_id: 0, // Dummy
+        }}
+      />
+    </DashboardLayout >
   );
 }

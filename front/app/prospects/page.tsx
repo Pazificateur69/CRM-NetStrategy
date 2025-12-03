@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { getProspectsList } from '@/services/data';
 import { ProspectDetail } from '@/types/crm';
 import Link from 'next/link';
+import { ProspectKanbanBoard } from '@/components/ProspectKanbanBoard';
 import {
     Plus,
     Search,
@@ -17,7 +18,9 @@ import {
     Calendar,
     ArrowUpRight,
     Filter,
-    Target
+    Target,
+    LayoutGrid,
+    List
 } from 'lucide-react';
 
 // --- COMPOSANT LIGNE DE PROSPECT ---
@@ -48,7 +51,7 @@ const ProspectRow = ({ prospect }: { prospect: ProspectDetail }) => {
     return (
         <Link
             href={`/prospects/${prospect.id}`}
-            className="group relative grid grid-cols-1 lg:grid-cols-12 gap-4 items-center p-5 hover:bg-accent/50 transition-all duration-200 border-b border-border last:border-0"
+            className="group relative grid grid-cols-1 lg:grid-cols-10 gap-4 items-center p-5 hover:bg-accent/50 transition-all duration-200 border-b border-border last:border-0"
         >
             {/* Indicateur de survol */}
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -69,19 +72,7 @@ const ProspectRow = ({ prospect }: { prospect: ProspectDetail }) => {
                 </div>
             </div>
 
-            {/* Score */}
-            <div className="lg:col-span-2 hidden lg:flex items-center">
-                {prospect.score !== undefined ? (
-                    <div className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${prospect.score >= 70 ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20' :
-                        prospect.score >= 30 ? 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20' :
-                            'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20'
-                        }`}>
-                        {prospect.score} / 100
-                    </div>
-                ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
-                )}
-            </div>
+
 
             {/* Email */}
             <div className="lg:col-span-3 hidden lg:flex items-center gap-2 text-sm text-muted-foreground">
@@ -104,11 +95,14 @@ const ProspectRow = ({ prospect }: { prospect: ProspectDetail }) => {
     );
 };
 
+// ... (ProspectRow component remains unchanged)
+
 export default function ProspectsIndexPage() {
     const [prospects, setProspects] = useState<ProspectDetail[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
     const fetchProspects = useCallback(async () => {
         setLoading(true);
@@ -184,8 +178,8 @@ export default function ProspectsIndexPage() {
                 </div>
 
                 {/* Barre d'outils */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="relative flex-1">
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    <div className="relative flex-1 w-full">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                         <input
                             type="text"
@@ -195,6 +189,24 @@ export default function ProspectsIndexPage() {
                             className="w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all shadow-sm"
                         />
                     </div>
+
+                    <div className="flex items-center gap-2 bg-card border border-border p-1 rounded-xl shadow-sm">
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm' : 'text-muted-foreground hover:bg-accent'}`}
+                            title="Vue Liste"
+                        >
+                            <List className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('kanban')}
+                            className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm' : 'text-muted-foreground hover:bg-accent'}`}
+                            title="Vue Kanban"
+                        >
+                            <LayoutGrid className="w-5 h-5" />
+                        </button>
+                    </div>
+
                     <button className="flex items-center gap-2 px-4 py-3 bg-card border border-border rounded-xl text-foreground font-medium hover:bg-accent transition-colors shadow-sm">
                         <Filter className="w-5 h-5" />
                         <span>Filtres</span>
@@ -202,58 +214,64 @@ export default function ProspectsIndexPage() {
                 </div>
 
                 {/* Contenu Principal */}
-                <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-                    {loading ? (
-                        <div className="p-12 flex flex-col items-center justify-center text-muted-foreground">
-                            <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
-                            <p>Chargement de la liste...</p>
+                {loading ? (
+                    <div className="p-12 flex flex-col items-center justify-center text-muted-foreground">
+                        <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
+                        <p>Chargement de la liste...</p>
+                    </div>
+                ) : error ? (
+                    <div className="p-8 text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10 text-destructive mb-4">
+                            <AlertCircle className="w-6 h-6" />
                         </div>
-                    ) : error ? (
-                        <div className="p-8 text-center">
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10 text-destructive mb-4">
-                                <AlertCircle className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground mb-1">Erreur</h3>
-                            <p className="text-muted-foreground mb-4">{error}</p>
-                            <button
-                                onClick={fetchProspects}
-                                className="text-purple-600 hover:text-purple-700 font-medium hover:underline"
-                            >
-                                Réessayer
-                            </button>
+                        <h3 className="text-lg font-semibold text-foreground mb-1">Erreur</h3>
+                        <p className="text-muted-foreground mb-4">{error}</p>
+                        <button
+                            onClick={fetchProspects}
+                            className="text-purple-600 hover:text-purple-700 font-medium hover:underline"
+                        >
+                            Réessayer
+                        </button>
+                    </div>
+                ) : filteredProspects.length === 0 ? (
+                    <div className="p-16 text-center bg-card rounded-2xl border border-border shadow-sm">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted text-muted-foreground mb-4">
+                            <Search className="w-8 h-8" />
                         </div>
-                    ) : filteredProspects.length === 0 ? (
-                        <div className="p-16 text-center">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted text-muted-foreground mb-4">
-                                <Search className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground mb-1">Aucun résultat</h3>
-                            <p className="text-muted-foreground">
-                                Aucun prospect ne correspond à votre recherche "{searchTerm}"
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Header Table (Desktop) */}
-                            <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                <div className="col-span-4">Société / Contact</div>
-                                <div className="col-span-2">Score</div>
-                                <div className="col-span-3">Email</div>
-                                <div className="col-span-2">Statut</div>
-                                <div className="col-span-1 text-right">Action</div>
-                            </div>
+                        <h3 className="text-lg font-semibold text-foreground mb-1">Aucun résultat</h3>
+                        <p className="text-muted-foreground">
+                            Aucun prospect ne correspond à votre recherche "{searchTerm}"
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        {viewMode === 'list' ? (
+                            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-fade-in">
+                                {/* Header Table (Desktop) */}
+                                <div className="hidden lg:grid grid-cols-10 gap-4 px-6 py-3 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                    <div className="col-span-4">Société / Contact</div>
 
-                            {/* Liste */}
-                            <div>
-                                {filteredProspects.map((prospect) => (
-                                    <ProspectRow key={prospect.id} prospect={prospect} />
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
+                                    <div className="col-span-3">Email</div>
+                                    <div className="col-span-2">Statut</div>
+                                    <div className="col-span-1 text-right">Action</div>
+                                </div>
 
-                {!loading && !error && (
+                                {/* Liste */}
+                                <div>
+                                    {filteredProspects.map((prospect) => (
+                                        <ProspectRow key={prospect.id} prospect={prospect} />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="animate-fade-in">
+                                <ProspectKanbanBoard prospects={filteredProspects} setProspects={setProspects} />
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {!loading && !error && viewMode === 'list' && (
                     <div className="text-center text-sm text-muted-foreground">
                         Affichage de {filteredProspects.length} sur {prospects.length} prospects
                     </div>

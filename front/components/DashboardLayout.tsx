@@ -22,7 +22,8 @@ import {
   Moon,
   Laptop,
   Calendar as CalendarIcon,
-  FolderKanban
+  FolderKanban,
+  MessageSquare
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Toaster } from '@/components/ui/Toaster';
@@ -30,15 +31,21 @@ import { AiAssistant } from '@/components/AiAssistant';
 import CommandPalette from '@/components/CommandPalette';
 import NotificationCenter from '@/components/NotificationCenter';
 
+import ChatSystem from '@/components/ChatSystem';
+import VideoConfModal from '@/components/VideoConfModal';
+import { Video } from 'lucide-react';
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   // Prevent hydration mismatch and handle mobile sidebar
   useEffect(() => {
@@ -54,6 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const profile = await getUserProfile();
         setUserName(profile.name);
         setUserEmail(profile.email);
+        setUserId(profile.id);
         if (profile.roles?.includes('admin')) {
           setIsAdmin(true);
         }
@@ -129,6 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <NavLink href="/prospects" icon={<PhoneCall />} label="Prospects" active={pathname.startsWith('/prospects')} />
           <NavLink href="/projects" icon={<FolderKanban />} label="Projets" active={pathname.startsWith('/projects')} />
           <NavLink href="/calendar" icon={<CalendarIcon />} label="Calendrier" active={pathname.startsWith('/calendar')} />
+          <NavLink href="/messages" icon={<MessageSquare />} label="Messagerie" active={pathname.startsWith('/messages')} />
 
           {isAdmin && (
             <>
@@ -211,6 +220,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
               </button>
             </div>
+            {/* Video Conference Trigger */}
+            <button
+              onClick={() => setVideoModalOpen(true)}
+              className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+              title="Démarrer une visioconférence"
+            >
+              <Video className="w-5 h-5" />
+            </button>
+
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -237,6 +255,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Toaster />
       <CommandPalette />
       <AiAssistant />
+      {/* Communication Suite */}
+      {userId && <ChatSystem currentUserId={userId} />}
+      <VideoConfModal isOpen={videoModalOpen} onClose={() => setVideoModalOpen(false)} />
     </div>
   );
 }

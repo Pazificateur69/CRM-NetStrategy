@@ -65,4 +65,17 @@ class DashboardController extends Controller
             'prospects' => $prospects,
         ]);
     }
+
+    public function updatePreferences(Request $request)
+    {
+        $validated = $request->validate([
+            'preferences' => 'required|array',
+        ]);
+
+        $request->user()->update([
+            'dashboard_preferences' => $validated['preferences'],
+        ]);
+
+        return response()->json(['message' => 'Préférences mises à jour']);
+    }
 }

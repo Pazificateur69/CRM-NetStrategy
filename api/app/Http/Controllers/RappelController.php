@@ -21,7 +21,7 @@ class RappelController extends Controller
         if (!$user->hasRole('admin')) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                    ->orWhereHas('assignedUsers', fn($subQ) => $subQ->where('user_id', $user->id));
+                    ->orWhereHas('assignedUsers', fn($subQ) => $subQ->where('users.id', $user->id));
             });
         }
 
@@ -58,11 +58,34 @@ class RappelController extends Controller
         if (!$user->hasRole('admin')) {
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                    ->orWhereHas('assignedUsers', fn($subQ) => $subQ->where('user_id', $user->id));
+                    ->orWhereHas('assignedUsers', fn($subQ) => $subQ->where('users.id', $user->id));
             });
         }
 
         $rappels = $query->get();
+
+        return RappelResource::collection($rappels)->response();
+    }
+
+    /**
+     * Récupérer les rappels d'un utilisateur spécifique (Admin)
+     */
+    public function getByUser(Request $request, $userId)
+    {
+        $user = $request->user();
+
+        if (!$user->hasRole('admin')) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
+        $rappels = Rappel::with(['user.roles', 'rappelable', 'assignedUsers.roles'])
+            ->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhereHas('assignedUsers', fn($subQ) => $subQ->where('users.id', $userId));
+            })
+            ->orderBy('ordre', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
 
         return RappelResource::collection($rappels)->response();
     }

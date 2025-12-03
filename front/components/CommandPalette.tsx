@@ -7,7 +7,7 @@ import api from '@/services/api';
 
 interface SearchResult {
     id: number | string;
-    type: 'client' | 'prospect' | 'user' | 'ask-ai' | 'action';
+    type: 'client' | 'prospect' | 'project' | 'user' | 'ask-ai' | 'action';
     nom?: string;
     name?: string; // for user
     entreprise?: string; // for client
@@ -181,13 +181,15 @@ export default function CommandPalette() {
                                 >
                                     <div className={`p-2 rounded-lg ${result.type === 'client' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
                                         result.type === 'prospect' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                            result.type === 'action' ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' :
-                                                'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+                                            result.type === 'project' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
+                                                result.type === 'action' ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' :
+                                                    'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
                                         }`}>
                                         {result.icon ? <result.icon className="w-5 h-5" /> : (
                                             <>
                                                 {result.type === 'client' && <Building2 className="w-5 h-5" />}
                                                 {result.type === 'prospect' && <Briefcase className="w-5 h-5" />}
+                                                {result.type === 'project' && <LayoutGrid className="w-5 h-5" />}
                                                 {result.type === 'user' && <User className="w-5 h-5" />}
                                                 {result.type === 'ask-ai' && <Sparkles className="w-5 h-5" />}
                                             </>

@@ -75,6 +75,15 @@ class AuthController extends Controller
 
         $token = $user->createToken('api_token', ['*'])->plainTextToken;
 
+        // Log login history
+        \App\Models\LoginHistory::create([
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'status' => 'success',
+            'details' => ['method' => 'password']
+        ]);
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
@@ -120,6 +129,15 @@ class AuthController extends Controller
         // 🔥 Brûler le token temporaire et émettre le vrai token
         $user->currentAccessToken()->delete();
         $token = $user->createToken('api_token', ['*'])->plainTextToken;
+
+        // Log login history
+        \App\Models\LoginHistory::create([
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'status' => 'success',
+            'details' => ['method' => '2fa']
+        ]);
 
         return response()->json([
             'access_token' => $token,

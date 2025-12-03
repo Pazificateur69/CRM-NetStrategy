@@ -12,7 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
@@ -24,6 +24,9 @@ class Kernel extends ConsoleKernel
     {
         // 🔁 Envoi automatique des rappels chaque jour à 8h du matin
         $schedule->command('rappels:send-daily')->dailyAt('08:00');
+
+        // 📧 Résumé quotidien à 18h
+        $schedule->command('crm:daily-summary')->dailyAt('18:00');
 
         // Exemple : sauvegarde auto chaque nuit
         // $schedule->command('backup:run')->dailyAt('02:00');

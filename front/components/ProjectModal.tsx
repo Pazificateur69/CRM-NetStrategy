@@ -77,7 +77,8 @@ export default function ProjectModal({ open, onClose, onSubmit, project, clients
         client_id: '',
         user_id: '',
         budget: '',
-        progress: 0
+        progress: 0,
+        template: ''
     });
 
     useEffect(() => {
@@ -91,7 +92,8 @@ export default function ProjectModal({ open, onClose, onSubmit, project, clients
                 client_id: project.client_id?.toString() || '',
                 user_id: project.user_id?.toString() || '',
                 budget: project.budget?.toString() || '',
-                progress: project.progress || 0
+                progress: project.progress || 0,
+                template: project.template || ''
             });
         } else {
             setFormData({
@@ -103,7 +105,8 @@ export default function ProjectModal({ open, onClose, onSubmit, project, clients
                 client_id: '',
                 user_id: '',
                 budget: '',
-                progress: 0
+                progress: 0,
+                template: ''
             });
         }
     }, [project, open]);
@@ -177,6 +180,25 @@ export default function ProjectModal({ open, onClose, onSubmit, project, clients
                                 required
                                 placeholder="Ex: Refonte site web..."
                             />
+
+                            {!project && (
+                                <div className="group">
+                                    <label className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-2">
+                                        <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
+                                        Modèle de projet
+                                    </label>
+                                    <select
+                                        value={formData.template || ''}
+                                        onChange={e => setFormData({ ...formData, template: e.target.value })}
+                                        className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white dark:bg-slate-800"
+                                    >
+                                        <option value="">Vide (Aucun modèle)</option>
+                                        <option value="ecommerce">Site E-commerce (50 tâches)</option>
+                                        <option value="seo">Campagne SEO (12 tâches)</option>
+                                        <option value="onboarding">Onboarding Client (8 tâches)</option>
+                                    </select>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="group">

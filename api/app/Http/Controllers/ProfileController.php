@@ -35,15 +35,56 @@ class ProfileController extends Controller
     public function updatePassword(Request $request)
     {
         $validated = $request->validate([
-            'current_password' => 'required|current_password',
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', 'min:8'],
         ]);
 
         $request->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
 
-        return response()->json(['message' => 'Mot de passe mis à jour avec succès']);
+        return response()->json(['message' => 'Mot de passe mis à jour']);
+    }
+
+    public function deleteAccount(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $user = $request->user();
+
+        // Optional: Anonymize instead of delete if needed
+        // $user->update(['name' => 'Deleted User', 'email' => 'deleted_' . $user->id . '@example.com', ...]);
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'Compte supprimé définitivement']);
+    }
+
+    public function exportData(Request $request)
+    {
+        $user = $request->user();
+
+        // Load relationships for export
+        $user->load(['loginHistory', 'auditLogs']);
+
+        $data = [
+            'profile' => $user->only(['id', 'name', 'email', 'role', 'pole', 'created_at']),
+            'preferences' => [
+                'notifications' => $user->notification_preferences,
+                'dashboard' => $user->dashboard_preferences,
+            ],
+            'security' => [
+                'login_history' => $user->loginHistory,
+                'active_sessions' => $user->tokens,
+            ],
+            'activity' => $user->auditLogs,
+            'export_date' => now()->toIso8601String(),
+        ];
+
+        return response()->json($data);
     }
 
     /**

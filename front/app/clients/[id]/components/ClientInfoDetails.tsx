@@ -14,17 +14,6 @@ interface ClientInfoDetailsProps {
   client: any;
   canEdit: boolean;
   reloadClient: () => Promise<void>;
-  newComment: string;
-  setNewComment: React.Dispatch<React.SetStateAction<string>>;
-  handleAddComment: () => Promise<void>;
-
-  editingCommentId: number | null;
-  commentForm: { texte: string };
-  startEditComment: (comment: any) => void;
-  cancelEditComment: () => void;
-  handleUpdateComment: (id: number, texte: string) => Promise<void>;
-  handleDeleteComment: (id: number) => Promise<void>;
-  savingComment: boolean;
 
   filteredTodos: any[];
   filteredRappels: any[];
@@ -77,17 +66,6 @@ export default function ClientInfoDetails({
   client,
   canEdit,
   reloadClient,
-  newComment,
-  setNewComment,
-  handleAddComment,
-
-  editingCommentId,
-  commentForm,
-  startEditComment,
-  cancelEditComment,
-  handleUpdateComment,
-  handleDeleteComment,
-  savingComment,
 
   filteredTodos,
   filteredRappels,
@@ -703,15 +681,6 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
         </div>
       </section>
 
-      {/* Section Commentaires - Design moderne */}
-      <CommentSection
-        comments={allComments.map((c: any) => ({ ...c, texte: c.texte || '' }))}
-        canEdit={true}
-        onAdd={handleAddComment}
-        onUpdate={handleUpdateComment}
-        onDelete={handleDeleteComment}
-        currentUserName={currentUserName}
-      />
     </div>
   );
 }

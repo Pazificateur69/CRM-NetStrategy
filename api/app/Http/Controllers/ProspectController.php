@@ -67,7 +67,7 @@ class ProspectController extends Controller
             throw UnauthorizedException::forPermissions(['view prospects']);
         }
 
-        $prospect->load(['contenu', 'todos', 'rappels']);
+        $prospect->load(['contenu.user', 'todos', 'rappels']);
 
         return (new ProspectResource($prospect))->response();
     }

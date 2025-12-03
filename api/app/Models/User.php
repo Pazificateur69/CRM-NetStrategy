@@ -19,18 +19,27 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'pole',
         'notification_preferences',
+        'dashboard_preferences',
+        'pole',
+        'google_calendar_token',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_recovery_codes',
+        'two_factor_secret',
+        'google_calendar_token',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
         'notification_preferences' => 'array',
+        'dashboard_preferences' => 'array',
+        'two_factor_confirmed_at' => 'datetime',
+        'google_calendar_token' => 'array',
     ];
 
     /**

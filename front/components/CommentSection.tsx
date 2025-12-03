@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Edit, Trash2, Save, X, Loader2, AtSign } from 'lucide-react';
+import { MessageCircle, Edit, Trash2, Save, X, Loader2, AtSign, Users } from 'lucide-react';
 import api from '@/services/api';
 
 interface Comment {
@@ -12,9 +12,10 @@ interface Comment {
 }
 
 interface UserSuggestion {
-    id: number;
+    id: number | string;
     name: string;
     pole: string;
+    type: 'user' | 'pole';
 }
 
 interface CommentSectionProps {
@@ -144,23 +145,86 @@ export default function CommentSection({
     };
 
     const renderCommentText = (text: string) => {
-        // Updated regex to handle names with spaces if needed, but for now standard @Name
-        // Also handle @Pole
-        return text.split(/(@[\w\s]+)/g).map((part, i) => {
+        // Build regex from known user names to avoid greedy matching
+        // Escape special regex characters in names just in case
+        const escapeRegExp = (string: string) => {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+
+        const knownNames = suggestions.map(u => escapeRegExp(u.name));
+        // Also add current user name if known and not in list
+        if (currentUserName && !suggestions.find(u => u.name === currentUserName)) {
+            knownNames.push(escapeRegExp(currentUserName));
+        }
+
+        // If no known names, fallback to simple word matching (safer than greedy space matching)
+        if (knownNames.length === 0) {
+            return text.split(/(@[a-zA-Z0-9_]+)/g).map((part, i) => {
+                if (part.startsWith('@')) {
+                    return (
+                        <span key={i} className="font-bold px-1 rounded bg-indigo-50 text-indigo-600">
+                            {part}
+                        </span>
+                    );
+                }
+                return part;
+            });
+        }
+
+        // Sort by length descending to match longest names first (e.g. "Jean Paul" before "Jean")
+        knownNames.sort((a, b) => b.length - a.length);
+
+        const pattern = `(@(?:${knownNames.join('|')}))`;
+        const regex = new RegExp(pattern, 'g');
+
+        // Helper to detect URLs
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+        return text.split(regex).map((part, i) => {
             if (part.startsWith('@')) {
                 const name = part.substring(1).trim();
-                // Check if it looks like a valid mention (matches a user or pole roughly)
-                // For now, just highlight anything starting with @ that isn't just whitespace
-                if (name.length > 0) {
+                const suggestion = suggestions.find(u => u.name === name);
+                const isKnown = suggestion || name === currentUserName;
+
+                if (isKnown) {
                     const isMe = currentUserName && name === currentUserName;
+                    const isPole = suggestion?.type === 'pole';
+
+                    let className = "font-bold px-1 rounded ";
+                    if (isMe) {
+                        className += "bg-yellow-100 text-yellow-800";
+                    } else if (isPole) {
+                        className += "bg-orange-100 text-orange-800";
+                    } else {
+                        className += "bg-indigo-50 text-indigo-600";
+                    }
+
                     return (
-                        <span key={i} className={`font-bold px-1 rounded ${isMe ? 'bg-yellow-100 text-yellow-800' : 'bg-indigo-50 text-indigo-600'}`}>
+                        <span key={i} className={className}>
                             {part}
                         </span>
                     );
                 }
             }
-            return part;
+
+            // Check for URLs in non-mention parts
+            return part.split(urlRegex).map((subPart, j) => {
+                if (subPart.match(urlRegex)) {
+                    return (
+                        <a
+                            key={`${i}-${j}`}
+                            href={subPart}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline break-all"
+                            onClick={(e) => e.stopPropagation()} // Prevent bubbling if needed
+                        >
+                            {subPart}
+                        </a>
+                    );
+                }
+                return subPart;
+            });
         });
     };
 
@@ -203,8 +267,11 @@ export default function CommentSection({
                                     onClick={() => insertMention(user.name)}
                                     className="w-full text-left px-4 py-2 hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                                 >
-                                    <div className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold">
-                                        {user.name.charAt(0).toUpperCase()}
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${user.type === 'pole'
+                                        ? 'bg-orange-100 text-orange-600'
+                                        : 'bg-indigo-100 text-indigo-600'
+                                        }`}>
+                                        {user.type === 'pole' ? <Users className="w-3 h-3" /> : user.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-gray-800">{user.name}</p>

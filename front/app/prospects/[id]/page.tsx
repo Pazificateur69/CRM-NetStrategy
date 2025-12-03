@@ -87,6 +87,7 @@ export default function ProspectDetailPage() {
     const [activeTab, setActiveTab] = useState('informations');
     const [userRole, setUserRole] = useState<string>('');
     const [currentUserId, setCurrentUserId] = useState<number | undefined>(undefined);
+    const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined);
 
     // Modals State
     const [showEditModal, setShowEditModal] = useState(false);
@@ -131,6 +132,7 @@ export default function ProspectDetailPage() {
             setProspect(prospectData);
             setUserRole(userData.data.roles?.[0] || '');
             setCurrentUserId(userData.data.id);
+            setCurrentUserName(userData.data.name);
         } catch (error) {
             console.error("Erreur de chargement de la fiche prospect.", error);
         } finally {
@@ -395,11 +397,7 @@ export default function ProspectDetailPage() {
                             <div className="flex items-center gap-4 mb-2">
                                 <h1 className="text-4xl font-heading font-bold text-foreground tracking-tight">{prospect.societe}</h1>
                                 {getStatusBadge(prospect.statut)}
-                                {prospect.score !== undefined && (
-                                    <div className={`px-3 py-1 rounded-full text-sm font-bold border ${prospect.score >= 70 ? 'bg-green-100 text-green-700 border-green-200' : prospect.score >= 30 ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
-                                        Score: {prospect.score}/100
-                                    </div>
-                                )}
+
                             </div>
 
                             <div className="flex flex-wrap items-center gap-6 text-muted-foreground mt-4">
@@ -442,7 +440,7 @@ export default function ProspectDetailPage() {
                                     <DetailItem label="Contact Principal" value={prospect.contact} icon={User} />
                                     <DetailItem label="Email" value={prospect.emails?.[0] ? <a href={`mailto:${prospect.emails[0]}`} className="text-purple-600 hover:underline">{prospect.emails[0]}</a> : null} icon={Mail} />
                                     <DetailItem label="Téléphone" value={prospect.telephones?.[0]} icon={Phone} />
-                                    <DetailItem label="Site Web" value={prospect.site_web ? <a href={prospect.site_web} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">{prospect.site_web}</a> : null} icon={Globe} />
+                                    <DetailItem label="Site Web" value={prospect.site_web ? <a href={prospect.site_web.startsWith('http') ? prospect.site_web : `https://${prospect.site_web}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">{prospect.site_web}</a> : null} icon={Globe} />
                                     <DetailItem label="Adresse" value={prospect.adresse} icon={MapPin} />
                                     <DetailItem label="Ville" value={prospect.ville} icon={MapPin} />
                                     <DetailItem label="Code Postal" value={prospect.code_postal} icon={Hash} />
@@ -475,19 +473,7 @@ export default function ProspectDetailPage() {
                                 </div>
                             </div>
 
-                            {prospect.score_details && prospect.score_details.length > 0 && (
-                                <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-                                    <h3 className="text-lg font-bold mb-4 text-foreground">Détails du Score</h3>
-                                    <ul className="space-y-2">
-                                        {prospect.score_details.map((detail, index) => (
-                                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                                <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                                                <span>{detail}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
+
                         </div>
                     </div>
                 )}
@@ -554,7 +540,7 @@ export default function ProspectDetailPage() {
                             await deleteComment(id);
                             await fetchProspect();
                         }}
-                        currentUserName={userRole === 'admin' ? 'Admin' : undefined} // TODO: Get real user name
+                        currentUserName={currentUserName}
                     />
                 </div>
             </div>
