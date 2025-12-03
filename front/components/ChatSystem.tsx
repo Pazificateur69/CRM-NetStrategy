@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, User as UserIcon, Minimize2, Maximize2, Search, Check, CheckCheck, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, User as UserIcon, Minimize2, Maximize2, Search, Check, CheckCheck, Loader2, Image as ImageIcon, Smile } from 'lucide-react';
 import api from '@/services/api';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 interface User {
     id: number;
@@ -18,6 +19,7 @@ interface Message {
     sender_id: number;
     receiver_id: number;
     content: string;
+    image_url?: string | null;
     created_at: string;
     read_at?: string | null;
     pending?: boolean; // For optimistic updates
@@ -33,15 +35,30 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoadingContacts, setIsLoadingContacts] = useState(true);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { theme } = useTheme();
+
+    // Refs for deep comparison to prevent flickering
+    const contactsRef = useRef<User[]>([]);
+    const messagesRef = useRef<Message[]>([]);
+
+    // Helper for deep comparison
+    const isDeepEqual = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
 
     // Poll contacts list every 5s
     useEffect(() => {
         const fetchContacts = async () => {
             try {
                 const res = await api.get('/messages/contacts');
-                setContacts(res.data);
+                if (!isDeepEqual(res.data, contactsRef.current)) {
+                    setContacts(res.data);
+                    contactsRef.current = res.data;
+                }
                 setIsLoadingContacts(false);
             } catch (error) {
                 console.error("Error fetching contacts", error);
@@ -59,16 +76,21 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
 
         const fetchMessages = async () => {
             try {
-                const res = await api.get(`/messages/${selectedUser.id}`);
-                // Merge with pending messages to avoid flickering
-                setMessages(prev => {
-                    const pending = prev.filter(m => m.pending);
-                    // Filter out pending messages that are now in the server response (by content match as a heuristic, or just keep pending until confirmed)
-                    // Ideally we'd match by a temp ID, but for now we'll just replace the whole list 
-                    // and re-append pending ones if they aren't in the response yet.
-                    // A simple approach: Just use server data. Optimistic updates are short-lived.
-                    return res.data;
-                });
+                const res = await api.get(`/ messages / ${selectedUser.id} `);
+
+                // Merge logic: keep pending messages, update confirmed ones
+                // Simple check: if server data is different from what we have (excluding pending), update.
+                // We compare the server response with the *confirmed* messages we have.
+                const currentConfirmed = messagesRef.current.filter(m => !m.pending);
+
+                if (!isDeepEqual(res.data, currentConfirmed)) {
+                    setMessages(prev => {
+                        const pending = prev.filter(m => m.pending);
+                        const newMessages = [...res.data, ...pending];
+                        messagesRef.current = newMessages; // Update ref
+                        return newMessages;
+                    });
+                }
                 setIsLoadingMessages(false);
             } catch (error) {
                 console.error("Error fetching messages", error);
@@ -84,11 +106,11 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
     // Scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, selectedUser]);
+    }, [messages, selectedUser, imagePreview]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !selectedUser) return;
+        if ((!newMessage.trim() && !selectedImage) || !selectedUser) return;
 
         const tempId = Date.now();
         const tempMessage: Message = {
@@ -96,29 +118,63 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
             sender_id: currentUserId,
             receiver_id: selectedUser.id,
             content: newMessage,
+            image_url: imagePreview,
             created_at: new Date().toISOString(),
             read_at: null,
             pending: true
         };
 
         // Optimistic Update
-        setMessages(prev => [...prev, tempMessage]);
+        setMessages(prev => {
+            const updated = [...prev, tempMessage];
+            messagesRef.current = updated;
+            return updated;
+        });
+
+        const contentToSend = newMessage;
+        const imageToSend = selectedImage;
+
+        // Reset inputs immediately
         setNewMessage('');
+        setSelectedImage(null);
+        setImagePreview(null);
+        setShowEmojiPicker(false);
 
         try {
-            await api.post('/messages', {
-                receiver_id: selectedUser.id,
-                content: tempMessage.content
+            const formData = new FormData();
+            formData.append('receiver_id', selectedUser.id.toString());
+            if (contentToSend) formData.append('content', contentToSend);
+            if (imageToSend) formData.append('image', imageToSend);
+
+            await api.post('/messages', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
-            // The polling will pick up the real message shortly. 
-            // We could replace the temp message with the real one here if the API returned it, 
-            // but polling handles consistency.
+            // Polling will sync the real message
         } catch (error) {
             console.error("Error sending message", error);
             toast.error("Échec de l'envoi du message");
-            // Remove the pending message on failure
-            setMessages(prev => prev.filter(m => m.id !== tempId));
-            setNewMessage(tempMessage.content); // Restore content
+            setMessages(prev => {
+                const updated = prev.filter(m => m.id !== tempId);
+                messagesRef.current = updated;
+                return updated;
+            });
+            setNewMessage(contentToSend); // Restore content
+        }
+    };
+
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error("L'image est trop volumineuse (max 10Mo)");
+                return;
+            }
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -154,7 +210,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
     const ChatContent = () => (
         <div className="flex h-full overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-white/10">
             {/* Sidebar (Contacts) */}
-            <div className={`w-full md:w-80 border-r border-slate-200/50 dark:border-slate-700/50 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
+            <div className={`w - full md: w - 80 border - r border - slate - 200 / 50 dark: border - slate - 700 / 50 flex flex - col ${selectedUser ? 'hidden md:flex' : 'flex'} `}>
                 <div className="p-5 border-b border-slate-200/50 dark:border-slate-700/50">
                     <h2 className="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 mb-4">Messagerie</h2>
                     <div className="relative group">
@@ -183,25 +239,25 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                         filteredContacts.map(user => (
                             <motion.div
                                 key={user.id}
-                                layoutId={`contact-${user.id}`}
+                                layoutId={`contact - ${user.id} `}
                                 onClick={() => setSelectedUser(user)}
-                                className={`p-3 rounded-xl cursor-pointer flex items-center gap-3 transition-all group ${selectedUser?.id === user.id
-                                    ? 'bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20'
-                                    : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 border border-transparent'
-                                    }`}
+                                className={`p - 3 rounded - xl cursor - pointer flex items - center gap - 3 transition - all group ${selectedUser?.id === user.id
+                                        ? 'bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20'
+                                        : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50 border border-transparent'
+                                    } `}
                             >
                                 <div className="relative">
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0 transition-transform group-hover:scale-105 ${selectedUser?.id === user.id
-                                        ? 'bg-gradient-to-br from-indigo-500 to-violet-600'
-                                        : 'bg-gradient-to-br from-slate-400 to-slate-500'
-                                        }`}>
+                                    <div className={`w - 12 h - 12 rounded - full flex items - center justify - center text - white font - bold text - lg shadow - md shrink - 0 transition - transform group - hover: scale - 105 ${selectedUser?.id === user.id
+                                            ? 'bg-gradient-to-br from-indigo-500 to-violet-600'
+                                            : 'bg-gradient-to-br from-slate-400 to-slate-500'
+                                        } `}>
                                         {user.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full ring-1 ring-emerald-500/20"></div>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-1">
-                                        <h4 className={`font-semibold truncate ${selectedUser?.id === user.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
+                                        <h4 className={`font - semibold truncate ${selectedUser?.id === user.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'} `}>
                                             {user.name}
                                         </h4>
                                         {user.last_message_time && (
@@ -210,8 +266,8 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                             </span>
                                         )}
                                     </div>
-                                    <p className={`text-sm truncate ${user.unread_count > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
-                                        {user.last_message || 'Aucun message'}
+                                    <p className={`text - sm truncate ${user.unread_count > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'} `}>
+                                        {user.last_message || (user.unread_count > 0 ? 'Nouvelle image' : 'Aucun message')}
                                     </p>
                                 </div>
                                 {user.unread_count > 0 && (
@@ -226,7 +282,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
             </div>
 
             {/* Chat Area */}
-            <div className={`flex-1 flex flex-col bg-slate-50/30 dark:bg-slate-900/30 ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
+            <div className={`flex - 1 flex flex - col bg - slate - 50 / 30 dark: bg - slate - 900 / 30 ${!selectedUser ? 'hidden md:flex' : 'flex'} `}>
                 <AnimatePresence mode="wait">
                     {selectedUser ? (
                         <motion.div
@@ -280,24 +336,38 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                             <motion.div
                                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isLastInGroup ? 'mb-4' : 'mb-1'}`}
+                                                className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isLastInGroup ? 'mb-4' : 'mb-1'} `}
                                             >
-                                                <div className={`max-w-[75%] group relative flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                                    <div className={`px-4 py-2.5 text-sm shadow-sm backdrop-blur-sm relative transition-all duration-200 hover:shadow-md ${isMe
+                                                <div className={`max - w - [75 %] group relative flex flex - col ${isMe ? 'items-end' : 'items-start'} `}>
+                                                    <div className={`px - 4 py - 2.5 text - sm shadow - sm backdrop - blur - sm relative transition - all duration - 200 hover: shadow - md ${isMe
                                                             ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white'
                                                             : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                                                         } ${isFirstInGroup && isLastInGroup ? 'rounded-2xl' :
                                                             isFirstInGroup ? (isMe ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-bl-md') :
                                                                 isLastInGroup ? (isMe ? 'rounded-2xl rounded-tr-md' : 'rounded-2xl rounded-tl-md') :
                                                                     (isMe ? 'rounded-l-2xl rounded-r-md' : 'rounded-r-2xl rounded-l-md')
-                                                        }`}>
-                                                        {msg.content}
-                                                        {msg.pending && (
-                                                            <span className="absolute bottom-2 right-2">
-                                                                <Loader2 className="w-3 h-3 animate-spin text-white/70" />
-                                                            </span>
+                                                        } `}>
+
+                                                        {msg.image_url && (
+                                                            <div className="mb-2 rounded-lg overflow-hidden max-w-xs">
+                                                                <img
+                                                                    src={msg.image_url.startsWith('data:') ? msg.image_url : `${process.env.NEXT_PUBLIC_API_URL}/${msg.image_url}`}
+                                                                    alt="Shared image"
+                                                                    className="w-full h-auto object-cover"
+                                                                />
+                                                            </div >
                                                         )}
-                                                    </div>
+
+                                                        {msg.content && <p>{msg.content}</p>}
+
+                                                        {
+                                                            msg.pending && (
+                                                                <span className="absolute bottom-2 right-2">
+                                                                    <Loader2 className="w-3 h-3 animate-spin text-white/70" />
+                                                                </span>
+                                                            )
+                                                        }
+                                                    </div >
                                                     {isLastInGroup && (
                                                         <div className={`flex items-center gap-1 mt-1 text-[10px] font-medium ${isMe ? 'text-slate-400' : 'text-slate-400'} opacity-0 group-hover:opacity-100 transition-opacity px-1`}>
                                                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -306,37 +376,92 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                                             )}
                                                         </div>
                                                     )}
-                                                </div>
-                                            </motion.div>
-                                        </React.Fragment>
+                                                </div >
+                                            </motion.div >
+                                        </React.Fragment >
                                     );
                                 })}
                                 <div ref={messagesEndRef} />
-                            </div>
+                            </div >
 
                             {/* Input Area */}
-                            <form onSubmit={handleSendMessage} className="p-4 bg-white/50 dark:bg-slate-900/50 border-t border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md">
-                                <div className="flex gap-3 items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                            < div className="p-4 bg-white/50 dark:bg-slate-900/50 border-t border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md relative" >
+                                {imagePreview && (
+                                    <div className="absolute bottom-full left-4 mb-2 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 flex items-start gap-2">
+                                        <img src={imagePreview} alt="Preview" className="h-20 w-auto rounded-lg object-cover" />
+                                        <button onClick={() => { setImagePreview(null); setSelectedImage(null); }} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <AnimatePresence>
+                                    {showEmojiPicker && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 20 }}
+                                            className="absolute bottom-full right-4 mb-2 z-20"
+                                        >
+                                            <EmojiPicker
+                                                theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                                                onEmojiClick={(emojiData) => setNewMessage(prev => prev + emojiData.emoji)}
+                                            />
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                <form onSubmit={handleSendMessage} className="flex gap-3 items-end bg-white dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors"
+                                    >
+                                        <Smile className="w-5 h-5" />
+                                    </button>
+
                                     <input
-                                        type="text"
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleImageSelect}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors"
+                                    >
+                                        <ImageIcon className="w-5 h-5" />
+                                    </button>
+
+                                    <textarea
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSendMessage(e);
+                                            }
+                                        }}
                                         placeholder="Écrivez votre message..."
-                                        className="flex-1 bg-transparent border-none px-4 py-2 text-sm focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400"
-                                        autoFocus
+                                        className="flex-1 bg-transparent border-none px-2 py-2 text-sm focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 resize-none max-h-32 custom-scrollbar"
+                                        rows={1}
+                                        style={{ minHeight: '40px' }}
                                     />
+
                                     <motion.button
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                         type="submit"
-                                        disabled={!newMessage.trim()}
-                                        className="p-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 disabled:shadow-none transition-all"
+                                        disabled={!newMessage.trim() && !selectedImage}
+                                        className="p-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 disabled:shadow-none transition-all mb-0.5"
                                     >
                                         <Send className="w-5 h-5" />
                                     </motion.button>
-                                </div>
-                            </form>
-                        </motion.div>
+                                </form>
+                            </div >
+                        </motion.div >
                     ) : (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -350,9 +475,9 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                             <p className="max-w-xs text-slate-500">Sélectionnez un contact pour démarrer une conversation.</p>
                         </motion.div>
                     )}
-                </AnimatePresence>
-            </div>
-        </div>
+                </AnimatePresence >
+            </div >
+        </div >
     );
 
     // FULL PAGE MODE LAYOUT
@@ -416,6 +541,15 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                                         ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-tr-none'
                                                         : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none'
                                                         }`}>
+                                                        {msg.image_url && (
+                                                            <div className="mb-2 rounded-lg overflow-hidden">
+                                                                <img
+                                                                    src={msg.image_url.startsWith('data:') ? msg.image_url : `${process.env.NEXT_PUBLIC_API_URL}/${msg.image_url}`}
+                                                                    alt="Shared image"
+                                                                    className="w-full h-auto object-cover"
+                                                                />
+                                                            </div>
+                                                        )}
                                                         {msg.content}
                                                         <div className={`text-[10px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-indigo-100' : 'text-slate-400'}`}>
                                                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -429,7 +563,21 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                         })}
                                         <div ref={messagesEndRef} />
                                     </div>
-                                    <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex gap-2">
+                                    <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex gap-2 items-center">
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageSelect}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                        >
+                                            <ImageIcon className="w-4 h-4" />
+                                        </button>
                                         <input
                                             type="text"
                                             value={newMessage}
@@ -437,7 +585,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                             placeholder="Message..."
                                             className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
                                         />
-                                        <button type="submit" disabled={!newMessage.trim()} className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-lg shadow-indigo-500/20">
+                                        <button type="submit" disabled={!newMessage.trim() && !selectedImage} className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-lg shadow-indigo-500/20">
                                             <Send className="w-4 h-4" />
                                         </button>
                                     </form>
@@ -468,7 +616,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                                     )}
                                                 </div>
                                                 <p className={`text-xs truncate ${user.unread_count > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
-                                                    {user.last_message || 'Aucun message'}
+                                                    {user.last_message || (user.unread_count > 0 ? 'Nouvelle image' : 'Aucun message')}
                                                 </p>
                                             </div>
                                             {user.unread_count > 0 && (

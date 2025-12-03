@@ -38,13 +38,27 @@ class MessageController extends Controller
     {
         $validated = $request->validate([
             'receiver_id' => 'required|exists:users,id',
-            'content' => 'required|string',
+            'content' => 'nullable|string',
+            'image' => 'nullable|image|max:10240', // Max 10MB
         ]);
+
+        if (!$request->has('content') && !$request->hasFile('image')) {
+            return response()->json(['error' => 'Message content or image is required'], 422);
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('chat_images'), $filename);
+            $imagePath = 'chat_images/' . $filename;
+        }
 
         $message = Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $validated['receiver_id'],
-            'content' => $validated['content'],
+            'content' => $validated['content'] ?? '',
+            'image_url' => $imagePath,
         ]);
 
         return response()->json($message, 201);
