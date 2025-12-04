@@ -256,10 +256,54 @@ export default function ProspectsIndexPage() {
                                     <div className="col-span-1 text-right">Action</div>
                                 </div>
 
-                                {/* Liste */}
-                                <div>
+                                {/* Liste (Desktop) */}
+                                <div className="hidden lg:block">
                                     {filteredProspects.map((prospect) => (
                                         <ProspectRow key={prospect.id} prospect={prospect} />
+                                    ))}
+                                </div>
+
+                                {/* Mobile Cards View */}
+                                <div className="lg:hidden grid grid-cols-1 gap-4 p-4">
+                                    {filteredProspects.map((prospect) => (
+                                        <Link
+                                            key={prospect.id}
+                                            href={`/prospects/${prospect.id}`}
+                                            className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col gap-3 active:scale-[0.98] transition-transform"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-lg">
+                                                        {prospect.societe.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-foreground">{prospect.societe}</h3>
+                                                        <p className="text-xs text-muted-foreground">{prospect.contact || 'Contact non spécifié'}</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <Mail className="w-4 h-4" />
+                                                    <span className="truncate max-w-[150px]">{prospect.emails?.[0] || '—'}</span>
+                                                </div>
+                                                {(() => {
+                                                    switch (prospect.statut) {
+                                                        case 'converti':
+                                                            return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">Converti</span>;
+                                                        case 'relance':
+                                                            return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20">Relance</span>;
+                                                        case 'en_attente':
+                                                            return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">En attente</span>;
+                                                        case 'perdu':
+                                                            return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">Perdu</span>;
+                                                        default:
+                                                            return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">{prospect.statut}</span>;
+                                                    }
+                                                })()}
+                                            </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </div>

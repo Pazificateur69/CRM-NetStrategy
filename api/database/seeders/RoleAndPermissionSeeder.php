@@ -45,37 +45,41 @@ class RoleAndPermissionSeeder extends Seeder
 
         $roleSocial = Role::firstOrCreate(['name' => 'reseaux_sociaux']);
         $roleSocial->syncPermissions(['view clients', 'access social media']);
-        
+
         $roleComptable = Role::firstOrCreate(['name' => 'comptabilite']);
         $roleComptable->syncPermissions(['view clients', 'access comptabilite']);
 
+        // Role par défaut pour les nouveaux inscrits
+        $roleUser = Role::firstOrCreate(['name' => 'user']);
+        $roleUser->syncPermissions(['view clients', 'view prospects']);
+
         // 3. Assignation aux utilisateurs par défaut 
-        
+
         // Admin par défaut (assurez-vous qu'il a le champ 'role' dans la DB)
         $adminUser = User::where('email', 'admin@test.com')->first();
         if ($adminUser) {
-            $adminUser->syncRoles('admin'); 
+            $adminUser->syncRoles('admin');
         } else {
-             User::updateOrCreate(
+            User::updateOrCreate(
                 ['email' => 'admin@test.com'],
                 ['name' => 'Admin', 'password' => Hash::make('password123'), 'role' => 'admin']
             )->syncRoles('admin');
         }
-        
+
         // Louise (Commerciale)
         $louise = User::updateOrCreate(['email' => 'louise@test.com'], ['name' => 'Louise', 'password' => Hash::make('password123'), 'role' => 'com']);
-        $louise->syncRoles('com'); 
+        $louise->syncRoles('com');
 
         // Cherif (SEO)
         $cherif = User::updateOrCreate(['email' => 'cherif@test.com'], ['name' => 'Cherif', 'password' => Hash::make('password123'), 'role' => 'dev']);
-        $cherif->syncRoles('seo'); 
+        $cherif->syncRoles('seo');
 
         // Apo (Social Media)
         $apo = User::updateOrCreate(['email' => 'apo@test.com'], ['name' => 'Apo', 'password' => Hash::make('password123'), 'role' => 'reseaux_sociaux']);
-        $apo->syncRoles('reseaux_sociaux'); 
+        $apo->syncRoles('reseaux_sociaux');
 
         // Utilisateur Comptabilité
         $compta = User::updateOrCreate(['email' => 'compta@test.com'], ['name' => 'Compta', 'password' => Hash::make('password123'), 'role' => 'comptabilite']);
-        $compta->syncRoles('comptabilite'); 
+        $compta->syncRoles('comptabilite');
     }
 }

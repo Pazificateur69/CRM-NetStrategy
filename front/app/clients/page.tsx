@@ -213,10 +213,44 @@ export default function ClientsIndexPage() {
                                 <div className="col-span-1 text-right">Action</div>
                             </div>
 
-                            {/* Liste */}
-                            <div>
+                            {/* Liste (Desktop) */}
+                            <div className="hidden lg:block">
                                 {filteredClients.map((client) => (
                                     <ClientRow key={client.id} client={client} />
+                                ))}
+                            </div>
+
+                            {/* Mobile Cards View */}
+                            <div className="lg:hidden grid grid-cols-1 gap-4 p-4">
+                                {filteredClients.map((client) => (
+                                    <Link
+                                        key={client.id}
+                                        href={`/clients/${client.id}`}
+                                        className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col gap-3 active:scale-[0.98] transition-transform"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                                                    {client.societe.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-foreground">{client.societe}</h3>
+                                                    <p className="text-xs text-muted-foreground">{client.gerant || 'Gérant non spécifié'}</p>
+                                                </div>
+                                            </div>
+                                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Mail className="w-4 h-4" />
+                                            <span className="truncate">{client.emails[0] || '—'}</span>
+                                        </div>
+                                        {client.date_contrat && (
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg self-start">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                <span>Contrat: {new Date(client.date_contrat).toLocaleDateString('fr-FR')}</span>
+                                            </div>
+                                        )}
+                                    </Link>
                                 ))}
                             </div>
                         </>

@@ -41,6 +41,12 @@ class AuthController extends Controller
             'pole' => $validated['pole'] ?? null,
         ]);
 
+        // Assign Spatie Role
+        $role = $validated['role'] ?? 'user';
+        if (method_exists($user, 'assignRole')) {
+            $user->assignRole($role);
+        }
+
         return response()->json([
             'message' => 'Utilisateur créé avec succès',
             'user' => $user,

@@ -34,6 +34,7 @@ import NotificationCenter from '@/components/NotificationCenter';
 import ChatSystem from '@/components/ChatSystem';
 import VideoConfModal from '@/components/VideoConfModal';
 import { Video } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -111,71 +112,82 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-transparent font-sans text-foreground transition-colors duration-300">
       {/* --- SIDEBAR --- */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-card/70 backdrop-blur-2xl text-card-foreground transition-transform duration-300 ease-in-out shadow-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:relative lg:translate-x-0 flex flex-col border-r border-white/10 dark:border-white/5 supports-[backdrop-filter]:bg-card/60`}
-      >
-        {/* Logo Area */}
-        <div className="h-20 flex items-center px-8 border-b border-border bg-card/30 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 ring-1 ring-white/20">
-              <span className="font-bold text-white text-lg">N</span>
-            </div>
-            <span className="font-heading font-bold text-xl tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-              NetStrategy
-            </span>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
-          <div className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Principal
-          </div>
-          <NavLink href="/dashboard" icon={<LayoutDashboard />} label="Tableau de bord" active={pathname === '/dashboard'} />
-          <NavLink href="/clients" icon={<Briefcase />} label="Clients" active={pathname.startsWith('/clients')} />
-          <NavLink href="/prospects" icon={<PhoneCall />} label="Prospects" active={pathname.startsWith('/prospects')} />
-          <NavLink href="/projects" icon={<FolderKanban />} label="Projets" active={pathname.startsWith('/projects')} />
-          <NavLink href="/calendar" icon={<CalendarIcon />} label="Calendrier" active={pathname.startsWith('/calendar')} />
-          <NavLink href="/messages" icon={<MessageSquare />} label="Messagerie" active={pathname.startsWith('/messages')} />
-
-          {isAdmin && (
-            <>
-              <div className="px-4 mt-8 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Administration
+      <AnimatePresence mode="wait">
+        {(sidebarOpen || !mounted || window.innerWidth >= 1024) && (
+          <motion.aside
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className={`fixed inset-y-0 left-0 z-50 w-72 bg-card/80 backdrop-blur-2xl text-card-foreground shadow-2xl lg:relative lg:translate-x-0 flex flex-col border-r border-white/10 dark:border-white/5 supports-[backdrop-filter]:bg-card/60`}
+          >
+            {/* Logo Area */}
+            <div className="h-20 flex items-center px-8 border-b border-border bg-card/30 backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 ring-1 ring-white/20">
+                  <span className="font-bold text-white text-lg">N</span>
+                </div>
+                <span className="font-heading font-bold text-xl tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+                  NetStrategy
+                </span>
               </div>
-              <NavLink href="/users" icon={<Users />} label="Utilisateurs" active={pathname.startsWith('/users')} />
-              <NavLink href="/settings" icon={<Settings />} label="Paramètres" active={pathname.startsWith('/settings')} />
-            </>
-          )}
-        </nav>
-
-
-
-        {/* User Profile Bottom */}
-        <div className="p-4 border-t border-border bg-muted/30">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors cursor-pointer group">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md">
-              {userName?.charAt(0).toUpperCase()}
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden ml-auto p-1 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                {userName}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {userEmail}
-              </p>
+
+            {/* Navigation */}
+            <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
+              <div className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Principal
+              </div>
+              <NavLink href="/dashboard" icon={<LayoutDashboard />} label="Tableau de bord" active={pathname === '/dashboard'} />
+              <NavLink href="/clients" icon={<Briefcase />} label="Clients" active={pathname.startsWith('/clients')} />
+              <NavLink href="/prospects" icon={<PhoneCall />} label="Prospects" active={pathname.startsWith('/prospects')} />
+              <NavLink href="/projects" icon={<FolderKanban />} label="Projets" active={pathname.startsWith('/projects')} />
+              <NavLink href="/calendar" icon={<CalendarIcon />} label="Calendrier" active={pathname.startsWith('/calendar')} />
+              <NavLink href="/messages" icon={<MessageSquare />} label="Messagerie" active={pathname.startsWith('/messages')} />
+
+              {isAdmin && (
+                <>
+                  <div className="px-4 mt-8 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Administration
+                  </div>
+                  <NavLink href="/users" icon={<Users />} label="Utilisateurs" active={pathname.startsWith('/users')} />
+                  <NavLink href="/settings" icon={<Settings />} label="Paramètres" active={pathname.startsWith('/settings')} />
+                </>
+              )}
+            </nav>
+
+            {/* User Profile Bottom */}
+            <div className="p-4 border-t border-border bg-muted/30">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:bg-accent transition-colors cursor-pointer group">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md">
+                  {userName?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                    {userName}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {userEmail}
+                  </p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                  title="Déconnexion"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-              title="Déconnexion"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </aside>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       {/* --- MAIN CONTENT --- */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

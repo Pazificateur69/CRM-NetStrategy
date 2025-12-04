@@ -101,4 +101,15 @@ class MessageController extends Controller
 
         return response()->json($users);
     }
+    // Broadcast typing event
+    public function typing(Request $request)
+    {
+        $validated = $request->validate([
+            'receiver_id' => 'required|exists:users,id',
+        ]);
+
+        broadcast(new \App\Events\UserTyping(Auth::id(), $validated['receiver_id']))->toOthers();
+
+        return response()->json(['status' => 'ok']);
+    }
 }
