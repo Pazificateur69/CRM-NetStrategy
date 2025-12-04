@@ -216,6 +216,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/contacts', [App\Http\Controllers\MessageController::class, 'contacts']);
     Route::get('/messages/{userId}', [App\Http\Controllers\MessageController::class, 'index']);
     Route::post('/messages', [App\Http\Controllers\MessageController::class, 'store']);
+    Route::post('/messages/typing', [App\Http\Controllers\MessageController::class, 'typing']);
 
     // ===================================================
     // 🤖 INTELLIGENCE ARTIFICIELLE

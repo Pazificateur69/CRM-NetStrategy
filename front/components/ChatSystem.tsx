@@ -51,20 +51,23 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
 
     const isDeepEqual = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
 
+    const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
+    const [typingUsers, setTypingUsers] = useState<number[]>([]);
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const fetchContacts = async () => {
+        try {
+            const res = await api.get('/messages/contacts');
+            setContacts(res.data);
+            setIsLoadingContacts(false); // Moved here to ensure it's set after initial fetch
+        } catch (error) {
+            console.error("Error fetching contacts", error);
+        }
+    };
+
     useEffect(() => {
-        const fetchContacts = async () => {
-            try {
-                const res = await api.get('/messages/contacts');
-                if (!isDeepEqual(res.data, contactsRef.current)) {
-                    setContacts(res.data);
-                    contactsRef.current = res.data;
-                }
-                setIsLoadingContacts(false);
-            } catch (error) {
-                console.error("Error fetching contacts", error);
-            }
-        };
         fetchContacts();
+        const interval = setInterval(fetchContacts, 10000); // Poll every 10 seconds
 
         const echo = createEcho();
         echo.private(`chat.${currentUserId}`)
@@ -100,19 +103,33 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         fetchMessages();
 
         const echo = createEcho();
+
+        // Presence Channel for Online Status
+        echo.join('online')
+            .here((users: any[]) => {
+                setOnlineUsers(users.map(u => u.id));
+            })
+            .joining((user: any) => {
+                setOnlineUsers(prev => [...prev, user.id]);
+            })
+            .leaving((user: any) => {
+                setOnlineUsers(prev => prev.filter(id => id !== user.id));
+            });
+
+        // Private Channel for Messages & Typing
         echo.private(`chat.${currentUserId}`)
             .listen('MessageSent', (e: any) => {
                 const newMessage = e.message;
-                // Only add if it belongs to the current conversation
-                if (newMessage.sender_id === selectedUser.id || newMessage.receiver_id === selectedUser.id) {
+                if (newMessage.sender_id === selectedUser?.id || newMessage.receiver_id === selectedUser?.id) {
                     setMessages(prev => {
-                        // Avoid duplicates
                         if (prev.some(m => m.id === newMessage.id)) return prev;
                         const updated = [...prev, newMessage];
                         messagesRef.current = updated;
                         return updated;
                     });
                 }
+                // Refresh contacts to update last message
+                fetchContacts();
             })
             .listen('MessageRead', (e: any) => {
                 if (selectedUser && e.receiver_id === selectedUser.id) {
@@ -127,12 +144,32 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                         return updated;
                     });
                 }
+            })
+            .listen('UserTyping', (e: any) => {
+                if (!typingUsers.includes(e.sender_id)) {
+                    setTypingUsers(prev => [...prev, e.sender_id]);
+                }
+
+                // Remove typing status after 3 seconds
+                setTimeout(() => {
+                    setTypingUsers(prev => prev.filter(id => id !== e.sender_id));
+                }, 3000);
             });
 
         return () => {
+            echo.leave('online');
             echo.leave(`chat.${currentUserId}`);
         };
-    }, [selectedUser, currentUserId]);
+    }, [currentUserId, selectedUser]); // Re-run if selectedUser changes to ensure correct message filtering logic (though Echo setup could be optimized)
+
+    const handleTyping = () => {
+        if (selectedUser && !typingTimeoutRef.current) {
+            api.post('/messages/typing', { receiver_id: selectedUser.id });
+            typingTimeoutRef.current = setTimeout(() => {
+                typingTimeoutRef.current = null;
+            }, 2000); // Debounce typing events
+        }
+    };
 
     // Smart Auto-scroll
     useLayoutEffect(() => {
@@ -321,8 +358,13 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                     ←
                                 </button>
                                 <div className="relative">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
-                                        {selectedUser.name.charAt(0).toUpperCase()}
+                                    <div className="relative">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                                            {selectedUser.name.charAt(0)}
+                                        </div>
+                                        {onlineUsers.includes(selectedUser.id) && (
+                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
+                                        )}
                                     </div>
                                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></div>
                                 </div>
@@ -445,30 +487,42 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
 
                                     <TextareaAutosize
                                         minRows={1}
-                                        maxRows={5}
                                         value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onChange={(e) => {
+                                            setNewMessage(e.target.value);
+                                            handleTyping();
+                                        }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
                                                 e.preventDefault();
                                                 handleSendMessage();
                                             }
                                         }}
-                                        placeholder="Écrivez un message..."
-                                        className="flex-1 bg-transparent border-none px-2 py-3 text-[15px] focus:ring-0 text-slate-900 dark:text-white placeholder-slate-400 resize-none"
+                                        placeholder="Écrivez votre message..."
+                                        className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl px-4 py-3 pr-12 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all max-h-32 min-h-[48px]"
                                     />
-
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => handleSendMessage()}
-                                        disabled={!newMessage.trim() && !selectedImage}
-                                        className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-indigo-500/20 mb-0.5 mr-0.5"
-                                    >
-                                        <Send className="w-5 h-5" />
-                                    </motion.button>
+                                    <div className="absolute right-3 top-3 flex items-center gap-2">
+                                        <button
+                                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                            className="text-slate-400 hover:text-yellow-500 transition-colors"
+                                        >
+                                            <Smile className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
+                                <button
+                                    onClick={handleSendMessage}
+                                    disabled={!newMessage.trim() && !selectedImage}
+                                    className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <Send className="w-5 h-5" />
+                                </button>
                             </div>
+                            {selectedUser && typingUsers.includes(selectedUser.id) && (
+                                <div className="text-xs text-slate-500 dark:text-slate-400 italic mt-1 ml-4 animate-pulse">
+                                    {selectedUser.name} est en train d'écrire...
+                                </div>
+                            )}
                         </motion.div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50/30 dark:bg-slate-900/50">
