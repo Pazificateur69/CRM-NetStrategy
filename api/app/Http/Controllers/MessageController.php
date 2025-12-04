@@ -25,10 +25,15 @@ class MessageController extends Controller
             ->get();
 
         // Mark messages as read
-        Message::where('sender_id', $userId)
+        // Mark messages as read
+        $updated = Message::where('sender_id', $userId)
             ->where('receiver_id', $authUserId)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
+
+        if ($updated > 0) {
+            broadcast(new \App\Events\MessageRead($userId, $authUserId, now()))->toOthers();
+        }
 
         return response()->json($messages);
     }
@@ -60,6 +65,8 @@ class MessageController extends Controller
             'content' => $validated['content'] ?? '',
             'image_url' => $imagePath,
         ]);
+
+        broadcast(new \App\Events\MessageSent($message))->toOthers();
 
         return response()->json($message, 201);
     }

@@ -488,13 +488,6 @@ export default function CalendarPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => toast.info("La synchronisation Google/Outlook nécessite une configuration API (Clé API manquante).")}
-                            className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-medium border border-slate-200 dark:border-slate-700 transition-all"
-                        >
-                            <CalendarIcon className="w-4 h-4" />
-                            Sync
-                        </button>
                         <label className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-medium border border-slate-200 dark:border-slate-700 transition-all cursor-pointer">
                             <CalendarIcon className="w-4 h-4" />
                             Importer

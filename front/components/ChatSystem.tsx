@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { MessageSquare, X, Send, Minimize2, Maximize2, Search, Check, CheckCheck, Loader2, Image as ImageIcon, Smile, Paperclip } from 'lucide-react';
 import api from '@/services/api';
@@ -6,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import TextareaAutosize from 'react-textarea-autosize';
+import createEcho from '@/services/echo';
 
 interface User {
     id: number;
@@ -62,9 +65,17 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
             }
         };
         fetchContacts();
-        const interval = setInterval(fetchContacts, 5000);
-        return () => clearInterval(interval);
-    }, []);
+
+        const echo = createEcho();
+        echo.private(`chat.${currentUserId}`)
+            .listen('MessageSent', (e: any) => {
+                fetchContacts(); // Refresh contacts list on new message
+            });
+
+        return () => {
+            echo.leave(`chat.${currentUserId}`);
+        };
+    }, [currentUserId]);
 
     useEffect(() => {
         if (!selectedUser) return;
@@ -87,9 +98,41 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         };
         setIsLoadingMessages(true);
         fetchMessages();
-        const interval = setInterval(fetchMessages, 2000);
-        return () => clearInterval(interval);
-    }, [selectedUser]);
+
+        const echo = createEcho();
+        echo.private(`chat.${currentUserId}`)
+            .listen('MessageSent', (e: any) => {
+                const newMessage = e.message;
+                // Only add if it belongs to the current conversation
+                if (newMessage.sender_id === selectedUser.id || newMessage.receiver_id === selectedUser.id) {
+                    setMessages(prev => {
+                        // Avoid duplicates
+                        if (prev.some(m => m.id === newMessage.id)) return prev;
+                        const updated = [...prev, newMessage];
+                        messagesRef.current = updated;
+                        return updated;
+                    });
+                }
+            })
+            .listen('MessageRead', (e: any) => {
+                if (selectedUser && e.receiver_id === selectedUser.id) {
+                    setMessages(prev => {
+                        const updated = prev.map(msg => {
+                            if (msg.sender_id === currentUserId && !msg.read_at) {
+                                return { ...msg, read_at: e.read_at };
+                            }
+                            return msg;
+                        });
+                        messagesRef.current = updated;
+                        return updated;
+                    });
+                }
+            });
+
+        return () => {
+            echo.leave(`chat.${currentUserId}`);
+        };
+    }, [selectedUser, currentUserId]);
 
     // Smart Auto-scroll
     useLayoutEffect(() => {
@@ -139,8 +182,17 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
             if (contentToSend) formData.append('content', contentToSend);
             if (imageToSend) formData.append('image', imageToSend);
 
-            await api.post('/messages', formData, {
+            const res = await api.post('/messages', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            const confirmedMessage = res.data;
+            setMessages(prev => {
+                const updated = prev.map(m =>
+                    m.id === tempId ? confirmedMessage : m
+                );
+                messagesRef.current = updated;
+                return updated;
             });
         } catch (error) {
             console.error("Error sending message", error);
@@ -175,7 +227,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         user.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const ChatContent = () => (
+    const renderChatContent = () => (
         <div className="flex h-full overflow-hidden bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800">
             {/* Contacts Sidebar */}
             <div className={`w-full md:w-80 border-r border-slate-100 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/50 ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
@@ -212,14 +264,14 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                     key={user.id}
                                     onClick={() => setSelectedUser(user)}
                                     className={`w-full p-3 flex items-center gap-3 rounded-xl transition-all duration-200 group ${selectedUser?.id === user.id
-                                            ? 'bg-white dark:bg-slate-800 shadow-md ring-1 ring-slate-200 dark:ring-slate-700'
-                                            : 'hover:bg-white/60 dark:hover:bg-slate-800/60 hover:shadow-sm'
+                                        ? 'bg-white dark:bg-slate-800 shadow-md ring-1 ring-slate-200 dark:ring-slate-700'
+                                        : 'hover:bg-white/60 dark:hover:bg-slate-800/60 hover:shadow-sm'
                                         }`}
                                 >
                                     <div className="relative shrink-0">
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm transition-transform group-hover:scale-105 ${selectedUser?.id === user.id
-                                                ? 'bg-gradient-to-br from-indigo-500 to-violet-600'
-                                                : 'bg-gradient-to-br from-slate-400 to-slate-500'
+                                            ? 'bg-gradient-to-br from-indigo-500 to-violet-600'
+                                            : 'bg-gradient-to-br from-slate-400 to-slate-500'
                                             }`}>
                                             {user.name.charAt(0).toUpperCase()}
                                         </div>
@@ -299,8 +351,8 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                         >
                                             <div className={`max-w-[70%] group flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                                                 <div className={`px-4 py-3 text-[15px] leading-relaxed shadow-sm transition-all hover:shadow-md ${isMe
-                                                        ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm'
-                                                        : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm'
+                                                    ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm'
+                                                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm'
                                                     }`}>
                                                     {msg.image_url && (
                                                         <div className="mb-3 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
@@ -435,7 +487,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
     );
 
     if (variant === 'full') {
-        return <div className="h-[calc(100vh-120px)]"><ChatContent /></div>;
+        return <div className="h-[calc(100vh-120px)]">{renderChatContent()}</div>;
     }
 
     // Widget Mode
@@ -488,7 +540,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
 
             {!isMinimized && (
                 <div className="h-[calc(100%-64px)]">
-                    <ChatContent />
+                    {renderChatContent()}
                 </div>
             )}
         </motion.div>
