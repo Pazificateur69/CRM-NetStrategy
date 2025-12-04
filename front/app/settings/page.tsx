@@ -755,7 +755,7 @@ export default function SettingsPage() {
                                                     const password = prompt('Veuillez confirmer votre mot de passe pour supprimer le compte :');
                                                     if (password) {
                                                         deleteAccount(password).then(() => {
-                                                            window.location.href = '/login';
+                                                            window.location.href = '/';
                                                         }).catch(() => toast.error('Mot de passe incorrect'));
                                                     }
                                                 }

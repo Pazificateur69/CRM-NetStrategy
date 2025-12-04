@@ -44,8 +44,9 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
         // Rediriger vers login si pas déjà sur la page de login
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+        // Rediriger vers login si pas déjà sur la page de login
+        if (window.location.pathname !== '/') {
+          window.location.href = '/';
         }
       }
     }
