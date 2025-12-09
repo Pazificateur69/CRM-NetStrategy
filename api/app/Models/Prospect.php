@@ -45,4 +45,9 @@ class Prospect extends Model
     {
         return $this->morphMany(ContenuFiche::class, 'contenuable');
     }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
 }

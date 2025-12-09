@@ -23,7 +23,8 @@ import {
   Laptop,
   Calendar as CalendarIcon,
   FolderKanban,
-  MessageSquare
+  MessageSquare,
+  Plus
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Toaster } from '@/components/ui/Toaster';
@@ -270,6 +271,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Communication Suite */}
       {userId && <ChatSystem currentUserId={userId} />}
       <VideoConfModal isOpen={videoModalOpen} onClose={() => setVideoModalOpen(false)} />
+
+      {/* Floating Action Button (Mobile) */}
+      <div className="fixed bottom-6 right-6 lg:hidden z-50">
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+          className="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-500/30 active:scale-95 transition-all"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
     </div>
   );
 }

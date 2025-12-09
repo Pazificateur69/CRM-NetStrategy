@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+import api from '@/services/api';
 
 export interface CrmData {
     clients: {
@@ -50,13 +48,11 @@ export function useCrmData() {
             }
 
             try {
-                const headers = { Authorization: `Bearer ${token}` };
-
-                // Fetch parallel data
+                // Fetch parallel data using the configured API instance
                 const [clientsRes, prospectsRes, todosRes] = await Promise.all([
-                    axios.get(`${API_URL}/clients`, { headers }),
-                    axios.get(`${API_URL}/prospects`, { headers }),
-                    axios.get(`${API_URL}/todos`, { headers }),
+                    api.get('/clients'),
+                    api.get('/prospects'),
+                    api.get('/todos'),
                 ]);
 
                 const clients = clientsRes.data.data || [];

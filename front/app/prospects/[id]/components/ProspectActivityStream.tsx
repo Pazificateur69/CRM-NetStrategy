@@ -31,6 +31,7 @@ interface NewTodoState {
     description: string;
     pole?: string;
     assigned_to?: number | null;
+    priorite: 'basse' | 'moyenne' | 'haute';
 }
 
 interface NewRappelState {
@@ -39,6 +40,7 @@ interface NewRappelState {
     date_rappel: string;
     pole?: string;
     assigned_users?: number[];
+    priorite: 'basse' | 'moyenne' | 'haute';
 }
 
 export interface ProspectActivityStreamProps {
@@ -176,6 +178,24 @@ export default function ProspectActivityStream({
         return badges[statut as keyof typeof badges] || 'bg-slate-50 text-slate-700 border-slate-200';
     };
 
+    const getPriorityBadge = (priorite: string) => {
+        switch (priorite) {
+            case 'haute': return 'bg-rose-50 text-rose-700 border-rose-200';
+            case 'moyenne': return 'bg-amber-50 text-amber-700 border-amber-200';
+            case 'basse': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            default: return 'bg-slate-50 text-slate-700 border-slate-200';
+        }
+    };
+
+    const getPriorityLabel = (priorite: string) => {
+        switch (priorite) {
+            case 'haute': return 'Haute';
+            case 'moyenne': return 'Moyenne';
+            case 'basse': return 'Basse';
+            default: return priorite || 'Moyenne';
+        }
+    };
+
     return (
         <div className="grid lg:grid-cols-2 gap-8">
             {/* ========== TODOS ========== */}
@@ -239,6 +259,18 @@ export default function ProspectActivityStream({
                                                         </select>
                                                     </div>
                                                     <div>
+                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Priorité</label>
+                                                        <select
+                                                            value={todoForm.priorite || 'moyenne'}
+                                                            onChange={(e) => updateTodoForm('priorite', e.target.value)}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-500 focus:ring-0 transition-colors"
+                                                        >
+                                                            <option value="basse">Basse</option>
+                                                            <option value="moyenne">Moyenne</option>
+                                                            <option value="haute">Haute</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-span-2">
                                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Échéance</label>
                                                         <input
                                                             type="date"
@@ -296,6 +328,12 @@ export default function ProspectActivityStream({
                                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusBadge(t.statut)}`}>
                                                             {t.statut?.replace('_', ' ') || 'En cours'}
                                                         </span>
+
+                                                        {t.priorite && (
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getPriorityBadge(t.priorite)}`}>
+                                                                {getPriorityLabel(t.priorite)}
+                                                            </span>
+                                                        )}
 
                                                         {t.pole && (
                                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${POLE_OPTIONS.find(p => p.value === t.pole)?.color || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
@@ -384,64 +422,82 @@ export default function ProspectActivityStream({
                         </div>
                     )}
 
-                    {/* Nouveau Todo Form */}
+                    {/* Nouveau Todo Form - Collapsible */}
                     {canEdit && (
-                        <div className="mt-6 pt-6 border-t border-slate-200">
-                            <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors">
-                                <h4 className="font-bold text-slate-700 text-sm flex items-center gap-2 mb-4">
-                                    <Plus className="w-4 h-4 text-blue-500" />
-                                    Ajouter une nouvelle tâche
-                                </h4>
-
-                                <div className="space-y-4">
-                                    <input
-                                        id="new-todo-input"
-                                        placeholder="Titre de la tâche..."
-                                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-0 transition-colors"
-                                        value={newTodo.titre}
-                                        onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })}
-                                    />
-
-                                    <div className="flex gap-3">
-                                        <textarea
-                                            placeholder="Description (optionnel)..."
-                                            className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-0 transition-colors resize-none"
-                                            rows={1}
-                                            value={newTodo.description}
-                                            onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
-                                        />
-                                        <button
-                                            onClick={handleAddTodoWithValidation}
-                                            disabled={!newTodo.titre}
-                                            className="px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                                        >
-                                            <ArrowRight className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    {isAdmin && (
-                                        <div className="pt-2">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <label className="text-xs font-bold text-slate-500 uppercase">Assignation</label>
-                                                {currentUserId && (
-                                                    <button
-                                                        onClick={handleAutoAssignTodo}
-                                                        className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
-                                                    >
-                                                        M'attribuer
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <UserSelector
-                                                value={newTodo.assigned_to || undefined}
-                                                onChange={(value) => setNewTodo({ ...newTodo, assigned_to: value as number })}
-                                                label=""
-                                                placeholder="Choisir un responsable..."
-                                                pole={newTodo.pole || undefined}
-                                            />
+                        <div className="mt-4">
+                            <div className="group border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl transition-all hover:border-blue-400">
+                                <details className="group/details">
+                                    <summary className="flex items-center gap-3 p-4 cursor-pointer list-none text-slate-600 dark:text-slate-400 font-bold text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                        <div className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                                            <Plus className="w-4 h-4" />
                                         </div>
-                                    )}
-                                </div>
+                                        <span>Ajouter une nouvelle tâche</span>
+                                    </summary>
+
+                                    <div className="px-4 pb-4 space-y-4 animate-in slide-in-from-top-2 fade-in duration-200">
+                                        <input
+                                            id="new-todo-input"
+                                            placeholder="Titre de la tâche..."
+                                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none font-medium"
+                                            value={newTodo.titre}
+                                            onChange={(e) => setNewTodo({ ...newTodo, titre: e.target.value })}
+                                        />
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <select
+                                                    value={newTodo.priorite || 'moyenne'}
+                                                    onChange={(e) => setNewTodo({ ...newTodo, priorite: e.target.value as any })}
+                                                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none font-medium"
+                                                >
+                                                    <option value="basse">Prio. Basse</option>
+                                                    <option value="moyenne">Prio. Moyenne</option>
+                                                    <option value="haute">Prio. Haute</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <textarea
+                                                placeholder="Description (optionnel)..."
+                                                className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none resize-none font-medium text-slate-600"
+                                                rows={1}
+                                                value={newTodo.description}
+                                                onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+                                            />
+                                            <button
+                                                onClick={handleAddTodoWithValidation}
+                                                disabled={!newTodo.titre}
+                                                className="px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                                            >
+                                                <ArrowRight className="w-5 h-5" />
+                                            </button>
+                                        </div>
+
+                                        {isAdmin && (
+                                            <div className="pt-2">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase">Assignation</label>
+                                                    {currentUserId && (
+                                                        <button
+                                                            onClick={handleAutoAssignTodo}
+                                                            className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                                                        >
+                                                            M'attribuer
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <UserSelector
+                                                    value={newTodo.assigned_to || undefined}
+                                                    onChange={(value) => setNewTodo({ ...newTodo, assigned_to: value as number })}
+                                                    label=""
+                                                    placeholder="Choisir un responsable..."
+                                                    pole={newTodo.pole || undefined}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </details>
                             </div>
                         </div>
                     )}
@@ -505,7 +561,19 @@ export default function ProspectActivityStream({
                                                             className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
                                                         />
                                                     </div>
-                                                    <div className="flex items-end pb-2">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Priorité</label>
+                                                        <select
+                                                            value={rappelForm.priorite || 'moyenne'}
+                                                            onChange={(e) => updateRappelForm('priorite', e.target.value)}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
+                                                        >
+                                                            <option value="basse">Basse</option>
+                                                            <option value="moyenne">Moyenne</option>
+                                                            <option value="haute">Haute</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-span-2 flex items-end pb-2">
                                                         <label className="flex items-center gap-3 cursor-pointer group/check">
                                                             <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${rappelForm.fait ? 'bg-purple-600 border-purple-600' : 'border-slate-300 bg-white group-hover/check:border-purple-400'}`}>
                                                                 {rappelForm.fait && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
@@ -590,6 +658,12 @@ export default function ProspectActivityStream({
                                                             {r.fait ? 'Effectué' : 'À venir'}
                                                         </span>
 
+                                                        {r.priorite && (
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getPriorityBadge(r.priorite)}`}>
+                                                                {getPriorityLabel(r.priorite)}
+                                                            </span>
+                                                        )}
+
                                                         {r.pole && (
                                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${POLE_OPTIONS.find(p => p.value === r.pole)?.color || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                                                                 <Layers className="w-3 h-3 mr-1.5" />
@@ -653,73 +727,86 @@ export default function ProspectActivityStream({
                         </div>
                     )}
 
-                    {/* Nouveau Rappel Form */}
+                    {/* Nouveau Rappel Form - Collapsible */}
                     {canEdit && (
-                        <div className="mt-6 pt-6 border-t border-slate-200">
-                            <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl p-5 hover:border-purple-300 transition-colors">
-                                <h4 className="font-bold text-slate-700 text-sm flex items-center gap-2 mb-4">
-                                    <Plus className="w-4 h-4 text-purple-500" />
-                                    Ajouter un nouveau rappel
-                                </h4>
+                        <div className="mt-4">
+                            <div className="group border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl transition-all hover:border-purple-400">
+                                <details className="group/details">
+                                    <summary className="flex items-center gap-3 p-4 cursor-pointer list-none text-slate-600 dark:text-slate-400 font-bold text-sm hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                                        <div className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
+                                            <Plus className="w-4 h-4" />
+                                        </div>
+                                        <span>Ajouter un nouveau rappel</span>
+                                    </summary>
 
-                                <div className="space-y-4">
-                                    <input
-                                        id="new-rappel-input"
-                                        placeholder="Titre du rappel..."
-                                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
-                                        value={newRappel.titre}
-                                        onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })}
-                                    />
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="px-4 pb-4 space-y-4 animate-in slide-in-from-top-2 fade-in duration-200">
                                         <input
-                                            type="datetime-local"
-                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
-                                            value={newRappel.date_rappel}
-                                            onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })}
+                                            id="new-rappel-input"
+                                            placeholder="Titre du rappel..."
+                                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 transition-all outline-none font-medium"
+                                            value={newRappel.titre}
+                                            onChange={(e) => setNewRappel({ ...newRappel, titre: e.target.value })}
                                         />
-                                        <textarea
-                                            placeholder="Description (optionnel)..."
-                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-0 transition-colors resize-none"
-                                            rows={1}
-                                            value={newRappel.description}
-                                            onChange={(e) => setNewRappel({ ...newRappel, description: e.target.value })}
-                                        />
-                                    </div>
 
-                                    {isAdmin && (
-                                        <div className="pt-2">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <label className="text-xs font-bold text-slate-500 uppercase">Assignation</label>
-                                                {currentUserId && (
-                                                    <button
-                                                        onClick={handleAutoAssignRappel}
-                                                        className="text-xs font-bold text-purple-600 hover:text-purple-800 hover:underline"
-                                                    >
-                                                        M'attribuer
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <UserSelector
-                                                value={newRappel.assigned_users || []}
-                                                onChange={(value) => setNewRappel({ ...newRappel, assigned_users: value as number[] })}
-                                                label=""
-                                                placeholder="Choisir des responsables..."
-                                                pole={newRappel.pole || undefined}
-                                                multiple={true}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <input
+                                                type="datetime-local"
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 transition-all outline-none font-medium text-slate-600"
+                                                value={newRappel.date_rappel}
+                                                onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })}
+                                            />
+                                            <select
+                                                value={newRappel.priorite || 'moyenne'}
+                                                onChange={(e) => setNewRappel({ ...newRappel, priorite: e.target.value as any })}
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 transition-all outline-none font-medium"
+                                            >
+                                                <option value="basse">Prio. Basse</option>
+                                                <option value="moyenne">Prio. Moyenne</option>
+                                                <option value="haute">Prio. Haute</option>
+                                            </select>
+                                            <textarea
+                                                placeholder="Description (optionnel)..."
+                                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 transition-all outline-none resize-none font-medium text-slate-600"
+                                                rows={1}
+                                                value={newRappel.description}
+                                                onChange={(e) => setNewRappel({ ...newRappel, description: e.target.value })}
                                             />
                                         </div>
-                                    )}
 
-                                    <button
-                                        onClick={handleAddRappelWithValidation}
-                                        disabled={!newRappel.titre || !newRappel.date_rappel}
-                                        className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                                    >
-                                        <Plus className="w-5 h-5" />
-                                        Créer le rappel
-                                    </button>
-                                </div>
+                                        {isAdmin && (
+                                            <div className="pt-2">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <label className="text-xs font-bold text-slate-500 uppercase">Assignation</label>
+                                                    {currentUserId && (
+                                                        <button
+                                                            onClick={handleAutoAssignRappel}
+                                                            className="text-xs font-bold text-purple-600 hover:text-purple-800 hover:underline"
+                                                        >
+                                                            M'attribuer
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <UserSelector
+                                                    value={newRappel.assigned_users || []}
+                                                    onChange={(value) => setNewRappel({ ...newRappel, assigned_users: value as number[] })}
+                                                    label=""
+                                                    placeholder="Choisir des responsables..."
+                                                    pole={newRappel.pole || undefined}
+                                                    multiple={true}
+                                                />
+                                            </div>
+                                        )}
+
+                                        <button
+                                            onClick={handleAddRappelWithValidation}
+                                            disabled={!newRappel.titre || !newRappel.date_rappel}
+                                            className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                            Créer le rappel
+                                        </button>
+                                    </div>
+                                </details>
                             </div>
                         </div>
                     )}

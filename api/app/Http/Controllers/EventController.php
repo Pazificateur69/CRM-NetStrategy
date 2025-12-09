@@ -55,6 +55,8 @@ class EventController extends Controller
      */
     public function update(Request $request, Event $event)
     {
+        \Log::info('Event Update Request:', $request->all());
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'start' => 'sometimes|date',

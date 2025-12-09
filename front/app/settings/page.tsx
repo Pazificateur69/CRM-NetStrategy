@@ -14,7 +14,6 @@ import {
     disable2FA,
     getRecoveryCodes,
     regenerateRecoveryCodes,
-    getTwoFactorQrCode,
     getLoginHistory,
     getActiveSessions,
     revokeSession,
@@ -171,11 +170,9 @@ export default function SettingsPage() {
     const handleEnable2FA = async () => {
         setLoading(true);
         try {
-            await enable2FA();
-            // Fortify returns the QR code SVG in a separate call usually, or we need to fetch it
-            // Let's assume we fetch it immediately after enabling
-            const qrResponse = await getTwoFactorQrCode();
-            setQrCode(qrResponse.data.svg);
+            const response = await enable2FA();
+            // The response directly contains the QR code and secret
+            setQrCode(response.data.qr_code);
             setSetupStep('qr');
         } catch (error) {
             toast.error("Impossible d'activer l'A2F");
@@ -194,7 +191,7 @@ export default function SettingsPage() {
 
             // Fetch recovery codes immediately
             const codesResponse = await getRecoveryCodes();
-            setRecoveryCodes(codesResponse.data);
+            setRecoveryCodes(codesResponse.data.recovery_codes);
             setShowRecoveryCodes(true);
         } catch (error) {
             toast.error("Code incorrect. Veuillez réessayer.");
@@ -225,7 +222,7 @@ export default function SettingsPage() {
         setLoading(true);
         try {
             const response = await getRecoveryCodes();
-            setRecoveryCodes(response.data);
+            setRecoveryCodes(response.data.recovery_codes);
             setShowRecoveryCodes(true);
         } catch (error) {
             toast.error("Impossible de récupérer les codes.");
@@ -239,7 +236,7 @@ export default function SettingsPage() {
         setLoading(true);
         try {
             const response = await regenerateRecoveryCodes();
-            setRecoveryCodes(response.data);
+            setRecoveryCodes(response.data.recovery_codes);
             toast.success("Nouveaux codes générés.");
         } catch (error) {
             toast.error("Erreur lors de la régénération.");

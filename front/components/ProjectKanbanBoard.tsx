@@ -85,7 +85,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onDragStart, 
     return (
         <Link
             href={`/projects/${project.id}`}
-            className="block group relative bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200 cursor-grab active:cursor-grabbing"
+            className="block group relative bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-500/30 dark:hover:border-indigo-400/30 transition-all duration-300 cursor-grab active:cursor-grabbing"
             draggable
             onDragStart={(e) => onDragStart(e, project.id, project.status)}
             onDragEnter={(e) => onDragEnter(e, index, project.status)}
@@ -94,62 +94,61 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onDragStart, 
             {/* Header */}
             <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 mr-2">
-                    <h4 className="font-semibold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-100 leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         {project.title}
                     </h4>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        <Briefcase className="w-3 h-3" />
-                        <span className="truncate max-w-[120px]">
+                    <div className="flex items-center gap-1.5 mt-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <Briefcase className="w-3 h-3 text-slate-400" />
+                        <span className="truncate max-w-[140px]">
                             {project.client?.societe || project.client?.gerant || 'Sans client'}
                         </span>
                     </div>
                 </div>
+                {/* Priority Indicator (Mock) */}
+                <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
             </div>
 
             {/* Progress Bar */}
-            <div className="mb-4">
-                <div className="flex justify-between text-[10px] font-medium mb-1">
-                    <span className="text-slate-500 dark:text-slate-400">Progression</span>
+            <div className="mb-4 bg-slate-100 dark:bg-slate-700/50 p-2 rounded-lg">
+                <div className="flex justify-between text-[10px] font-bold mb-1.5 uppercase tracking-wider">
+                    <span className="text-slate-400 dark:text-slate-500">Progression</span>
                     <span className="text-indigo-600 dark:text-indigo-400">{project.progress}%</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
                         style={{ width: `${project.progress}%` }}
                     />
                 </div>
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700/50">
                 <div className="flex items-center gap-2">
                     <div className="flex -space-x-2">
                         {project.manager ? (
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white border-2 border-white dark:border-slate-800 shadow-sm" title={`Responsable: ${project.manager.name}`}>
+                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white border-2 border-white dark:border-slate-800 shadow-md transform group-hover:scale-110 transition-transform" title={`Responsable: ${project.manager.name}`}>
                                 {project.manager.name.charAt(0)}
                             </div>
                         ) : (
-                            <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] text-slate-400 border-2 border-white dark:border-slate-800">
-                                <User className="w-3 h-3" />
+                            <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] text-slate-400 border-2 border-white dark:border-slate-800">
+                                <User className="w-3.5 h-3.5" />
                             </div>
                         )}
                     </div>
-                    {project.budget && (
-                        <div className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
-                            {project.budget.toLocaleString('fr-FR')} €
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
                     {project.tasks_count !== undefined && (
-                        <div className="flex items-center gap-1 text-[10px] text-slate-400" title="Tâches">
-                            <CheckCircle2 className="w-3 h-3" />
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded-md" title="Tâches">
+                            <CheckCircle2 className="w-3 h-3 text-slate-400" />
                             <span>{project.tasks_count}</span>
                         </div>
                     )}
                     {project.due_date && (
-                        <div className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${isOverdue ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-slate-50 text-slate-500 border border-slate-100'}`}>
+                        <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${isOverdue
+                            ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700'}`}>
                             {isOverdue ? <AlertCircle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
                             <span>{format(new Date(project.due_date), 'd MMM', { locale: fr })}</span>
                         </div>

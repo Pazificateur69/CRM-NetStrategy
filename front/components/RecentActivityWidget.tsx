@@ -54,8 +54,8 @@ export default function RecentActivityWidget() {
                 {logs.map((log) => (
                     <div key={log.id} className="group flex items-start gap-2.5 text-xs p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50">
                         <div className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 shadow-sm ${log.action === 'create' ? 'bg-emerald-500 shadow-emerald-500/20' :
-                                log.action === 'delete' ? 'bg-rose-500 shadow-rose-500/20' :
-                                    log.action === 'update' ? 'bg-amber-500 shadow-amber-500/20' : 'bg-blue-500 shadow-blue-500/20'
+                            log.action === 'delete' ? 'bg-rose-500 shadow-rose-500/20' :
+                                log.action === 'update' ? 'bg-amber-500 shadow-amber-500/20' : 'bg-blue-500 shadow-blue-500/20'
                             }`} />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
@@ -70,7 +70,7 @@ export default function RecentActivityWidget() {
 
                             {log.details && (
                                 <p className="text-[10px] text-muted-foreground truncate opacity-80 mt-0.5">
-                                    {log.details}
+                                    {typeof log.details === 'object' ? JSON.stringify(log.details) : log.details}
                                 </p>
                             )}
 

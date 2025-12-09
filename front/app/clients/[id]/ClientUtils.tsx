@@ -57,6 +57,7 @@ export interface NewTodoPayload {
   titre: string;
   description: string;
   statut: 'en_cours' | 'termine' | 'retard';
+  priorite?: 'basse' | 'moyenne' | 'haute';
   pole: string | null;
   assigned_to?: number | null;
 }
@@ -66,6 +67,7 @@ export interface NewRappelPayload {
   description: string;
   date_rappel: string;
   fait: boolean;
+  priorite?: 'basse' | 'moyenne' | 'haute';
   pole: string | null;
   assigned_users?: number[];
 }
@@ -74,6 +76,7 @@ export interface TodoFormState {
   titre: string;
   description: string;
   statut: 'en_cours' | 'termine' | 'retard';
+  priorite?: 'basse' | 'moyenne' | 'haute';
   date_echeance: string;
   assigned_to?: number | null;
   pole?: string | null;
@@ -84,6 +87,7 @@ export interface RappelFormState {
   description: string;
   date_rappel: string;
   fait: boolean;
+  priorite?: 'basse' | 'moyenne' | 'haute';
   assigned_users?: number[];
   pole?: string | null;
 }

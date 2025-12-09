@@ -113,10 +113,6 @@ export const updateNotifications = async (preferences: any) => {
   return api.put('/user/notifications', { preferences });
 };
 
-export const getTwoFactorQrCode = async () => {
-  return api.get('/user/two-factor-qr-code');
-};
-
 // Security & Sessions
 export const getLoginHistory = async () => {
   return api.get('/user/login-history');

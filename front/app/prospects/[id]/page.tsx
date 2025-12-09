@@ -100,6 +100,7 @@ export default function ProspectDetailPage() {
         description: string;
         pole?: string;
         assigned_to?: number | null;
+        priorite: 'basse' | 'moyenne' | 'haute';
     }
 
     interface NewRappelState {
@@ -108,15 +109,16 @@ export default function ProspectDetailPage() {
         date_rappel: string;
         pole?: string;
         assigned_users?: number[];
+        priorite: 'basse' | 'moyenne' | 'haute';
     }
 
-    const [newTodo, setNewTodo] = useState<NewTodoState>({ titre: '', description: '', pole: '', assigned_to: undefined });
-    const [todoForm, setTodoForm] = useState<TodoFormState>({ titre: '', description: '', statut: 'en_cours', date_echeance: '', assigned_to: undefined, pole: undefined });
+    const [newTodo, setNewTodo] = useState<NewTodoState>({ titre: '', description: '', pole: '', assigned_to: undefined, priorite: 'moyenne' });
+    const [todoForm, setTodoForm] = useState<TodoFormState>({ titre: '', description: '', statut: 'en_cours', date_echeance: '', assigned_to: undefined, pole: undefined, priorite: 'moyenne' });
     const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
     const [savingTodo, setSavingTodo] = useState(false);
 
-    const [newRappel, setNewRappel] = useState<NewRappelState>({ titre: '', description: '', date_rappel: '', pole: '', assigned_users: undefined });
-    const [rappelForm, setRappelForm] = useState<RappelFormState>({ titre: '', description: '', date_rappel: '', fait: false, assigned_users: undefined, pole: undefined });
+    const [newRappel, setNewRappel] = useState<NewRappelState>({ titre: '', description: '', date_rappel: '', pole: '', assigned_users: undefined, priorite: 'moyenne' });
+    const [rappelForm, setRappelForm] = useState<RappelFormState>({ titre: '', description: '', date_rappel: '', fait: false, assigned_users: undefined, pole: undefined, priorite: 'moyenne' });
     const [editingRappelId, setEditingRappelId] = useState<number | null>(null);
     const [savingRappel, setSavingRappel] = useState(false);
 
@@ -215,7 +217,7 @@ export default function ProspectDetailPage() {
                 pole: newTodo.pole || undefined,
                 assigned_to: newTodo.assigned_to || undefined
             });
-            setNewTodo({ titre: '', description: '', pole: '', assigned_to: undefined });
+            setNewTodo({ titre: '', description: '', pole: '', assigned_to: undefined, priorite: 'moyenne' });
             await fetchProspect();
         } catch (error) {
             console.error("Erreur ajout todo", error);
@@ -256,7 +258,7 @@ export default function ProspectDetailPage() {
                 ...newRappel,
                 pole: newRappel.pole || undefined
             });
-            setNewRappel({ titre: '', description: '', date_rappel: '', pole: '', assigned_users: undefined });
+            setNewRappel({ titre: '', description: '', date_rappel: '', pole: '', assigned_users: undefined, priorite: 'moyenne' });
             await fetchProspect();
         } catch (error) {
             console.error("Erreur ajout rappel", error);
@@ -297,7 +299,8 @@ export default function ProspectDetailPage() {
             statut: todo.statut,
             date_echeance: todo.date_echeance ? todo.date_echeance.split('T')[0] : '',
             assigned_to: todo.assigned_to,
-            pole: todo.pole
+            pole: todo.pole,
+            priorite: todo.priorite || 'moyenne'
         });
     };
 
@@ -309,7 +312,8 @@ export default function ProspectDetailPage() {
             date_rappel: rappel.date_rappel ? rappel.date_rappel.slice(0, 16) : '',
             fait: rappel.fait,
             assigned_users: rappel.assignedUsers?.map((u: any) => u.id),
-            pole: rappel.pole
+            pole: rappel.pole,
+            priorite: rappel.priorite || 'moyenne'
         });
     };
 

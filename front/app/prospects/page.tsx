@@ -11,6 +11,7 @@ import {
     Plus,
     Search,
     Users,
+    User,
     AlertCircle,
     ChevronRight,
     Building2,
@@ -25,58 +26,47 @@ import {
 
 // --- COMPOSANT LIGNE DE PROSPECT ---
 const ProspectRow = ({ prospect }: { prospect: ProspectDetail }) => {
-    const formattedDate = prospect.created_at
-        ? new Date(prospect.created_at).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        })
-        : '—';
-
     const getStatusBadge = (statut: string) => {
         switch (statut) {
             case 'converti':
-                return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">Converti</span>;
+                return <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">Converti</span>;
             case 'relance':
-                return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20">Relance</span>;
+                return <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 shadow-sm">Relance</span>;
             case 'en_attente':
-                return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">En attente</span>;
+                return <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 shadow-sm">En attente</span>;
             case 'perdu':
-                return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">Perdu</span>;
+                return <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20 shadow-sm">Perdu</span>;
             default:
-                return <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">{statut}</span>;
+                return <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-sm">{statut}</span>;
         }
     };
 
     return (
         <Link
             href={`/prospects/${prospect.id}`}
-            className="group relative grid grid-cols-1 lg:grid-cols-10 gap-4 items-center p-5 hover:bg-accent/50 transition-all duration-200 border-b border-border last:border-0"
+            className="group relative grid grid-cols-1 lg:grid-cols-10 gap-4 items-center p-4 mx-2 my-1 hover:bg-white dark:hover:bg-slate-800/80 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-md hover:scale-[1.005]"
         >
-            {/* Indicateur de survol */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-
             {/* Société */}
-            <div className="lg:col-span-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-lg shrink-0">
+            <div className="lg:col-span-4 flex items-center gap-3 pl-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-lg shadow-purple-500/20">
                     {prospect.societe.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    <h3 className="font-bold text-slate-900 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                         {prospect.societe}
                     </h3>
-                    <p className="text-sm text-muted-foreground truncate flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5" />
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+                        <User className="w-3 h-3" />
                         {prospect.contact || 'Contact non spécifié'}
                     </p>
                 </div>
             </div>
 
-
-
             {/* Email */}
-            <div className="lg:col-span-3 hidden lg:flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="w-4 h-4 text-muted-foreground/70" />
+            <div className="lg:col-span-3 hidden lg:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                <div className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                </div>
                 <span className="truncate">{prospect.emails?.[0] || '—'}</span>
             </div>
 
@@ -86,8 +76,8 @@ const ProspectRow = ({ prospect }: { prospect: ProspectDetail }) => {
             </div>
 
             {/* Action */}
-            <div className="lg:col-span-1 flex justify-end">
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-purple-500/10 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-all">
+            <div className="lg:col-span-1 flex justify-end pr-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-purple-100 group-hover:text-purple-600 dark:group-hover:bg-purple-900/30 dark:group-hover:text-purple-400 transition-all">
                     <ChevronRight className="w-5 h-5" />
                 </div>
             </div>
@@ -155,62 +145,52 @@ export default function ProspectsIndexPage() {
                 </div>
 
                 {/* Stats Rapides */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-card p-5 rounded-2xl border border-border shadow-sm flex items-center gap-4">
-                        <div className="p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5 relative overflow-hidden group">
+                        <div className="absolute right-0 top-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
+                        <div className="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl relative z-10">
                             <Target className="w-6 h-6" />
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Total Prospects</p>
-                            <p className="text-2xl font-bold text-foreground">{prospects.length}</p>
-                        </div>
-                    </div>
-                    {/* Placeholder pour d'autres stats */}
-                    <div className="bg-card p-5 rounded-2xl border border-border shadow-sm flex items-center gap-4 opacity-60">
-                        <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                            <ArrowUpRight className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Convertis ce mois</p>
-                            <p className="text-2xl font-bold text-foreground">—</p>
+                        <div className="relative z-10">
+                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Prospects</p>
+                            <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{prospects.length}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Barre d'outils */}
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                    <div className="relative flex-1 w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <div className="flex flex-col xl:flex-row gap-4 items-center">
+                    <div className="relative w-full xl:w-auto flex-1 group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Rechercher un prospect..."
+                            placeholder="Rechercher nom, email, contact..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all shadow-sm"
+                            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all shadow-sm"
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 bg-card border border-border p-1 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm' : 'text-muted-foreground hover:bg-accent'}`}
-                            title="Vue Liste"
+                            className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === 'list'
+                                ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                         >
-                            <List className="w-5 h-5" />
+                            <List className="w-4 h-4" />
+                            Liste
                         </button>
                         <button
                             onClick={() => setViewMode('kanban')}
-                            className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm' : 'text-muted-foreground hover:bg-accent'}`}
-                            title="Vue Kanban"
+                            className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === 'kanban'
+                                ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                         >
-                            <LayoutGrid className="w-5 h-5" />
+                            <LayoutGrid className="w-4 h-4" />
+                            Kanban
                         </button>
                     </div>
-
-                    <button className="flex items-center gap-2 px-4 py-3 bg-card border border-border rounded-xl text-foreground font-medium hover:bg-accent transition-colors shadow-sm">
-                        <Filter className="w-5 h-5" />
-                        <span>Filtres</span>
-                    </button>
                 </div>
 
                 {/* Contenu Principal */}

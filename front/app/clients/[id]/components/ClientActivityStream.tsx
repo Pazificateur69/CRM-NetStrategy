@@ -34,6 +34,7 @@ interface NewTodoState {
   description: string;
   pole?: string;
   assigned_to?: number | null;
+  priorite: 'basse' | 'moyenne' | 'haute';
 }
 
 interface NewRappelState {
@@ -42,7 +43,156 @@ interface NewRappelState {
   date_rappel: string;
   pole?: string;
   assigned_users?: number[];
+  priorite: 'basse' | 'moyenne' | 'haute';
 }
+
+// ...
+
+const getPriorityBadge = (priorite: string) => {
+  switch (priorite) {
+    case 'haute': return 'bg-rose-50 text-rose-700 border-rose-200';
+    case 'moyenne': return 'bg-amber-50 text-amber-700 border-amber-200';
+    case 'basse': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    default: return 'bg-slate-50 text-slate-700 border-slate-200';
+  }
+};
+
+const getPriorityLabel = (priorite: string) => {
+  switch (priorite) {
+    case 'haute': return 'Haute';
+    case 'moyenne': return 'Moyenne';
+    case 'basse': return 'Basse';
+    default: return priorite || 'Moyenne';
+  }
+};
+
+// ... inside render ...
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Statut</label>
+                                                        <select
+                                                            value={todoForm.statut}
+                                                            onChange={(e) => updateTodoForm('statut', e.target.value)}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-500 focus:ring-0 transition-colors"
+                                                        >
+                                                            <option value="en_cours">En cours</option>
+                                                            <option value="termine">Terminé</option>
+                                                            <option value="retard">En retard</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Priorité</label>
+                                                        <select
+                                                            value={todoForm.priorite || 'moyenne'}
+                                                            onChange={(e) => updateTodoForm('priorite', e.target.value)}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-500 focus:ring-0 transition-colors"
+                                                        >
+                                                            <option value="basse">Basse</option>
+                                                            <option value="moyenne">Moyenne</option>
+                                                            <option value="haute">Haute</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Échéance</label>
+                                                        <input
+                                                            type="date"
+                                                            value={todoForm.date_echeance}
+                                                            onChange={(e) => updateTodoForm('date_echeance', e.target.value)}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-blue-500 focus:ring-0 transition-colors"
+                                                        />
+                                                    </div>
+                                                </div>
+
+// ... inside display Todo ...
+
+                                                    <div className="pl-8 flex flex-wrap items-center gap-2">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusBadge(t.statut)}`}>
+                                                            {t.statut?.replace('_', ' ') || 'En cours'}
+                                                        </span>
+                                                        
+                                                        {t.priorite && (
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getPriorityBadge(t.priorite)}`}>
+                                                                {getPriorityLabel(t.priorite)}
+                                                            </span>
+                                                        )}
+
+// ... inside New Todo Form ...
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <select
+                                                            value={newTodo.priorite || 'moyenne'}
+                                                            onChange={(e) => setNewTodo({ ...newTodo, priorite: e.target.value as any })}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-0 transition-colors"
+                                                        >
+                                                            <option value="basse">Prio. Basse</option>
+                                                            <option value="moyenne">Prio. Moyenne</option>
+                                                            <option value="haute">Prio. Haute</option>
+                                                        </select>
+                                                    </div>
+                                                    {showPoleSelection && (
+                                                    <div>
+// ... (pole selection)
+
+// ... inside New Rappel Form ...
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <input
+                                                        type="datetime-local"
+                                                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
+                                                        value={newRappel.date_rappel}
+                                                        onChange={(e) => setNewRappel({ ...newRappel, date_rappel: e.target.value })}
+                                                    />
+                                                    <select
+                                                        value={newRappel.priorite || 'moyenne'}
+                                                        onChange={(e) => setNewRappel({ ...newRappel, priorite: e.target.value as any })}
+                                                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
+                                                    >
+                                                        <option value="basse">Prio. Basse</option>
+                                                        <option value="moyenne">Prio. Moyenne</option>
+                                                        <option value="haute">Prio. Haute</option>
+                                                    </select>
+                                                </div>
+
+// ... inside Edit Rappel Form ...
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Date & Heure</label>
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={rappelForm.date_rappel}
+                                                            onChange={(e) => updateRappelForm('date_rappel', e.target.value)}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Priorité</label>
+                                                        <select
+                                                            value={rappelForm.priorite || 'moyenne'}
+                                                            onChange={(e) => updateRappelForm('priorite', e.target.value)}
+                                                            className="w-full border-2 border-slate-200 rounded-xl px-4 py-2 text-sm focus:border-purple-500 focus:ring-0 transition-colors"
+                                                        >
+                                                            <option value="basse">Basse</option>
+                                                            <option value="moyenne">Moyenne</option>
+                                                            <option value="haute">Haute</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+// ... inside display Rappel ...
+
+                                                    <div className="pl-8 flex flex-wrap items-center gap-2">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${r.fait ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-purple-50 text-purple-700 border-purple-200'}`}>
+                                                            {r.fait ? 'Effectué' : 'À venir'}
+                                                        </span>
+
+                                                        {r.priorite && (
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getPriorityBadge(r.priorite)}`}>
+                                                                {getPriorityLabel(r.priorite)}
+                                                            </span>
+                                                        )}
 
 export interface ClientActivityStreamProps {
   filteredTodos: any[];

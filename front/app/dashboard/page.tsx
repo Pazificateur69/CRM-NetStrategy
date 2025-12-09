@@ -10,6 +10,8 @@ import DashboardLayout from '@/components/DashboardLayout';
 import DashboardVignette from '@/components/DashboardVignette';
 import { DashboardData, DashboardEntity } from '@/types/crm';
 import { getUserProfile, logout, updateDashboardPreferences } from '@/services/auth';
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton';
+import QuickActionsWidget from '@/components/QuickActionsWidget';
 import {
   RefreshCcw,
   Users,
@@ -42,6 +44,7 @@ export default function DashboardPage() {
   const [showCustomize, setShowCustomize] = useState(false);
   const [widgets, setWidgets] = useState({
     welcome: true,
+    quickActions: true,
     stats: true,
     kanban: true,
     users: true,
@@ -74,7 +77,7 @@ export default function DashboardPage() {
           localStorage.setItem('userRole', userProfile.role || 'user');
           localStorage.setItem('userPole', userProfile.pole || 'non_defini');
           if (userProfile.dashboard_preferences) {
-            setWidgets(userProfile.dashboard_preferences);
+            setWidgets(prev => ({ ...prev, ...userProfile.dashboard_preferences }));
           }
         }
 
@@ -175,10 +178,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-[80vh]">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6"></div>
-          <p className="text-lg text-muted-foreground font-medium animate-pulse">Chargement de votre espace...</p>
-        </div>
+        <DashboardSkeleton />
       </DashboardLayout>
     );
   }
@@ -260,6 +260,9 @@ export default function DashboardPage() {
 
         {/* WELCOME WIDGET */}
         {widgets.welcome && <WelcomeWidget userName={userName} />}
+
+        {/* QUICK ACTIONS WIDGET */}
+        {widgets.quickActions && <QuickActionsWidget />}
 
         {/* STATISTIQUES */}
         {widgets.stats && (

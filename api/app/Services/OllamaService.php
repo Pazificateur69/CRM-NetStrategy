@@ -49,14 +49,18 @@ class OllamaService
 
     public function analyzeProspect($prospectData): string
     {
-        $prompt = "Tu es un expert CRM. Analyse ce prospect :\n";
-        $prompt .= json_encode($prospectData) . "\n\n";
-        $prompt .= "Réponds UNIQUEMENT avec un JSON valide contenant :\n";
-        $prompt .= "- summary (string, résumé court)\n";
-        $prompt .= "- sentiment (string: Positif, Neutre, Négatif)\n";
-        $prompt .= "- next_steps (array of strings, 3 actions)\n";
-        $prompt .= "- talking_points (array of strings, 3 points clés)\n";
-        $prompt .= "Ne mets pas de markdown, juste le JSON brut.";
+        $prompt = "Tu es un expert commercial et CRM de haut niveau. Analyse ce prospect en détail pour maximiser la conversion :\n";
+        $prompt .= json_encode($prospectData, JSON_PRETTY_PRINT) . "\n\n";
+        $prompt .= "Consignes :\n";
+        $prompt .= "1. Analyse la cohérence des actions passées (todos, rappels).\n";
+        $prompt .= "2. Détecte les signaux d'urgence ou d'opportunité.\n";
+        $prompt .= "3. Propose une stratégie concrète.\n\n";
+        $prompt .= "Réponds UNIQUEMENT avec un JSON valide respectant ce schéma strict :\n";
+        $prompt .= "- summary (string, résumé percutant de la situation)\n";
+        $prompt .= "- sentiment (string: 'Très Chaud' | 'Chaud' | 'Tiède' | 'Froid' | 'À relancer')\n";
+        $prompt .= "- next_steps (array of strings, 3 actions précises et datées si possible)\n";
+        $prompt .= "- talking_points (array of strings, 3 arguments clés personnalisés pour le prochain appel)\n";
+        $prompt .= "Ne mets pas de markdown ou de code block, juste le JSON brut.";
 
         return $this->generateContent($prompt);
     }

@@ -74,4 +74,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Rappel::class);
     }
+
+    public function loginHistory()
+    {
+        return $this->hasMany(LoginHistory::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
 }

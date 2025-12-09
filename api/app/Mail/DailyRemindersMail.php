@@ -12,16 +12,20 @@ class DailyRemindersMail extends Mailable
 
     public $user;
     public $rappels;
+    public $todos;
+    public $events;
 
-    public function __construct($user, $rappels)
+    public function __construct($user, $rappels, $todos, $events)
     {
         $this->user = $user;
         $this->rappels = $rappels;
+        $this->todos = $todos;
+        $this->events = $events;
     }
 
     public function build()
     {
-        return $this->subject('📅 Vos rappels du jour')
-                    ->view('emails.daily_reminders');
+        return $this->subject('📅 Votre récapitulatif du jour')
+            ->view('emails.daily_recap');
     }
 }

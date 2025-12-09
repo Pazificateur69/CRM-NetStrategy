@@ -161,42 +161,69 @@ export default function ProjectsPage() {
                     </div>
 
                     {/* Filters Bar */}
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <div className="flex flex-col xl:flex-row gap-4 w-full md:w-auto items-center">
+                        <div className="relative w-full md:w-auto group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Rechercher..."
+                                placeholder="Rechercher un projet..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-sm w-full md:w-72 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
                             />
                         </div>
 
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                            <option value="">Tous les statuts</option>
-                            <option value="not_started">À faire</option>
-                            <option value="in_progress">En cours</option>
-                            <option value="on_hold">En pause</option>
-                            <option value="completed">Terminé</option>
-                        </select>
+                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/50 overflow-x-auto max-w-full">
+                            <button
+                                onClick={() => setStatusFilter('')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${statusFilter === ''
+                                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                Tous
+                            </button>
+                            <button
+                                onClick={() => setStatusFilter('in_progress')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${statusFilter === 'in_progress'
+                                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                En cours
+                            </button>
+                            <button
+                                onClick={() => setStatusFilter('not_started')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${statusFilter === 'not_started'
+                                    ? 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                À faire
+                            </button>
+                            <button
+                                onClick={() => setStatusFilter('completed')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${statusFilter === 'completed'
+                                    ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                Terminés
+                            </button>
+                        </div>
 
-                        <select
-                            value={clientFilter}
-                            onChange={(e) => setClientFilter(e.target.value)}
-                            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-indigo-500 max-w-[200px]"
-                        >
-                            <option value="">Tous les clients</option>
-                            {clients.map(c => (
-                                <option key={c.id} value={c.id}>
-                                    {c.societe ? `${c.societe} ${c.gerant ? `(${c.gerant})` : ''}` : c.gerant}
-                                </option>
-                            ))}
-                        </select>
+                        {/* Client Filter (Simple Select for now, but styled) */}
+                        <div className="relative">
+                            <select
+                                value={clientFilter}
+                                onChange={(e) => setClientFilter(e.target.value)}
+                                className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <option value="">Tous les clients</option>
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.societe ? `${c.societe}` : c.gerant}
+                                    </option>
+                                ))}
+                            </select>
+                            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">

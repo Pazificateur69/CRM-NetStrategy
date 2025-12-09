@@ -222,4 +222,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // 🤖 INTELLIGENCE ARTIFICIELLE
     // ===================================================
     Route::post('/ai/analyze-prospect/{id}', [AIController::class, 'analyzeProspect']);
+    Route::post('/ai/chat', [AIController::class, 'chat']);
 });
