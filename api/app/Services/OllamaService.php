@@ -18,15 +18,24 @@ class OllamaService
         $this->model = env('OLLAMA_MODEL', 'mistral');
     }
 
-    public function generateContent(string $prompt): string
+    public function generateContent(string $prompt, bool $jsonMode = false): string
     {
         try {
-            $response = Http::timeout(60)->post("{$this->baseUrl}/api/generate", [
+            $payload = [
                 'model' => $this->model,
                 'prompt' => $prompt,
                 'stream' => false,
-                'format' => 'json', // Force JSON mode if supported by model
-            ]);
+                'options' => [
+                    'temperature' => $jsonMode ? 0.2 : 0.7, // Low temp for data, higher for chat
+                    'num_ctx' => 4096, // Ensure decent context window
+                ]
+            ];
+
+            if ($jsonMode) {
+                $payload['format'] = 'json';
+            }
+
+            $response = Http::timeout(60)->post("{$this->baseUrl}/api/generate", $payload);
 
             if ($response->failed()) {
                 Log::error('Ollama API Error: ' . $response->body());
@@ -43,6 +52,20 @@ class OllamaService
 
         } catch (\Exception $e) {
             Log::error('Ollama Service Exception: ' . $e->getMessage());
+
+            // FALLBACK FOR LOCAL DEV (Mock Mode)
+            if (env('APP_ENV') === 'local') {
+                if ($jsonMode || str_contains($prompt, 'JSON')) {
+                    return json_encode([
+                        'summary' => "Mode Démo: Ollama n'est pas connecté sur le port 11434. Veuillez lancer l'application pour avoir une vraie analyse.",
+                        'sentiment' => "Neutre",
+                        'next_steps' => ["Lancer Ollama", "Vérifier la connexion", "Réessayer l'analyse"],
+                        'talking_points' => ["Ceci est une simulation", "L'IA est hors ligne", "Les données sont fictives"]
+                    ]);
+                }
+                return "Mode Démo: Je ne peux pas répondre car Ollama n'est pas connecté (port 11434). Veuillez lancer l'application.";
+            }
+
             return "Erreur de connexion à Ollama (vérifiez qu'il tourne sur le port 11434).";
         }
     }
@@ -62,6 +85,6 @@ class OllamaService
         $prompt .= "- talking_points (array of strings, 3 arguments clés personnalisés pour le prochain appel)\n";
         $prompt .= "Ne mets pas de markdown ou de code block, juste le JSON brut.";
 
-        return $this->generateContent($prompt);
+        return $this->generateContent($prompt, true);
     }
 }

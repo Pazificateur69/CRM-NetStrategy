@@ -66,6 +66,56 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function focusBoard(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $today = now()->startOfDay();
+        $endOfDay = now()->endOfDay();
+
+        // 1. Tâches en retard (Priorité absolue)
+        $overdue = $user->todos()
+            ->where('statut', '!=', 'termine')
+            ->where('date_echeance', '<', $today)
+            ->orderBy('date_echeance', 'asc')
+            ->with(['client', 'todoable'])
+            ->get();
+
+        // 2. Tâches du jour
+        $todayTasks = $user->todos()
+            ->where('statut', '!=', 'termine')
+            ->whereBetween('date_echeance', [$today, $endOfDay])
+            ->orderBy('priorite', 'desc') // Haute avant Basse
+            ->with(['client', 'todoable'])
+            ->get();
+
+        // 3. Tâches Haute Priorité (sans date ou future)
+        $highPriority = $user->todos()
+            ->where('statut', '!=', 'termine')
+            ->where('priorite', 'haute')
+            ->where(function ($q) use ($endOfDay) {
+                $q->whereNull('date_echeance')
+                    ->orWhere('date_echeance', '>', $endOfDay);
+            })
+            ->limit(5)
+            ->with(['client', 'todoable'])
+            ->get();
+
+        // 4. Rappels du jour
+        $reminders = $user->rappels()
+            ->where('statut', '!=', 'termine')
+            ->whereDate('date_echeance', '<=', now())
+            ->orderBy('date_echeance', 'asc')
+            ->with(['client', 'rappelable'])
+            ->get();
+
+        return response()->json([
+            'overdue' => $overdue,
+            'today' => $todayTasks,
+            'high_priority' => $highPriority,
+            'reminders' => $reminders
+        ]);
+    }
+
     public function updatePreferences(Request $request)
     {
         $validated = $request->validate([

@@ -15,8 +15,9 @@ export interface Task {
   pole?: string;
   dueDate?: string | null;
   responsible?: string;
-  assignedTo?: { id: number; name: string; email: string } | null; // Ajouté
+  assignedTo?: { id: number; name: string; email: string } | null;
   ordre?: number;
+  review_status?: 'none' | 'pending' | 'approved' | 'rejected' | 'correction_needed';
 }
 
 // ✅ Todo et Rappel sont maintenant importés depuis types/crm.ts pour éviter les duplications
@@ -70,6 +71,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
     ordre: t.ordre || 0,
+    review_status: t.review_status || 'none',
   }));
 
   const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
@@ -107,6 +109,7 @@ export async function getAllAdminTasks(): Promise<Task[]> {
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
     ordre: t.ordre || 0,
+    review_status: t.review_status || 'none',
   }));
 
   const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
@@ -146,6 +149,7 @@ export async function getUserTasks(userId: number): Promise<Task[]> {
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
     ordre: t.ordre || 0,
+    review_status: t.review_status || 'none',
   }));
 
   const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
@@ -183,6 +187,7 @@ export async function getMyTasks(): Promise<Task[]> {
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
     ordre: t.ordre || 0,
+    review_status: t.review_status || 'none',
   }));
 
   const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
@@ -239,6 +244,7 @@ export async function updateTaskStatus(
       status: mapBackendToFrontendStatus(t.statut),
       priorite: t.priorite || 'moyenne',
       ordre: t.ordre || 0,
+      review_status: t.review_status || 'none',
     };
   } catch (error: any) {
     console.error('❌ Erreur updateTaskStatus :', error.response?.status, error.response?.data);

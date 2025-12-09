@@ -1,13 +1,13 @@
 // app/clients/[id]/components/ClientInfoDetails.tsx
 
 import React, { useState } from 'react';
-import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles, CheckSquare, Plus, DollarSign } from 'lucide-react';
+import { MessageCircle, Edit, Trash2, Save, X, Loader2, Globe, Mail, Phone, MapPin, Map, IdCard, FileText, Sparkles, CheckSquare, Plus, DollarSign, Download } from 'lucide-react';
 import { InfoCard } from '../ClientUtils';
 import ClientActivityStream from './ClientActivityStream';
 import ClientInterlocuteurs from './ClientInterlocuteurs';
 import CommentSection from '@/components/CommentSection';
 import { updateClient, addPrestation, updatePrestation, deletePrestation } from '@/services/crm';
-import { useWebLLM } from '@/hooks/useWebLLM';
+import api from '@/services/api';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
 interface ClientInfoDetailsProps {
@@ -93,15 +93,11 @@ export default function ClientInfoDetails({
   const [savingPrestation, setSavingPrestation] = useState(false);
 
   // --- AI ---
-  const { engine, initEngine, isReady } = useWebLLM();
   const [analyzing, setAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
 
   const handleAnalyzeAI = async () => {
-    if (!client || !engine) {
-      if (!isReady) initEngine();
-      return;
-    }
+    if (!client) return;
 
     setAnalyzing(true);
     try {
@@ -124,12 +120,12 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
 }
 `;
 
-      const reply = await engine.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
+      // Use backend API instead of local WebLLM
+      const response = await api.post('/ai/chat', {
+        messages: [{ role: 'user', content: prompt }]
       });
+      const content = response.data.response || "{}";
 
-      const content = reply.choices[0].message.content || "{}";
       const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
 
       try {
@@ -150,6 +146,24 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
       alert("Erreur lors de l'analyse IA");
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await api.get(`/clients/${client.id}/pdf`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Fiche_Client_${client.societe.replace(/\s+/g, '_')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Erreur téléchargement PDF", error);
+      alert("Erreur lors du téléchargement du PDF");
     }
   };
 
@@ -300,24 +314,33 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
               Informations Générales de l'Entreprise
             </h2>
 
-            {/* AI Trigger Button */}
-            <button
-              onClick={handleAnalyzeAI}
-              disabled={analyzing}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-sm transition-all text-sm font-medium border border-white/30 ${analyzing ? 'bg-white/10 text-white/80 cursor-wait' : 'bg-white/20 hover:bg-white/30 text-white hover:scale-105 active:scale-95'}`}
-            >
-              {analyzing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="animate-pulse">Analyse en cours...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Analyse IA</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-sm transition-all text-sm font-medium border border-white/30 bg-white/20 hover:bg-white/30 text-white hover:scale-105 active:scale-95"
+              >
+                <Download className="w-4 h-4" />
+                <span>PDF</span>
+              </button>
+
+              <button
+                onClick={handleAnalyzeAI}
+                disabled={analyzing}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg backdrop-blur-sm transition-all text-sm font-medium border border-white/30 ${analyzing ? 'bg-white/10 text-white/80 cursor-wait' : 'bg-white/20 hover:bg-white/30 text-white hover:scale-105 active:scale-95'}`}
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="animate-pulse">Analyse...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>IA</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 

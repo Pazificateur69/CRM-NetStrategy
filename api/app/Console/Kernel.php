@@ -28,6 +28,9 @@ class Kernel extends ConsoleKernel
         // 📧 Résumé quotidien à 18h
         $schedule->command('crm:daily-summary')->dailyAt('18:00');
 
+        // 📊 Rapport Hebdomadaire (Vendredi 17h)
+        $schedule->command('crm:weekly-report')->weeklyOn(5, '17:00');
+
         // Exemple : sauvegarde auto chaque nuit
         // $schedule->command('backup:run')->dailyAt('02:00');
     }

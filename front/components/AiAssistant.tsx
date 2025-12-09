@@ -2,16 +2,23 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useWebLLM } from "@/hooks/useWebLLM";
 import { useCrmData } from "@/hooks/useCrmData";
 import { Bot, X, Send, Loader2, Sparkles, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { usePathname } from "next/navigation";
 
+import api from '@/services/api';
+
 export function AiAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
-    const { initEngine, isLoading, progress, messages, sendMessage, clearMessages, isGenerating, isReady, setMessages } = useWebLLM();
+
+    // Custom state management since we removed WebLLM hook
+    const [messages, setMessages] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isReady, setIsReady] = useState(true); // Always ready with API
+
     const crmData = useCrmData();
     const [input, setInput] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -22,14 +29,11 @@ export function AiAssistant() {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [messages, isGenerating]);
 
     const handleOpen = () => {
         setIsOpen(true);
         setIsMinimized(false);
-        if (!isReady && !isLoading) {
-            initEngine();
-        }
     };
 
     // Listen for custom event to open AI
@@ -37,7 +41,53 @@ export function AiAssistant() {
         const handleCustomOpen = () => handleOpen();
         window.addEventListener('open-ai-assistant', handleCustomOpen);
         return () => window.removeEventListener('open-ai-assistant', handleCustomOpen);
-    }, [isReady, isLoading]);
+    }, []);
+
+    const sendMessage = async (userText: string, systemPrompt: string) => {
+        setIsGenerating(true);
+
+        // 1. Add User Message
+        const userMsg = { role: 'user', content: userText };
+        const newHistory = [...messages, userMsg];
+        setMessages(newHistory);
+
+        try {
+            // 2. Prepare API Payload
+            // If history is empty (except the one we just added), prepend system prompt
+            let apiMessages = [...newHistory];
+
+            if (messages.length === 0) {
+                apiMessages = [
+                    { role: 'system', content: systemPrompt },
+                    ...apiMessages
+                ];
+            } else if (messages.length > 0 && messages[0].role !== 'system') {
+                // Ensure system prompt is always present/up-to-date at start if not existing?
+                // Or just prepend it for the API call regardless of visual history?
+                // Let's prepend it for the API call context.
+                apiMessages = [
+                    { role: 'system', content: systemPrompt },
+                    ...messages.filter(m => m.role !== 'system'), // Avoid dupes if we store it
+                    userMsg
+                ];
+            }
+
+            // 3. Call API
+            const response = await api.post('/ai/chat', {
+                messages: apiMessages
+            });
+
+            // 4. Add Assistant Response
+            const reply = response.data.response;
+            setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+
+        } catch (error) {
+            console.error("Chat Error", error);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Désolé, une erreur est survenue lors de la communication avec le serveur." }]);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,7 +114,7 @@ ${crmData.clients.map(c => `
   * Phone: ${c.phone}
   * City: ${c.ville}
   * Revenue: ${c.revenue}€/month
-  * Services: ${c.prestations.length > 0 ? c.prestations.map(p => `${p.type} (${p.montant}€/${p.frequence})`).join(', ') : 'None'}
+  * Services: ${c.prestations?.length > 0 ? c.prestations.map((p: any) => `${p.type} (${p.montant}€/${p.frequence})`).join(', ') : 'None'}
 `).join('')}
 
 --- PROSPECTS ---
@@ -88,11 +138,12 @@ INSTRUCTIONS:
 
         // Inject context about current page
         const contextPrefix = `[Context: User is on page ${pathname}] `;
+
         await sendMessage(contextPrefix + text, systemPrompt);
     };
 
     const handleClearChat = () => {
-        clearMessages();
+        setMessages([]);
     };
 
     // Use Portal to ensure fixed positioning is relative to viewport
@@ -147,7 +198,7 @@ INSTRUCTIONS:
                         <h3 className="font-bold text-sm">Assistant IA</h3>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <span className={`w-1.5 h-1.5 rounded-full ${isReady ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                            {isReady ? 'Prêt' : 'Initialisation...'}
+                            {isReady ? 'En ligne' : 'Connexion...'}
                         </p>
                     </div>
                 </div>
@@ -170,24 +221,14 @@ INSTRUCTIONS:
 
             {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" ref={scrollRef}>
-                {isLoading && (
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4 p-4">
-                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                        <div className="space-y-1">
-                            <p className="text-sm font-medium">Chargement du modèle IA...</p>
-                            <p className="text-xs text-muted-foreground max-w-[200px] mx-auto">{progress}</p>
-                        </div>
-                    </div>
-                )}
-
-                {!isLoading && messages.length === 0 && (
+                {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-50">
                         <Sparkles className="w-12 h-12 text-primary/50" />
                         <p className="text-sm">Posez-moi une question sur vos clients ou prospects.</p>
                     </div>
                 )}
 
-                {messages.map((msg, idx) => (
+                {messages.filter(m => m.role !== 'system').map((msg, idx) => (
                     <div
                         key={idx}
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}
@@ -199,7 +240,7 @@ INSTRUCTIONS:
                                 }`}
                         >
                             {/* Simple markdown-like rendering for bold text */}
-                            {msg.content.replace(/\[Context:.*?\] /, '').split(/(\*\*.*?\*\*)/).map((part, i) =>
+                            {msg.content.replace(/\[Context:.*?\] /, '').split(/(\*\*.*?\*\*)/).map((part: string, i: number) =>
                                 part.startsWith('**') && part.endsWith('**')
                                     ? <strong key={i}>{part.slice(2, -2)}</strong>
                                     : part
@@ -229,12 +270,12 @@ INSTRUCTIONS:
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Posez votre question..."
-                        disabled={!isReady || isGenerating}
+                        disabled={isGenerating}
                         className="w-full pl-4 pr-12 py-3 bg-background/50 border border-white/10 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all placeholder:text-muted-foreground text-sm"
                     />
                     <button
                         type="submit"
-                        disabled={!input.trim() || !isReady || isGenerating}
+                        disabled={!input.trim() || isGenerating}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                         <Send className="w-4 h-4" />

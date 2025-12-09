@@ -30,6 +30,7 @@ import {
 import { TaskKanbanBoard } from '@/components/TaskKanbanBoard';
 import WelcomeWidget from '@/components/WelcomeWidget';
 import RecentActivityWidget from '@/components/RecentActivityWidget';
+import WeeklyStatsWidget from '@/components/WeeklyStatsWidget';
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -208,7 +209,7 @@ export default function DashboardPage() {
   const allEntities = [...data.clients, ...data.prospects] as DashboardEntity[];
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-10 animate-fade-in">
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -258,8 +259,15 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* WELCOME WIDGET */}
-        {widgets.welcome && <WelcomeWidget userName={userName} />}
+        {/* WELCOME & STATS PERSO */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            {widgets.welcome && <WelcomeWidget userName={userName} />}
+          </div>
+          <div className="lg:col-span-1 h-full">
+            <WeeklyStatsWidget />
+          </div>
+        </div>
 
         {/* QUICK ACTIONS WIDGET */}
         {widgets.quickActions && <QuickActionsWidget />}
@@ -529,7 +537,7 @@ export default function DashboardPage() {
           </section>
         )}
       </div >
-    </DashboardLayout >
+    </>
   );
 }
 

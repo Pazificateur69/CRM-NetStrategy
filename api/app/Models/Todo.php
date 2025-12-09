@@ -24,6 +24,11 @@ class Todo extends Model
         'todoable_id',
         'todoable_type',
         'assigned_to', // ✅ utilisateur assigné à la tâche
+        'prospect_id',
+        'rappel_id',
+        'review_status',
+        'approver_id',
+        'review_comment',
     ];
 
     public function user()
@@ -40,10 +45,15 @@ class Todo extends Model
     {
         return $this->morphTo();
     }
-    
+
     public function assignedUser()
-{
-    return $this->belongsTo(User::class, 'assigned_to');
-}
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(\App\Models\Project::class);
+    }
 
 }

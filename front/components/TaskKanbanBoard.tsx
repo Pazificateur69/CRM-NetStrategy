@@ -13,7 +13,10 @@ import {
   ListTodo,
   AlertCircle,
   MoreHorizontal,
-  UserCircle2
+  UserCircle2,
+  FileCheck,
+  Check,
+  X
 } from 'lucide-react';
 
 // ===========================================
@@ -84,6 +87,9 @@ const getPriorityStyles = (priorite: string) => {
 // ===========================================
 // 🧩 COMPOSANT - Carte individuelle
 // ===========================================
+// ===========================================
+// 🧩 COMPOSANT - Carte individuelle
+// ===========================================
 interface TaskCardProps {
   task: Task;
   index: number;
@@ -99,6 +105,7 @@ interface TaskCardProps {
     targetIndex: number,
     columnStatus: Task['status']
   ) => void;
+  onTaskUpdate: (updatedTask: Task) => void; // ✅ Callback de mise à jour
   isAdmin: boolean;
 }
 
@@ -107,6 +114,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   index,
   onDragStart,
   onDragEnter,
+  onTaskUpdate,
   isAdmin,
 }) => {
   // 🕒 Calcul de l'urgence dynamique
@@ -136,6 +144,27 @@ const TaskCard: React.FC<TaskCardProps> = ({
       month: 'short',
     })
     : null;
+
+  // 📝 LOGIQUE D'EXTENSION DE DEADLINE
+  const extendDeadline = async (days: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Empêcher le clic sur la carte
+    e.preventDefault();
+
+    try {
+      const currentDue = task.dueDate ? new Date(task.dueDate) : new Date();
+      currentDue.setDate(currentDue.getDate() + days);
+      const newDateStr = currentDue.toISOString().split('T')[0];
+
+      // Appel API selon le type
+      const endpoint = task.type === 'todo' ? `/todos/${task.id}` : `/rappels/${task.id.replace('r-', '')}`;
+      await api.put(endpoint, { date_echeance: newDateStr });
+
+      // Mise à jour locale
+      onTaskUpdate({ ...task, dueDate: newDateStr });
+    } catch (err) {
+      console.error('Erreur extension deadline:', err);
+    }
+  };
 
   // 🎨 Couleur de fond subtile selon le statut
   const statusColors = {
@@ -198,20 +227,113 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
 
-        {formattedDueDate && (
+        <div className="flex items-center gap-2">
+          {/* BOUTONS D'EXTENSION RAPIDE (Visible au survol) */}
+          {task.status !== 'done' && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => extendDeadline(1, e)}
+                className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded text-[10px] text-slate-600 dark:text-slate-300 font-medium"
+                title="+1 Jour"
+              >
+                +1J
+              </button>
+              <button
+                onClick={(e) => extendDeadline(7, e)}
+                className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded text-[10px] text-slate-600 dark:text-slate-300 font-medium"
+                title="+1 Semaine"
+              >
+                +1S
+              </button>
+            </div>
+          )}
+
+          {formattedDueDate && (
+            <div className={`
+              flex items-center gap-1.5 font-medium px-2 py-1 rounded-md transition-colors
+              ${isOverdue
+                ? 'bg-red-50 text-red-600 border border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50'
+                : task.type === 'reminder'
+                  ? 'bg-purple-50 text-purple-600 border border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/50'
+                  : 'text-muted-foreground'
+              }
+            `}>
+              {task.type === 'reminder' ? <Clock className="w-3.5 h-3.5" /> : <Calendar className="w-3.5 h-3.5" />}
+              <span>{formattedDueDate}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 🛡️ ZONE DE REVUE (Review Workflow) */}
+      <div className="mt-3 pt-2 border-t border-border/50 flex items-center justify-between">
+        {/* Badge de statut de revue */}
+        {task.review_status && task.review_status !== 'none' && (
           <div className={`
-            flex items-center gap-1.5 font-medium px-2 py-1 rounded-md transition-colors
-            ${isOverdue
-              ? 'bg-red-50 text-red-600 border border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50'
-              : task.type === 'reminder'
-                ? 'bg-purple-50 text-purple-600 border border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/50'
-                : 'text-muted-foreground'
-            }
-          `}>
-            {task.type === 'reminder' ? <Clock className="w-3.5 h-3.5" /> : <Calendar className="w-3.5 h-3.5" />}
-            <span>{formattedDueDate}</span>
+             text-[10px] uppercase font-bold px-2 py-0.5 rounded-full flex items-center gap-1
+             ${task.review_status === 'pending' ? 'bg-orange-100 text-orange-600' : ''}
+             ${task.review_status === 'approved' ? 'bg-green-100 text-green-600' : ''}
+             ${task.review_status === 'rejected' ? 'bg-red-100 text-red-600' : ''}
+           `}>
+            <FileCheck className="w-3 h-3" />
+            {task.review_status === 'pending' && 'En revue'}
+            {task.review_status === 'approved' && 'Validé'}
+            {task.review_status === 'rejected' && 'Rejeté'}
           </div>
         )}
+
+        {/* Actions de revue */}
+        <div className="flex items-center gap-1 ml-auto">
+          {/* User: Demander une revue */}
+          {(!task.review_status || task.review_status === 'none' || task.review_status === 'rejected') && (
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!confirm('Demander une revue pour cette tâche ?')) return;
+                try {
+                  await api.put(`/todos/${task.id}`, { review_status: 'pending' });
+                  onTaskUpdate({ ...task, review_status: 'pending' });
+                } catch (err) { console.error(err); }
+              }}
+              className="opacity-0 group-hover:opacity-100 text-[10px] font-medium bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100 transition-all flex items-center gap-1"
+            >
+              <FileCheck className="w-3 h-3" />
+              Revue
+            </button>
+          )}
+
+          {/* Admin: Valider / Rejeter */}
+          {isAdmin && task.review_status === 'pending' && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    await api.put(`/todos/${task.id}`, { review_status: 'approved' });
+                    onTaskUpdate({ ...task, review_status: 'approved' });
+                  } catch (err) { console.error(err); }
+                }}
+                className="p-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                title="Valider"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    await api.put(`/todos/${task.id}`, { review_status: 'rejected' });
+                    onTaskUpdate({ ...task, review_status: 'rejected' });
+                  } catch (err) { console.error(err); }
+                }}
+                className="p-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                title="Rejeter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -241,6 +363,7 @@ interface TaskSectionProps {
     newStatus: Task['status']
   ) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  onTaskUpdate: (updatedTask: Task) => void; // ✅ Prop passée
   isAdmin: boolean;
 }
 
@@ -252,6 +375,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({
   onDragEnter,
   onDrop,
   onDragOver,
+  onTaskUpdate,
   isAdmin,
 }) => {
   const tasksByStatus = useMemo(() => {
@@ -327,6 +451,7 @@ const TaskSection: React.FC<TaskSectionProps> = ({
                     index={index}
                     onDragStart={onDragStart}
                     onDragEnter={onDragEnter}
+                    onTaskUpdate={onTaskUpdate}
                     isAdmin={isAdmin}
                   />
                 ))}
@@ -395,6 +520,11 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
     columnStatus: Task['status']
   ) => {
     dragOverItem.current = { index: targetIndex, status: columnStatus };
+  };
+
+  // ✅ HANDLER POUR MISE À JOUR RAPIDE (+1J / +1S)
+  const handleTaskUpdate = (updatedTask: Task) => {
+    setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
   };
 
   const handleDrop = async (
@@ -473,6 +603,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onTaskUpdate={handleTaskUpdate}
         isAdmin={isAdmin}
       />
 
@@ -484,6 +615,7 @@ export const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({
         onDragEnter={handleDragEnter}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onTaskUpdate={handleTaskUpdate}
         isAdmin={isAdmin}
       />
     </div>

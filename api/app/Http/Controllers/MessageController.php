@@ -45,10 +45,11 @@ class MessageController extends Controller
             'receiver_id' => 'required|exists:users,id',
             'content' => 'nullable|string',
             'image' => 'nullable|image|max:10240', // Max 10MB
+            'audio' => 'nullable|file|mimes:audio/mpeg,mpga,mp3,wav,webm,ogg|max:10240', // Max 10MB
         ]);
 
-        if (!$request->has('content') && !$request->hasFile('image')) {
-            return response()->json(['error' => 'Message content or image is required'], 422);
+        if (!$request->has('content') && !$request->hasFile('image') && !$request->hasFile('audio')) {
+            return response()->json(['error' => 'Message content, image, or audio is required'], 422);
         }
 
         $imagePath = null;
@@ -59,11 +60,20 @@ class MessageController extends Controller
             $imagePath = 'chat_images/' . $filename;
         }
 
+        $audioPath = null;
+        if ($request->hasFile('audio')) {
+            $file = $request->file('audio');
+            $filename = time() . '_voice_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('chat_audio'), $filename);
+            $audioPath = 'chat_audio/' . $filename;
+        }
+
         $message = Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $validated['receiver_id'],
             'content' => $validated['content'] ?? '',
             'image_url' => $imagePath,
+            'audio_url' => $audioPath,
         ]);
 
         broadcast(new \App\Events\MessageSent($message))->toOthers();

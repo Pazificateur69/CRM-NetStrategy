@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { MessageSquare, X, Send, Minimize2, Maximize2, Search, Check, CheckCheck, Loader2, Image as ImageIcon, Smile, Paperclip } from 'lucide-react';
+import { MessageSquare, X, Send, Minimize2, Maximize2, Search, Check, CheckCheck, Loader2, Image as ImageIcon, Smile, Paperclip, Mic } from 'lucide-react';
 import api from '@/services/api';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import TextareaAutosize from 'react-textarea-autosize';
 import createEcho from '@/services/echo';
+import VoiceRecorder from '@/components/VoiceRecorder';
 
 interface User {
     id: number;

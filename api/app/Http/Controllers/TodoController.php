@@ -51,6 +51,30 @@ class TodoController extends Controller
     }
 
     /**
+     * Vue "Mon Travail" (Kanban global)
+     */
+    public function myWork(Request $request)
+    {
+        $user = $request->user();
+
+        $todos = Todo::with(['client', 'project', 'todoable'])
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhere('assigned_to', $user->id);
+            })
+            ->orderBy('ordre')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'retard' => $todos->where('statut', 'retard')->values(),
+            'planifie' => $todos->where('statut', 'planifie')->values(),
+            'en_cours' => $todos->where('statut', 'en_cours')->values(),
+            'termine' => $todos->where('statut', 'termine')->values(),
+        ]);
+    }
+
+    /**
      * Récupérer les tâches par pôle
      */
     public function getByPole(Request $request, string $pole)
@@ -95,6 +119,55 @@ class TodoController extends Controller
             ->get();
 
         return TodoResource::collection($todos)->response();
+    }
+
+    /**
+     * Statistiques Hebdomadaires (Productivité perso)
+     */
+    public function weeklyStats(Request $request)
+    {
+        $user = $request->user();
+        $now = now();
+        $startOfWeek = $now->copy()->startOfWeek();
+        $startOfLastWeek = $startOfWeek->copy()->subWeek();
+        $endOfLastWeek = $startOfLastWeek->copy()->endOfWeek();
+
+        // Tâches créées
+        $createdCurrent = Todo::where('user_id', $user->id)
+            ->where('created_at', '>=', $startOfWeek)
+            ->count();
+
+        $createdLast = Todo::where('user_id', $user->id)
+            ->whereBetween('created_at', [$startOfLastWeek, $endOfLastWeek])
+            ->count();
+
+        // Tâches terminées (assigned_to or user_id)
+        $completedCurrent = Todo::where(function ($q) use ($user) {
+            $q->where('user_id', $user->id)->orWhere('assigned_to', $user->id);
+        })
+            ->where('statut', 'termine')
+            ->where('updated_at', '>=', $startOfWeek)
+            ->count();
+
+        $completedLast = Todo::where(function ($q) use ($user) {
+            $q->where('user_id', $user->id)->orWhere('assigned_to', $user->id);
+        })
+            ->where('statut', 'termine')
+            ->whereBetween('updated_at', [$startOfLastWeek, $endOfLastWeek])
+            ->count();
+
+        return response()->json([
+            'created' => [
+                'current' => $createdCurrent,
+                'last' => $createdLast,
+                'diff' => $createdCurrent - $createdLast
+            ],
+            'completed' => [
+                'current' => $completedCurrent,
+                'last' => $completedLast,
+                'diff' => $completedCurrent - $completedLast
+            ]
+        ]);
     }
 
     /**

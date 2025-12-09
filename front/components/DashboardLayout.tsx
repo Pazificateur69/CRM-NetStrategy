@@ -24,7 +24,9 @@ import {
   Calendar as CalendarIcon,
   FolderKanban,
   MessageSquare,
-  Plus
+  Plus,
+  Target,
+  Kanban
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Toaster } from '@/components/ui/Toaster';
@@ -36,6 +38,7 @@ import ChatSystem from '@/components/ChatSystem';
 import VideoConfModal from '@/components/VideoConfModal';
 import { Video } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import QuickAddTaskInput from '@/components/QuickAddTaskInput';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -146,6 +149,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 Principal
               </div>
               <NavLink href="/dashboard" icon={<LayoutDashboard />} label="Tableau de bord" active={pathname === '/dashboard'} />
+              <NavLink href="/dashboard/focus" icon={<Target />} label="Mode Focus" active={pathname === '/dashboard/focus'} />
+              <NavLink href="/my-work" icon={<Kanban />} label="Mon Travail" active={pathname === '/my-work'} />
               <NavLink href="/clients" icon={<Briefcase />} label="Clients" active={pathname.startsWith('/clients')} />
               <NavLink href="/prospects" icon={<PhoneCall />} label="Prospects" active={pathname.startsWith('/prospects')} />
               <NavLink href="/projects" icon={<FolderKanban />} label="Projets" active={pathname.startsWith('/projects')} />
@@ -218,8 +223,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Quick Add Task Input */}
+            <QuickAddTaskInput />
+
             {/* Search Bar (Trigger for Command Palette) */}
-            <div className="hidden md:flex items-center flex-1 max-w-xl mx-8">
+            <div className="hidden md:flex items-center flex-1 max-w-xl mx-2">
               <button
                 onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
                 className="w-full flex items-center gap-3 px-4 py-2.5 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-500/30 dark:hover:border-indigo-400/30 hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg hover:shadow-indigo-500/5 rounded-xl transition-all duration-300 group cursor-text text-left"

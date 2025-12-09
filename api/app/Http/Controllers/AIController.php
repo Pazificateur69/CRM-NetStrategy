@@ -74,26 +74,52 @@ class AIController extends Controller
     public function chat(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'prospect_id' => 'required|exists:prospects,id',
+            'prospect_id' => 'nullable|exists:prospects,id',
+            'client_id' => 'nullable|exists:clients,id',
             'messages' => 'required|array',
             'messages.*.role' => 'required|in:user,assistant,system',
             'messages.*.content' => 'required|string',
         ]);
 
-        $prospect = Prospect::with(['todos', 'rappels', 'events'])->find($validated['prospect_id']);
+        $context = "";
 
-        // Build Context
-        $context = "Tu es un assistant CRM intelligent. Tu discutes à propos du prospect : {$prospect->societe}.\n";
-        $context .= "Infos clés : Contact={$prospect->contact}, Email={$prospect->email}, Tel={$prospect->phone}, Statut={$prospect->statut}.\n";
-        $context .= "Détails : " . ($prospect->details ?? 'Aucun') . "\n";
-        $context .= "Historique : " . $prospect->todos->count() . " tâches, " . $prospect->rappels->count() . " rappels.\n";
-        $context .= "Réponds de manière concise, professionnelle et utile pour aider le commercial.\n";
+        // 1. Prospect Context
+        if (!empty($validated['prospect_id'])) {
+            $prospect = Prospect::with(['todos', 'rappels', 'events'])->find($validated['prospect_id']);
+            if ($prospect) {
+                $context .= "CONTEXT: Discusssion about PROSPECT: {$prospect->societe}.\n";
+                $context .= "Key Info: Contact={$prospect->contact}, Email={$prospect->email}, Tel={$prospect->phone}, Status={$prospect->statut}.\n";
+                $context .= "Details: " . ($prospect->details ?? 'None') . "\n";
+                $context .= "History: " . $prospect->todos->count() . " tasks, " . $prospect->rappels->count() . " reminders.\n";
+            }
+        }
 
-        // Prepare Prompt for Ollama (Format: System + History + New Message)
-        // Since OllamaService uses a simple string prompt, we format the chat history manually or use a specific chat endpoint if available.
-        // Assuming generateContent uses a completion endpoint, we construct a transcript.
+        // 2. Client Context
+        if (!empty($validated['client_id'])) {
+            $client = \App\Models\Client::with(['todos', 'rappels', 'prestations'])->find($validated['client_id']);
+            if ($client) {
+                $context .= "CONTEXT: Discussion about CLIENT: {$client->societe}.\n";
+                $context .= "Key Info: Contact={$client->gerant}, Email=" . ($client->emails[0] ?? 'N/A') . ", Tel=" . ($client->telephones[0] ?? 'N/A') . ".\n";
+                $context .= "Services: " . $client->prestations->count() . " active services.\n";
+            }
+        }
 
-        $prompt = $context . "\n\n";
+        // 3. Build Prompt
+        $baseSystemPrompt = "Tu es l'assistant IA de ce CRM. Ton rôle est d'aider l'utilisateur à gérer ses clients et prospects.\n";
+        $baseSystemPrompt .= "Règles :\n";
+        $baseSystemPrompt .= "- Sois concis et direct.\n";
+        $baseSystemPrompt .= "- Utilise des listes à puces pour énumérer des éléments (tâches, infos).\n";
+        $baseSystemPrompt .= "- Ne sois pas trop bavard, va à l'essentiel.\n";
+        $baseSystemPrompt .= "- Si on te demande des tâches, liste-les clairement.\n";
+        $baseSystemPrompt .= "- Adopte un ton professionnel mais amical.\n";
+
+        $prompt = "SYSTEM: $baseSystemPrompt\n";
+
+        // Add calculated context if any
+        if (!empty($context)) {
+            $prompt .= "CONTEXTE DU CRM:\n$context\n\n";
+        }
+
         foreach ($validated['messages'] as $msg) {
             $role = strtoupper($msg['role']);
             $prompt .= "$role: {$msg['content']}\n";
@@ -103,5 +129,45 @@ class AIController extends Controller
         $response = $this->aiService->generateContent($prompt);
 
         return response()->json(['response' => $response]);
+    }
+    public function suggestReminder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+        ]);
+
+        $today = now()->toDateString();
+        $prompt = "Tu es un assistant de productivité expert.\n";
+        $prompt .= "Analyse la tâche suivante et suggère une date d'échéance réaliste et une raison courte.\n";
+        $prompt .= "Tâche : {$validated['title']}\n";
+        if (!empty($validated['description'])) {
+            $prompt .= "Détails : {$validated['description']}\n";
+        }
+        $prompt .= "Date actuelle : $today\n";
+        $prompt .= "Règles :\n";
+        $prompt .= "- Si urgence détectée (mots comme 'urgent', 'ASAP', 'aujourd'hui'), mets la date d'aujourd'hui ou demain.\n";
+        $prompt .= "- Si c'est une tâche de fond (stratégie, veille), mets +1 semaine.\n";
+        $prompt .= "- Sinon, mets par défaut +2 jours.\n";
+        $prompt .= "Réponds UNIQUEMENT au format JSON valide : { \"date\": \"YYYY-MM-DD\", \"reason\": \"Explication courte\" }";
+
+        $response = $this->aiService->generateContent($prompt);
+
+        // Nettoyage basique si l'IA ajoute du texte autour du JSON
+        if (preg_match('/\{.*\}/s', $response, $matches)) {
+            $response = $matches[0];
+        }
+
+        $decoded = json_decode($response, true);
+
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return response()->json($decoded);
+        }
+
+        return response()->json([
+            'date' => now()->addDays(2)->toDateString(),
+            'reason' => 'Suggestion par défaut (IA indisponible)',
+            'raw_response' => $response
+        ]);
     }
 }

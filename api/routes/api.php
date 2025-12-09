@@ -7,6 +7,7 @@ use App\Http\Controllers\{
     ClientController,
     ProspectController,
     RappelController,
+    MoodController,
     TodoController,
     DashboardController,
     ComptabiliteController,
@@ -22,7 +23,8 @@ use App\Http\Controllers\{
     ProjectController,
     NotificationController,
     SecurityController,
-    OrganizationController
+    OrganizationController,
+    PdfController
 };
 
 // ===================================================
@@ -61,11 +63,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     // 🚪 AUTHENTIFICATION
     // ===================================================
-    // ===================================================
-    // 🚪 AUTHENTIFICATION
-    // ===================================================
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/2fa/verify-login', [AuthController::class, 'verifyTwoFactorLogin']); // 🔐 Vérification OTP à la connexion
+
+    // ===================================================
+    // 🤖 INTELLIGENCE ARTIFICIELLE
+    // ===================================================
+    Route::post('/ai/chat', [AIController::class, 'chat']);
+    Route::post('/ai/analyze-prospect/{id}', [AIController::class, 'analyzeProspect']);
+    Route::post('/ai/suggest-deadline', [AIController::class, 'suggestReminder']); // ✅ Smart Reminder Route
 
     // ===================================================
     // 🛡️ 2FA SETTINGS
@@ -118,6 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // 📊 DASHBOARD
     // ===================================================
     Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
+    Route::get('/dashboard/focus', [DashboardController::class, 'focusBoard']);
     Route::put('/dashboard/preferences', [DashboardController::class, 'updatePreferences']);
     Route::get('/dashboard/clients-overview', [DashboardController::class, 'clientOverview']);
 
@@ -142,7 +149,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // ✅ TÂCHES (TODOS) & RAPPELS
     // ===================================================
     Route::get('/todos/pole/{pole}', [TodoController::class, 'getByPole']);
-    Route::get('/todos/me', [TodoController::class, 'myTasks']); // ✅ Mes tâches
+    Route::get('/todos/me', [TodoController::class, 'myTasks']);
+    Route::get('/todos/my-work', [TodoController::class, 'myWork']); // ✅ Nouvelle vue globale
+    Route::get('/todos/stats/weekly', [TodoController::class, 'weeklyStats']);
+
+    // Mood Tracker
+    Route::post('/mood', [MoodController::class, 'store']);
+    Route::post('/mood', [MoodController::class, 'store']);
+    Route::get('/mood/today', [MoodController::class, 'checkToday']);
+    Route::get('/mood/stats', [MoodController::class, 'stats'])->middleware('role:admin'); // ✅ Admin Stats
     Route::get('/rappels/me', [RappelController::class, 'myTasks']); // ✅ Mes rappels
     Route::get('/rappels/pole/{pole}', [RappelController::class, 'getByPole']);
     Route::get('/todos/user/{userId}', [TodoController::class, 'getByUser'])->middleware('role:admin'); // ✅ Admin voir tâches user
@@ -202,7 +217,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/mentions', [UserController::class, 'listForMentions']); // ✅ Accessible à tous
 
     Route::middleware(['role:admin'])->group(function () {
+        Route::get('/users/workload', [UserController::class, 'workload']); // 📊 Workload
         Route::apiResource('users', UserController::class);
+
+        // 📄 EXPORT PDF
+        Route::get('/clients/{id}/pdf', [PdfController::class, 'exportClient']);
     });
 
     // ===================================================

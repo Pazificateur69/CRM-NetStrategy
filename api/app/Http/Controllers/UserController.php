@@ -229,4 +229,37 @@ class UserController extends Controller
 
         return response()->json($users->concat($poleData));
     }
+    /**
+     * Charge de travail (Admin)
+     */
+    public function workload(Request $request)
+    {
+        $admin = auth()->user();
+        if (!$admin || !$admin->hasRole('admin')) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $users = User::withCount([
+            'todos as active_tasks_count' => function ($query) {
+                $query->where('statut', '!=', 'termine');
+            },
+            'todos as completed_tasks_count' => function ($query) {
+                $query->where('statut', 'termine');
+            }
+        ])
+            ->orderByDesc('active_tasks_count')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'pole' => $user->pole,
+                    'avatar' => $user->avatar_url, // Assuming accessor exists or null
+                    'active' => $user->active_tasks_count,
+                    'completed' => $user->completed_tasks_count,
+                ];
+            });
+
+        return response()->json($users);
+    }
 }
