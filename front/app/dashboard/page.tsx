@@ -31,6 +31,7 @@ import { TaskKanbanBoard } from '@/components/TaskKanbanBoard';
 import WelcomeWidget from '@/components/WelcomeWidget';
 import RecentActivityWidget from '@/components/RecentActivityWidget';
 import WeeklyStatsWidget from '@/components/WeeklyStatsWidget';
+import MoodSelector from '@/components/MoodSelector';
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -260,12 +261,20 @@ export default function DashboardPage() {
         )}
 
         {/* WELCOME & STATS PERSO */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Main Welcome Card */}
+          <div className="xl:col-span-2 min-h-[280px]">
             {widgets.welcome && <WelcomeWidget userName={userName} />}
           </div>
-          <div className="lg:col-span-1 h-full">
-            <WeeklyStatsWidget />
+
+          {/* Side Widgets (Mood + Weekly Stats) */}
+          <div className="xl:col-span-1 flex flex-col sm:flex-row xl:flex-col gap-6 ">
+            <div className="flex-1">
+              <MoodSelector />
+            </div>
+            <div className="flex-1">
+              <WeeklyStatsWidget />
+            </div>
           </div>
         </div>
 
