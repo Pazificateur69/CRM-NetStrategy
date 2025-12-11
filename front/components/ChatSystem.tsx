@@ -25,6 +25,7 @@ interface Message {
     receiver_id: number;
     content: string;
     image_url?: string | null;
+    audio_url?: string | null;
     created_at: string;
     read_at?: string | null;
     pending?: boolean;
@@ -43,6 +44,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -265,6 +267,42 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         }
     };
 
+    const handleRecordingComplete = async (blob: Blob) => {
+        if (!selectedUser) return;
+        setIsRecording(false);
+        const tempId = Date.now();
+
+        // Optimistic UI for audio
+        const tempMessage: Message = {
+            id: tempId,
+            sender_id: currentUserId,
+            receiver_id: selectedUser.id,
+            content: '',
+            audio_url: URL.createObjectURL(blob),
+            created_at: new Date().toISOString(),
+            read_at: null,
+            pending: true
+        };
+
+        setMessages(prev => [...prev, tempMessage]);
+
+        try {
+            const formData = new FormData();
+            formData.append('receiver_id', selectedUser.id.toString());
+            formData.append('audio', blob, 'voice-message.webm');
+
+            const res = await api.post('/messages', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            setMessages(prev => prev.map(m => m.id === tempId ? res.data : m));
+        } catch (error) {
+            console.error("Error sending voice message", error);
+            toast.error("Échec de l'envoi du message vocal");
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+        }
+    };
+
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
@@ -438,6 +476,15 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                                             />
                                                         </div>
                                                     )}
+                                                    {msg.audio_url && (
+                                                        <div className="flex items-center gap-2 min-w-[200px]">
+                                                            <audio
+                                                                controls
+                                                                src={msg.audio_url.startsWith('blob:') ? msg.audio_url : `${process.env.NEXT_PUBLIC_API_URL}/${msg.audio_url}`}
+                                                                className={`h-8 w-full ${isMe ? 'invert sepia saturate-0 hue-rotate-180 brightness-200 contrast-100' : 'accent-indigo-600'}`}
+                                                            />
+                                                        </div>
+                                                    )}
                                                     {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
                                                 </div>
 
@@ -492,58 +539,72 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                     )}
                                 </AnimatePresence>
 
-                                <div className="flex items-end gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-[24px] ring-1 ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:bg-white dark:focus-within:bg-slate-800 transition-all shadow-sm">
-                                    <div className="flex gap-1 pb-1 pl-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"
-                                        >
-                                            <ImageIcon className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                            className={`p-2 rounded-xl transition-all ${showEmojiPicker ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'}`}
-                                        >
-                                            <Smile className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleImageSelect}
+                                {isRecording ? (
+                                    <VoiceRecorder
+                                        onRecordingComplete={handleRecordingComplete}
+                                        onCancel={() => setIsRecording(false)}
                                     />
+                                ) : (
+                                    <div className="flex items-end gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-[24px] ring-1 ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:bg-white dark:focus-within:bg-slate-800 transition-all shadow-sm">
+                                        <div className="flex gap-1 pb-1 pl-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"
+                                            >
+                                                <ImageIcon className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                                className={`p-2 rounded-xl transition-all ${showEmojiPicker ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'}`}
+                                            >
+                                                <Smile className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsRecording(true)}
+                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                            >
+                                                <Mic className="w-5 h-5" />
+                                            </button>
+                                        </div>
 
-                                    <TextareaAutosize
-                                        minRows={1}
-                                        value={newMessage}
-                                        onChange={(e) => {
-                                            setNewMessage(e.target.value);
-                                            handleTyping();
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                handleSendMessage();
-                                            }
-                                        }}
-                                        placeholder="Écrivez votre message..."
-                                        className="w-full bg-transparent text-slate-900 dark:text-white rounded-xl px-2 py-3 resize-none focus:outline-none transition-all max-h-32 min-h-[48px]"
-                                    />
-                                    <div className="pb-1 pr-1">
-                                        <button
-                                            onClick={handleSendMessage}
-                                            disabled={!newMessage.trim() && !selectedImage}
-                                            className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                        >
-                                            <Send className="w-4 h-4" />
-                                        </button>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageSelect}
+                                        />
+
+                                        <TextareaAutosize
+                                            minRows={1}
+                                            value={newMessage}
+                                            onChange={(e) => {
+                                                setNewMessage(e.target.value);
+                                                handleTyping();
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleSendMessage();
+                                                }
+                                            }}
+                                            placeholder="Écrivez votre message..."
+                                            className="w-full bg-transparent text-slate-900 dark:text-white rounded-xl px-2 py-3 resize-none focus:outline-none transition-all max-h-32 min-h-[48px]"
+                                        />
+                                        <div className="pb-1 pr-1">
+                                            <button
+                                                onClick={handleSendMessage}
+                                                disabled={!newMessage.trim() && !selectedImage}
+                                                className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                            >
+                                                <Send className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                             {selectedUser && typingUsers.includes(selectedUser.id) && (
                                 <div className="text-xs text-slate-500 dark:text-slate-400 italic mt-1 ml-4 animate-pulse absolute bottom-20 left-6">

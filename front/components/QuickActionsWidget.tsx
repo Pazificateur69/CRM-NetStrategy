@@ -66,23 +66,33 @@ function BuildingIcon(props: any) {
 
 export default function QuickActionsWidget() {
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {actions.map((action) => (
                 <Link
                     key={action.label}
                     href={action.href}
-                    className={`
-            group flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all duration-300
-            ${action.bg} ${action.border}
-            hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02]
-          `}
+                    className="
+                        group relative flex items-center p-4 rounded-2xl bg-card border border-border shadow-sm
+                        hover:shadow-lg hover:border-indigo-500/30 hover:bg-slate-50 dark:hover:bg-slate-800/50
+                        transition-all duration-300 hover:-translate-y-1 overflow-hidden
+                    "
                 >
-                    <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 shadow-sm ${action.color}`}>
-                        <action.icon className="w-6 h-6" />
+                    <div className={`p-3 rounded-xl bg-opacity-10 dark:bg-opacity-20 mr-4 ${action.bg}`}>
+                        <div className={`${action.color}`}>
+                            <action.icon className="w-5 h-5" />
+                        </div>
                     </div>
-                    <span className="font-semibold text-sm text-center text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-                        {action.label}
-                    </span>
+                    <div>
+                        <span className="block font-semibold text-sm text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            {action.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground hidden lg:block group-hover:text-indigo-500/70 transition-colors">
+                            Créer rapidement
+                        </span>
+                    </div>
+
+                    {/* Gradient Glow Effect on Hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
                 </Link>
             ))}
         </div>

@@ -97,9 +97,9 @@
 
     <div class="client-info">
         <h1>{{ $client->societe }}</h1>
-        <div><strong>Contact :</strong> {{ $client->prenom }} {{ $client->nom }}</div>
-        <div><strong>Email :</strong> {{ $client->email }}</div>
-        <div><strong>Téléphone :</strong> {{ $client->telephone }}</div>
+        <div><strong>Contact :</strong> {{ $client->gerant ?? 'Non spécifié' }}</div>
+        <div><strong>Email :</strong> {{ $client->emails[0] ?? ($client->email ?? '-') }}</div>
+        <div><strong>Téléphone :</strong> {{ $client->telephones[0] ?? ($client->phone ?? '-') }}</div>
         <div><strong>Statut :</strong> {{ ucfirst($client->statut) }}</div>
     </div>
 

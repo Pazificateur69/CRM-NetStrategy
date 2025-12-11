@@ -19,10 +19,34 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }: VoiceRe
     const chunksRef = useRef<BlobPart[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+
+    const getSupportedMimeType = () => {
+        const types = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4',
+            'audio/ogg;codecs=opus',
+            'audio/wav'
+        ];
+        for (const type of types) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                return type;
+            }
+        }
+        return '';
+    };
+
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
+
+            const mimeType = getSupportedMimeType();
+            if (!mimeType) {
+                toast.error("Votre navigateur ne supporte pas l'enregistrement audio vocal.");
+                return;
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
 
             mediaRecorderRef.current = mediaRecorder;
             chunksRef.current = [];
@@ -34,7 +58,7 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }: VoiceRe
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const blob = new Blob(chunksRef.current, { type: mimeType });
                 setAudioBlob(blob);
                 stream.getTracks().forEach(track => track.stop());
             };
@@ -46,9 +70,15 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }: VoiceRe
                 setRecordingTime(prev => prev + 1);
             }, 1000);
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error accessing microphone:', err);
-            toast.error("Impossible d'accéder au microphone");
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                toast.error("Accès au microphone refusé. Veuillez vérifier vos permissions.");
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                toast.error("Aucun microphone détecté.");
+            } else {
+                toast.error("Erreur lors de l'accès au microphone : " + (err.message || "Inconnue"));
+            }
             onCancel();
         }
     };
