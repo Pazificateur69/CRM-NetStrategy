@@ -1,4 +1,3 @@
-// app/prospects/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -11,6 +10,7 @@ import {
     Edit,
     FileText,
     Clock,
+    CheckCircle2,
     CheckCircle,
     Download,
     LucideIcon,
@@ -23,7 +23,8 @@ import {
     Loader2,
     MapPin,
     Globe,
-    Hash
+    Hash,
+    Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -42,6 +43,7 @@ import {
     deleteComment
 } from '@/services/crm';
 import api from '@/services/api';
+import ProspectAIAnalysisModal from './components/ProspectAIAnalysisModal';
 import ProspectEditModal from './components/ProspectEditModal';
 import QuickActionCallModal from '@/components/QuickActionCallModal';
 import ProspectConversionModal from './components/ProspectConversionModal';
@@ -88,6 +90,11 @@ export default function ProspectDetailPage() {
     const [userRole, setUserRole] = useState<string>('');
     const [currentUserId, setCurrentUserId] = useState<number | undefined>(undefined);
     const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined);
+
+    // AI Analysis State
+    const [showAIModal, setShowAIModal] = useState(false);
+    const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+    const [aiLoading, setAiLoading] = useState(false);
 
     // Modals State
     const [showEditModal, setShowEditModal] = useState(false);
@@ -204,6 +211,23 @@ export default function ProspectDetailPage() {
             window.location.href = `mailto:${prospect.emails[0]}`;
         } else {
             alert("Aucune adresse email disponible pour ce prospect.");
+        }
+    };
+
+    const handleAnalyzeAI = async () => {
+        if (!prospect) return;
+        setShowAIModal(true);
+        if (aiAnalysis) return; // Don't re-fetch if already have data
+
+        setAiLoading(true);
+        try {
+            const response = await api.post(`/ai/analyze-prospect/${prospect.id}`);
+            setAiAnalysis(response.data);
+        } catch (error) {
+            console.error("Erreur lors de l'analyse IA", error);
+            setAiAnalysis(null);
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -418,13 +442,18 @@ export default function ProspectDetailPage() {
 
                         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                             <button onClick={handleConvertClick} disabled={isConverting || prospect.statut === 'converti'} className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 rounded-xl transition-all shadow-lg shadow-green-500/20 font-semibold group">
-                                {isConverting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                                {isConverting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5 group-hover:scale-110 transition-transform" />}
                                 <span>{prospect.statut === 'converti' ? 'Déjà Converti' : 'Convertir en Client'}</span>
                             </button>
 
-                            <button onClick={() => setShowEditModal(true)} className="flex items-center justify-center gap-2 bg-card text-foreground px-6 py-3 rounded-xl hover:bg-accent transition-all shadow-sm border border-border font-semibold group">
+                            <button onClick={handleAnalyzeAI} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20 font-semibold group">
+                                <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                <span className="hidden sm:inline">Analyse AI</span>
+                            </button>
+
+                            <button onClick={() => setShowEditModal(true)} className="flex items-center justify-center gap-2 bg-card text-foreground px-4 py-3 rounded-xl hover:bg-accent transition-all shadow-sm border border-border font-semibold group">
                                 <Edit className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
-                                <span>Modifier</span>
+                                <span className="hidden sm:inline">Modifier</span>
                             </button>
                         </div>
                     </div>
@@ -434,6 +463,13 @@ export default function ProspectDetailPage() {
             <div className="mb-8">
                 <FicheTabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
             </div>
+
+            <ProspectAIAnalysisModal
+                open={showAIModal}
+                onClose={() => setShowAIModal(false)}
+                analysis={aiAnalysis}
+                loading={aiLoading}
+            />
 
             <div className="animate-fade-in">
                 {activeTab === 'informations' && (

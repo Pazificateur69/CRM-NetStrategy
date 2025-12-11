@@ -264,43 +264,77 @@ export default function SettingsPage() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-4xl mx-auto p-6 md:p-8 animate-fade-in">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Paramètres</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Gérez votre profil et vos préférences.</p>
+            <div className="max-w-6xl mx-auto p-6 md:p-8 animate-fade-in space-y-8">
+                {/* Header with Gradient */}
+                <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl p-8 lg:p-10 mb-8">
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20"></div>
+                    <div className="absolute -top-24 -right-24 bg-indigo-500/10 w-96 h-96 rounded-full blur-3xl"></div>
+
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div>
+                            <h1 className="text-3xl lg:text-4xl font-bold text-white tracking-tight mb-2">Paramètres</h1>
+                            <p className="text-slate-400 text-lg max-w-xl">Gérez votre profil, vos préférences et sécurisez votre compte.</p>
+                        </div>
+                        <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md p-2 rounded-xl border border-white/10">
+                            <div className="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-white text-lg">
+                                {user?.name?.charAt(0) || 'U'}
+                            </div>
+                            <div className="pr-4">
+                                <div className="text-sm font-medium text-white">{user?.name}</div>
+                                <div className="text-xs text-slate-400">{user?.role}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-8">
+                <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar Navigation */}
-                    <nav className="w-full md:w-64 flex-shrink-0 space-y-2">
-                        {[
-                            { id: 'profile', icon: User, label: 'Profil' },
-                            { id: 'appearance', icon: Palette, label: 'Apparence' },
-                            { id: 'notifications', icon: Bell, label: 'Notifications' },
-                            { id: 'security', icon: Shield, label: 'Sécurité' },
-                            ...(user?.role === 'admin' ? [{ id: 'organization', icon: Building, label: 'Organisation' }] : []),
-                            { id: 'data', icon: Download, label: 'Mes Données' },
-                        ].map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveTab(item.id as any)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all ${activeTab === item.id
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                    }`}
-                            >
-                                <item.icon className="w-5 h-5" />
-                                {item.label}
-                            </button>
-                        ))}
+                    <nav className="w-full lg:w-72 flex-shrink-0 space-y-2">
+                        <div className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-2xl p-4 border border-slate-200/60 dark:border-slate-800/60 shadow-sm sticky top-24">
+                            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-4">Menu</h3>
+                            {[
+                                { id: 'profile', icon: User, label: 'Mon Profil', desc: 'Infos personnelles' },
+                                { id: 'appearance', icon: Palette, label: 'Apparence', desc: 'Thème et UI' },
+                                { id: 'notifications', icon: Bell, label: 'Notifications', desc: 'Alertes & Emails' },
+                                { id: 'security', icon: Shield, label: 'Sécurité', desc: 'Mot de passe & 2FA' },
+                                ...(user?.role === 'admin' ? [{ id: 'organization', icon: Building, label: 'Organisation', desc: 'Paramètres globaux' }] : []),
+                                { id: 'data', icon: Download, label: 'Mes Données', desc: 'Export & Suppression' },
+                            ].map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id as any)}
+                                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-200 group ${activeTab === item.id
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 scale-[1.02]'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:scale-[1.01]'
+                                        }`}
+                                >
+                                    <div className={`p-2 rounded-lg transition-colors ${activeTab === item.id ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30'}`}>
+                                        <item.icon className={`w-5 h-5 ${activeTab === item.id ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`} />
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-sm">{item.label}</div>
+                                        {activeTab !== item.id && <div className="text-[10px] opacity-70 font-medium">{item.desc}</div>}
+                                    </div>
+                                    {activeTab === item.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                                </button>
+                            ))}
+                        </div>
                     </nav>
 
                     {/* Content Area */}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         {/* PROFILE TAB */}
                         {activeTab === 'profile' && (
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Informations personnelles</h2>
+                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
+                                <div className="flex items-center gap-4 mb-8 border-b border-slate-200 dark:border-slate-800 pb-6">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <User className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Informations personnelles</h2>
+                                        <p className="text-sm text-slate-500">Mettez à jour vos informations publiques.</p>
+                                    </div>
+                                </div>
                                 {/* ... (Existing Profile Form) ... */}
                                 <form onSubmit={handleProfileUpdate} className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -352,7 +386,7 @@ export default function SettingsPage() {
 
                         {/* APPEARANCE TAB */}
                         {activeTab === 'appearance' && (
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Apparence</h2>
                                 <div className="grid grid-cols-3 gap-4">
                                     {['light', 'dark', 'system'].map((t) => (
@@ -374,7 +408,7 @@ export default function SettingsPage() {
 
                         {/* NOTIFICATIONS TAB */}
                         {activeTab === 'notifications' && (
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Préférences de notification</h2>
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
@@ -404,9 +438,9 @@ export default function SettingsPage() {
 
                         {/* SECURITY TAB */}
                         {activeTab === 'security' && (
-                            <div className="space-y-8">
+                            <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
                                 {/* Password Change */}
-                                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300">
                                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Mot de passe</h2>
                                     <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-md">
                                         <input
@@ -444,7 +478,7 @@ export default function SettingsPage() {
                                 </div>
 
                                 {/* 2FA Section */}
-                                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300">
                                     <div className="flex items-start justify-between mb-6">
                                         <div>
                                             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -471,7 +505,7 @@ export default function SettingsPage() {
                                             </button>
                                         ) : setupStep === 'qr' && qrCode ? (
                                             <div className="space-y-6 animate-in fade-in slide-in-from-top-4">
-                                                <div className="p-6 bg-white rounded-xl border border-slate-200 inline-block" dangerouslySetInnerHTML={{ __html: qrCode }} />
+                                                <div className="p-6 bg-white rounded-xl border border-slate-200 inline-block" dangerouslySetInnerHTML={{ __html: qrCode || '' }} />
                                                 <div className="max-w-sm">
                                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                         Scannez ce code avec Google Authenticator, puis entrez le code à 6 chiffres :
@@ -591,7 +625,7 @@ export default function SettingsPage() {
                                 )}
 
                                 {/* Login History */}
-                                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300">
                                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                                         <History className="w-6 h-6 text-indigo-600" />
                                         Historique de connexion
@@ -625,7 +659,7 @@ export default function SettingsPage() {
                                 </div>
 
                                 {/* Active Sessions */}
-                                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300">
                                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                                         <Smartphone className="w-6 h-6 text-indigo-600" />
                                         Sessions actives
@@ -659,7 +693,7 @@ export default function SettingsPage() {
                         )}
                         {/* ORGANIZATION TAB */}
                         {activeTab === 'organization' && (
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                                     <Building className="w-6 h-6 text-indigo-600" />
                                     Paramètres de l'organisation
@@ -707,7 +741,7 @@ export default function SettingsPage() {
 
                         {/* DATA TAB */}
                         {activeTab === 'data' && (
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl border border-slate-200/60 dark:border-slate-800/60 p-6 md:p-8 shadow-xl transition-all duration-300 animate-in fade-in slide-in-from-right-4">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                                     <Download className="w-6 h-6 text-indigo-600" />
                                     Mes Données

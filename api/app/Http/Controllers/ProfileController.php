@@ -70,6 +70,15 @@ class ProfileController extends Controller
         // Load relationships for export
         $user->load(['loginHistory', 'auditLogs']);
 
+        // Fetch tasks (created and assigned)
+        $createdTodos = \App\Models\Todo::where('user_id', $user->id)->get();
+        $assignedTodos = \App\Models\Todo::where('assigned_to', $user->id)->where('user_id', '!=', $user->id)->get(); // Avoid duplicates if needed, or just list all assigned
+
+        $createdRappels = \App\Models\Rappel::where('user_id', $user->id)->get();
+        $assignedRappels = \App\Models\Rappel::whereHas('assignedUsers', function ($q) use ($user) {
+            $q->where('users.id', $user->id);
+        })->get();
+
         $data = [
             'profile' => $user->only(['id', 'name', 'email', 'role', 'pole', 'created_at']),
             'preferences' => [
@@ -80,7 +89,13 @@ class ProfileController extends Controller
                 'login_history' => $user->loginHistory,
                 'active_sessions' => $user->tokens,
             ],
-            'activity' => $user->auditLogs,
+            'activity' => $user->auditLogs, // includes AuditLog models if relationship exists
+            'tasks' => [
+                'created_todos' => $createdTodos,
+                'assigned_todos' => $assignedTodos,
+                'created_rappels' => $createdRappels,
+                'assigned_rappels' => $assignedRappels,
+            ],
             'export_date' => now()->toIso8601String(),
         ];
 

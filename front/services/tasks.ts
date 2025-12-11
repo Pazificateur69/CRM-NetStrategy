@@ -53,20 +53,31 @@ const mapFrontendToBackendStatus = (status: Task['status']): string => {
 // ===========================================
 // 🟢 Récupération des tâches + rappels
 // ===========================================
+// Helper to filter out old completed tasks (older than 24h)
+const isRecent = (t: any) => {
+  if (t.statut !== 'termine' && t.statut !== 'fait') return true;
+  if (!t.updated_at) return true;
+  const oneDay = 24 * 60 * 60 * 1000;
+  return new Date(t.updated_at).getTime() > Date.now() - oneDay;
+};
+
 export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
   const [todosRes, rappelsRes] = await Promise.all([
     api.get(`/todos/pole/${pole}`),
     api.get(`/rappels/pole/${pole}`),
   ]);
 
-  const todos: Task[] = (todosRes.data.data || todosRes.data).map((t: any) => ({
+  const todosData = (todosRes.data.data || todosRes.data).filter(isRecent);
+  const rappelsData = (rappelsRes.data.data || rappelsRes.data).filter(isRecent);
+
+  const todos: Task[] = todosData.map((t: any) => ({
     id: String(t.id),
     title: t.titre,
-    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
+    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : null),
     pole: t.pole || pole,
     dueDate: t.date_echeance || null,
     responsible: t.user?.name || '—',
-    assignedTo: t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null,
+    assignedTo: t.assigned_user ? { id: t.assigned_user.id, name: t.assigned_user.name, email: t.assigned_user.email } : null,
     type: 'todo',
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
@@ -74,7 +85,7 @@ export async function getAdminTasksByPole(pole: string): Promise<Task[]> {
     review_status: t.review_status || 'none',
   }));
 
-  const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
+  const rappels: Task[] = rappelsData.map((r: any) => ({
     id: `r-${r.id}`,
     title: r.titre,
     client: r.client?.societe || (r.rappelable ? (r.rappelable.societe || r.rappelable.contact || 'Prospect') : 'N/A'),
@@ -97,14 +108,17 @@ export async function getAllAdminTasks(): Promise<Task[]> {
     api.get('/rappels'),
   ]);
 
-  const todos: Task[] = (todosRes.data.data || todosRes.data).map((t: any) => ({
+  const todosData = (todosRes.data.data || todosRes.data).filter(isRecent);
+  const rappelsData = (rappelsRes.data.data || rappelsRes.data).filter(isRecent);
+
+  const todos: Task[] = todosData.map((t: any) => ({
     id: String(t.id),
     title: t.titre,
-    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
+    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : null),
     pole: t.pole || 'Général',
     dueDate: t.date_echeance || null,
     responsible: t.user?.name || '—',
-    assignedTo: t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null,
+    assignedTo: t.assigned_user ? { id: t.assigned_user.id, name: t.assigned_user.name, email: t.assigned_user.email } : null,
     type: 'todo',
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
@@ -112,7 +126,7 @@ export async function getAllAdminTasks(): Promise<Task[]> {
     review_status: t.review_status || 'none',
   }));
 
-  const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
+  const rappels: Task[] = rappelsData.map((r: any) => ({
     id: `r-${r.id}`,
     title: r.titre,
     client: r.client?.societe || (r.rappelable ? (r.rappelable.societe || r.rappelable.contact || 'Prospect') : 'N/A'),
@@ -137,14 +151,17 @@ export async function getUserTasks(userId: number): Promise<Task[]> {
     api.get(`/rappels/user/${userId}`),
   ]);
 
-  const todos: Task[] = (todosRes.data.data || todosRes.data).map((t: any) => ({
+  const todosData = (todosRes.data.data || todosRes.data).filter(isRecent);
+  const rappelsData = (rappelsRes.data.data || rappelsRes.data).filter(isRecent);
+
+  const todos: Task[] = todosData.map((t: any) => ({
     id: String(t.id),
     title: t.titre,
-    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
+    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : null),
     pole: t.pole || 'Général',
     dueDate: t.date_echeance || null,
     responsible: t.user?.name || '—',
-    assignedTo: t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null,
+    assignedTo: t.assigned_user ? { id: t.assigned_user.id, name: t.assigned_user.name, email: t.assigned_user.email } : null,
     type: 'todo',
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
@@ -152,7 +169,7 @@ export async function getUserTasks(userId: number): Promise<Task[]> {
     review_status: t.review_status || 'none',
   }));
 
-  const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
+  const rappels: Task[] = rappelsData.map((r: any) => ({
     id: `r-${r.id}`,
     title: r.titre,
     client: r.client?.societe || (r.rappelable ? (r.rappelable.societe || r.rappelable.contact || 'Prospect') : 'N/A'),
@@ -175,14 +192,17 @@ export async function getMyTasks(): Promise<Task[]> {
     api.get('/rappels/me'),
   ]);
 
-  const todos: Task[] = (todosRes.data.data || todosRes.data).map((t: any) => ({
+  const todosData = (todosRes.data.data || todosRes.data).filter(isRecent);
+  const rappelsData = (rappelsRes.data.data || rappelsRes.data).filter(isRecent);
+
+  const todos: Task[] = todosData.map((t: any) => ({
     id: String(t.id),
     title: t.titre,
-    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
+    client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : null),
     pole: t.pole || 'Général',
     dueDate: t.date_echeance || null,
     responsible: t.user?.name || '—',
-    assignedTo: t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null,
+    assignedTo: t.assigned_user ? { id: t.assigned_user.id, name: t.assigned_user.name, email: t.assigned_user.email } : null,
     type: 'todo',
     status: mapBackendToFrontendStatus(t.statut),
     priorite: t.priorite || 'moyenne',
@@ -190,7 +210,7 @@ export async function getMyTasks(): Promise<Task[]> {
     review_status: t.review_status || 'none',
   }));
 
-  const rappels: Task[] = (rappelsRes.data.data || rappelsRes.data).map((r: any) => ({
+  const rappels: Task[] = rappelsData.map((r: any) => ({
     id: `r-${r.id}`,
     title: r.titre,
     client: r.client?.societe || (r.rappelable ? (r.rappelable.societe || r.rappelable.contact || 'Prospect') : 'N/A'),
@@ -233,12 +253,12 @@ export async function updateTaskStatus(
     return {
       id: String(t.id),
       title: t.titre,
-      client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : 'N/A'),
+      client: t.client?.societe || (t.todoable ? (t.todoable.societe || t.todoable.contact || 'Prospect') : null),
       pole: t.pole || '—',
       dueDate: t.date_echeance || t.date_rappel || null,
       responsible: t.user?.name || '—',
       assignedTo: type === 'todo'
-        ? (t.assignedUser ? { id: t.assignedUser.id, name: t.assignedUser.name, email: t.assignedUser.email } : null)
+        ? (t.assigned_user ? { id: t.assigned_user.id, name: t.assigned_user.name, email: t.assigned_user.email } : null)
         : (t.assigned_users?.[0] ? { id: t.assigned_users[0].id, name: t.assigned_users[0].name, email: t.assigned_users[0].email } : null),
       type,
       status: mapBackendToFrontendStatus(t.statut),

@@ -209,7 +209,7 @@ class TodoController extends Controller
             'user_id' => $user->id,
             'client_id' => $validated['client_id'] ?? null,
             'pole' => $determinedPole,
-            'assigned_to' => $validated['assigned_to'] ?? null,
+            'assigned_to' => $validated['assigned_to'] ?? $user->id, // ✅ Par défaut, assigné au créateur
         ]);
 
         if (!empty($validated['client_id'])) {

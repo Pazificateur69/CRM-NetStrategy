@@ -301,9 +301,11 @@ export default function ProjectsPage() {
                                     )}
                                 </div>
 
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 transition-colors">
-                                    {project.title}
-                                </h3>
+                                <Link href={`/projects/${project.id}`} className="block">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 transition-colors">
+                                        {project.title}
+                                    </h3>
+                                </Link>
 
                                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button

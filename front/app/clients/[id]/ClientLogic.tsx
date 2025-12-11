@@ -471,7 +471,7 @@ export function useClientLogic(): UseClientLogicReturn {
         setSavingComment(true);
         try {
             await addComment(Number(client.id), newComment);
-            console.log('client?.id', client?.id, newComment)
+
             setNewComment('');
             await reloadClient();
         } finally {

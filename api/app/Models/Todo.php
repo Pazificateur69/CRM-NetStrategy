@@ -29,6 +29,7 @@ class Todo extends Model
         'review_status',
         'approver_id',
         'review_comment',
+        'project_id',
     ];
 
     public function user()

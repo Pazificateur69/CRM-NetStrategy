@@ -38,16 +38,16 @@ class RoleAndPermissionSeeder extends Seeder
         $roleCom->syncPermissions(['view prospects', 'manage prospects', 'view clients', 'manage clients']);
 
         $roleDev = Role::firstOrCreate(['name' => 'dev']);
-        $roleDev->syncPermissions(['view clients', 'access dev']);
+        $roleDev->syncPermissions(['view clients', 'view prospects', 'access dev']);
 
         $roleSeo = Role::firstOrCreate(['name' => 'seo']);
-        $roleSeo->syncPermissions(['view clients', 'access seo']);
+        $roleSeo->syncPermissions(['view clients', 'view prospects', 'access seo']);
 
         $roleSocial = Role::firstOrCreate(['name' => 'reseaux_sociaux']);
-        $roleSocial->syncPermissions(['view clients', 'access social media']);
+        $roleSocial->syncPermissions(['view clients', 'view prospects', 'access social media']);
 
         $roleComptable = Role::firstOrCreate(['name' => 'comptabilite']);
-        $roleComptable->syncPermissions(['view clients', 'access comptabilite']);
+        $roleComptable->syncPermissions(['view clients', 'view prospects', 'access comptabilite']);
 
         // Role par défaut pour les nouveaux inscrits
         $roleUser = Role::firstOrCreate(['name' => 'user']);
@@ -81,5 +81,22 @@ class RoleAndPermissionSeeder extends Seeder
         // Utilisateur Comptabilité
         $compta = User::updateOrCreate(['email' => 'compta@test.com'], ['name' => 'Compta', 'password' => Hash::make('password123'), 'role' => 'comptabilite']);
         $compta->syncRoles('comptabilite');
+        // 4. Synchronization de secours : S'assurer que tous les users ont bien leur rôle Spatie
+        $users = User::all();
+        foreach ($users as $user) {
+            // Si l'utilisateur a un rôle défini dans la colonne 'role' mais pas de rôle Spatie, on lui assigne
+            if ($user->role && $user->roles->isEmpty()) {
+                // Mapping des rôles string vers rôles Spatie si nécessaire (ici c'est identique)
+                // On s'assure que le rôle existe
+                if (Role::where('name', $user->role)->exists()) {
+                    $user->assignRole($user->role);
+                    $this->command->info("Role '{$user->role}' assigned to user {$user->email}");
+                } else {
+                    // Fallback sur 'user' si le rôle inconnu
+                    $user->assignRole('user');
+                    $this->command->info("Fallback role 'user' assigned to user {$user->email} (original: {$user->role})");
+                }
+            }
+        }
     }
 }
