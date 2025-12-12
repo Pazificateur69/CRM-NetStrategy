@@ -7,6 +7,9 @@ use App\Models\Prestation;
 use Illuminate\Http\Request;
 use App\Http\Resources\ClientResource;
 use Illuminate\Http\JsonResponse;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ClientsImport;
+use App\Exports\ClientsTemplateExport;
 
 class ClientController extends Controller
 {
@@ -200,5 +203,32 @@ class ClientController extends Controller
                 }),
             ]
         ]);
+    }
+
+    /**
+     * Importer des clients via Excel
+     */
+    public function import(Request $request): JsonResponse
+    {
+        $this->authorize('manage clients');
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        try {
+            Excel::import(new ClientsImport, $request->file('file'));
+            return response()->json(['message' => 'Import terminé avec succès.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Erreur lors de l\'import : ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Télécharger le modèle d'import Excel
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new ClientsTemplateExport, 'clients_template.xlsx');
     }
 }

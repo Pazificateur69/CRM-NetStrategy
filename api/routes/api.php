@@ -131,6 +131,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===================================================
     // 🧱 CLIENTS & PROSPECTS
     // ===================================================
+    Route::post('/clients/import', [ClientController::class, 'import'])
+        ->middleware('permission:manage clients'); // ✅ Import Route
+    Route::get('/clients/template', [ClientController::class, 'downloadTemplate']); // ✅ Template Route
+
     Route::apiResource('clients', ClientController::class)
         ->middleware('permission:view clients|manage clients');
 

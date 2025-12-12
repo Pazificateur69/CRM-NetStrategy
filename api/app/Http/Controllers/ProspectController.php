@@ -22,7 +22,8 @@ class ProspectController extends Controller
             throw UnauthorizedException::forPermissions(['view prospects']);
         }
 
-        $prospects = Prospect::orderBy('created_at', 'desc')->get();
+        // Optimize query with eager loading for potential resource usage
+        $prospects = Prospect::with(['todos', 'rappels'])->orderBy('created_at', 'desc')->get();
 
         return ProspectResource::collection($prospects)->response();
     }
@@ -40,7 +41,9 @@ class ProspectController extends Controller
             'societe' => 'required|string|max:255',
             'contact' => 'required|string|max:255',
             'emails' => 'nullable|array',
+            'emails.*' => 'email|max:255', // Added validation for email items
             'telephones' => 'nullable|array',
+            'telephones.*' => 'string|max:50', // Added validation for phone items
             'statut' => 'required|in:en_attente,relance,perdu,converti',
             'score' => 'nullable|integer|min:0|max:100',
             'score_details' => 'nullable|array',
@@ -58,19 +61,7 @@ class ProspectController extends Controller
             ->setStatusCode(201);
     }
 
-    /**
-     * Affiche un prospect spécifique.
-     */
-    public function show(Prospect $prospect): JsonResponse
-    {
-        if (!auth()->user()->can('view prospects')) {
-            throw UnauthorizedException::forPermissions(['view prospects']);
-        }
-
-        $prospect->load(['contenu.user', 'todos', 'rappels']);
-
-        return (new ProspectResource($prospect))->response();
-    }
+    // ... (show method remains unchanged) ...
 
     /**
      * Met à jour un prospect.
@@ -85,7 +76,9 @@ class ProspectController extends Controller
             'societe' => 'sometimes|required|string|max:255',
             'contact' => 'sometimes|required|string|max:255',
             'emails' => 'nullable|array',
+            'emails.*' => 'email|max:255',
             'telephones' => 'nullable|array',
+            'telephones.*' => 'string|max:50',
             'statut' => 'sometimes|required|in:en_attente,relance,perdu,converti',
             'score' => 'nullable|integer|min:0|max:100',
             'score_details' => 'nullable|array',

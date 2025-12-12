@@ -16,8 +16,10 @@ import {
     Mail,
     Calendar,
     ArrowUpRight,
-    Filter
+    Filter,
+    Upload
 } from 'lucide-react';
+import ImportClientsModal from '@/components/ImportClientsModal';
 
 // --- COMPOSANT LIGNE DE CLIENT ---
 const ClientRow = ({ client }: { client: ClientDetail }) => {
@@ -80,6 +82,7 @@ export default function ClientsIndexPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const fetchClients = useCallback(async () => {
         setLoading(true);
@@ -122,13 +125,23 @@ export default function ClientsIndexPage() {
                             Gérez votre portefeuille client et accédez aux détails.
                         </p>
                     </div>
-                    <Link
-                        href="/clients/create"
-                        className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
-                    >
-                        <Plus className="w-5 h-5" />
-                        <span>Nouveau Client</span>
-                    </Link>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="inline-flex items-center justify-center gap-2 bg-card hover:bg-accent text-foreground border border-border font-semibold py-2.5 px-5 rounded-xl transition-all shadow-sm"
+                        >
+                            <Upload className="w-5 h-5" />
+                            <span className="hidden sm:inline">Importer</span>
+                        </button>
+                        <Link
+                            href="/clients/create"
+                            className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                            <Plus className="w-5 h-5" />
+                            <span>Nouveau Client</span>
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Stats Rapides */}
@@ -263,6 +276,12 @@ export default function ClientsIndexPage() {
                     </div>
                 )}
             </div>
+
+            <ImportClientsModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onSuccess={fetchClients}
+            />
         </DashboardLayout>
     );
 }

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'dashboard_preferences',
         'pole',
         'google_calendar_token',
+        'last_seen_at', // ✅ Track user presence
     ];
 
     protected $hidden = [
@@ -40,6 +41,7 @@ class User extends Authenticatable
         'dashboard_preferences' => 'array',
         'two_factor_confirmed_at' => 'datetime',
         'google_calendar_token' => 'array',
+        'last_seen_at' => 'datetime', // ✅ Auto-cast to Carbon
     ];
 
     /**

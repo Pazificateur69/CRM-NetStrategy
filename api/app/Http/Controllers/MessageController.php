@@ -76,6 +76,8 @@ class MessageController extends Controller
             'audio_url' => $audioPath,
         ]);
 
+        $message->load('sender'); // ✅ Load sender info for Frontend Toast
+
         broadcast(new \App\Events\MessageSent($message))->toOthers();
 
         return response()->json($message, 201);

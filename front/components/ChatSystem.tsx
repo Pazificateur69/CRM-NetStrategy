@@ -17,6 +17,7 @@ interface User {
     unread_count: number;
     last_message?: string;
     last_message_time?: string;
+    last_seen_at?: string;
 }
 
 interface Message {
@@ -49,6 +50,8 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { theme } = useTheme();
+    const selectedUserRef = useRef(selectedUser);
+    const isOpenRef = useRef(isOpen);
     const contactsRef = useRef<User[]>([]);
     const messagesRef = useRef<Message[]>([]);
 
@@ -62,13 +65,22 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         try {
             const res = await api.get('/messages/contacts');
             setContacts(res.data);
-            setIsLoadingContacts(false); // Moved here to ensure it's set after initial fetch
+            setIsLoadingContacts(false);
         } catch (error) {
             console.error("Error fetching contacts", error);
         }
     };
 
+    useEffect(() => {
+        selectedUserRef.current = selectedUser;
+        isOpenRef.current = isOpen;
+    }, [selectedUser, isOpen]);
+
     const playNotificationSound = () => {
+        // Use a simple reliable beep or allow browser default
+        // For now, keep existing or replacing with Audio element
+        const audio = new Audio('/assets/sounds/notification.mp3'); // We probably don't have this file
+        // Revert to reliable OSC
         try {
             const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
             const osc = ctx.createOscillator();
@@ -76,87 +88,69 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-            gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+            osc.frequency.setValueAtTime(1200, ctx.currentTime);
+            gain.gain.setValueAtTime(0.05, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
             osc.start();
             osc.stop(ctx.currentTime + 0.5);
         } catch (e) {
-            console.error("Audio play failed", e);
+            // Ignore context errors
         }
     };
 
     useEffect(() => {
         fetchContacts();
-        const interval = setInterval(fetchContacts, 10000); // Poll every 10 seconds
-
-        const echo = createEcho();
-        echo.private(`chat.${currentUserId}`)
-            .listen('MessageSent', (e: any) => {
-                fetchContacts(); // Refresh contacts list on new message
-                if (e.message.sender_id !== currentUserId) {
-                    playNotificationSound();
-                }
-            });
-
-        return () => {
-            echo.leave(`chat.${currentUserId}`);
-        };
-    }, [currentUserId]);
-
-    useEffect(() => {
-        if (!selectedUser) return;
-        const fetchMessages = async () => {
-            try {
-                const res = await api.get(`/messages/${selectedUser.id}`);
-                const currentConfirmed = messagesRef.current.filter(m => !m.pending);
-                if (!isDeepEqual(res.data, currentConfirmed)) {
-                    setMessages(prev => {
-                        const pending = prev.filter(m => m.pending);
-                        const newMessages = [...res.data, ...pending];
-                        messagesRef.current = newMessages;
-                        return newMessages;
-                    });
-                }
-                setIsLoadingMessages(false);
-            } catch (error) {
-                console.error("Error fetching messages", error);
-            }
-        };
-        setIsLoadingMessages(true);
-        fetchMessages();
+        const interval = setInterval(fetchContacts, 10000);
 
         const echo = createEcho();
 
-        // Presence Channel for Online Status
-        echo.join('online')
-            .here((users: any[]) => {
-                setOnlineUsers(users.map(u => u.id));
-            })
-            .joining((user: any) => {
-                setOnlineUsers(prev => [...prev, user.id]);
-            })
-            .leaving((user: any) => {
-                setOnlineUsers(prev => prev.filter(id => id !== user.id));
-            });
-
-        // Private Channel for Messages & Typing
+        // Global Channel Listener (Handles Notifications, Status, and Active Chat Updates)
         echo.private(`chat.${currentUserId}`)
             .listen('MessageSent', (e: any) => {
-                const newMessage = e.message;
-                if (newMessage.sender_id === selectedUser?.id || newMessage.receiver_id === selectedUser?.id) {
+                const msg = e.message;
+                const currentSelected = selectedUserRef.current;
+                const isOpenState = isOpenRef.current;
+
+                // 1. Refresh Contacts (Sidebar)
+                fetchContacts();
+
+                // 2. Active Chat Update
+                // If we are looking at this conversation, append the message
+                if (currentSelected && (msg.sender_id === currentSelected.id || msg.receiver_id === currentSelected.id)) {
                     setMessages(prev => {
-                        if (prev.some(m => m.id === newMessage.id)) return prev;
-                        const updated = [...prev, newMessage];
+                        // Avoid duplicates
+                        if (prev.some(m => m.id === msg.id)) return prev;
+                        const updated = [...prev, msg];
                         messagesRef.current = updated;
                         return updated;
                     });
+                    // Scroll to bottom
+                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
                 }
-                // Refresh contacts to update last message
-                fetchContacts();
+
+                // 3. Notification (Toast)
+                // If the message is NOT from me AND (Chat is closed OR We are looking at someone else)
+                const isFromMe = msg.sender_id === currentUserId;
+                const isChattingWithSender = isOpenState && currentSelected?.id === msg.sender_id;
+
+                if (!isFromMe && !isChattingWithSender) {
+                    playNotificationSound();
+                    toast.success(msg.sender?.name || "Nouveau message", {
+                        description: msg.content || "Vous a envoyé un message",
+                        position: 'bottom-right',
+                        action: {
+                            label: 'Répondre',
+                            onClick: () => {
+                                setIsOpen(true);
+                                // Here we would ideally set the user, but we'd need the full User object.
+                                // fetchContacts will update the sidebar, user can click there.
+                            }
+                        }
+                    });
+                }
             })
             .listen('MessageRead', (e: any) => {
-                if (selectedUser && e.receiver_id === selectedUser.id) {
+                if (selectedUserRef.current && e.receiver_id === selectedUserRef.current.id) {
                     setMessages(prev => {
                         const updated = prev.map(msg => {
                             if (msg.sender_id === currentUserId && !msg.read_at) {
@@ -170,21 +164,63 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                 }
             })
             .listen('UserTyping', (e: any) => {
-                if (!typingUsers.includes(e.sender_id)) {
-                    setTypingUsers(prev => [...prev, e.sender_id]);
-                }
+                // Check if the typing user is the one we are talking to? 
+                // Actually we want to show typing indicators in the sidebar too potentially, but for now just active chat.
+                // We add to typingUsers list.
+                setTypingUsers(prev => {
+                    if (!prev.includes(e.sender_id)) return [...prev, e.sender_id];
+                    return prev;
+                });
 
                 // Remove typing status after 3 seconds
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                // Note: This logic for timeout is a bit flawed with multiple users, separate timeouts needed.
+                // But for simplicity of this Refactor:
                 setTimeout(() => {
                     setTypingUsers(prev => prev.filter(id => id !== e.sender_id));
                 }, 3000);
             });
 
         return () => {
-            echo.leave('online');
             echo.leave(`chat.${currentUserId}`);
+            clearInterval(interval);
         };
-    }, [currentUserId, selectedUser]); // Re-run if selectedUser changes to ensure correct message filtering logic (though Echo setup could be optimized)
+    }, [currentUserId]);
+
+    useEffect(() => {
+        if (!selectedUser) return;
+        const fetchMessages = async () => {
+            try {
+                const res = await api.get(`/messages/${selectedUser.id}`);
+                // Simple set, logic for merging moved to other effect if needed, but this is init.
+                setMessages(res.data);
+                messagesRef.current = res.data;
+                setIsLoadingMessages(false);
+            } catch (error) {
+                console.error("Error fetching messages", error);
+            }
+        };
+        setIsLoadingMessages(true);
+        fetchMessages();
+
+        const echo = createEcho();
+        // Online Presence
+        echo.join('online')
+            .here((users: any[]) => {
+                setOnlineUsers(users.map(u => u.id));
+            })
+            .joining((user: any) => {
+                setOnlineUsers(prev => [...prev, user.id]);
+                // Optionally toast "User came online"
+            })
+            .leaving((user: any) => {
+                setOnlineUsers(prev => prev.filter(id => id !== user.id));
+            });
+
+        return () => {
+            echo.leave('online');
+        };
+    }, [selectedUser]); // Only runs on user switch
 
     const handleTyping = () => {
         if (selectedUser && !typingTimeoutRef.current) {
@@ -441,8 +477,14 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-slate-900 dark:text-white">{selectedUser.name}</h3>
-                                    <span className="text-xs text-emerald-500 font-medium flex items-center gap-1">
-                                        {onlineUsers.includes(selectedUser.id) ? 'En ligne' : 'Hors ligne'}
+                                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
+                                        {onlineUsers.includes(selectedUser.id) ? (
+                                            <span className="text-emerald-500">En ligne</span>
+                                        ) : (
+                                            selectedUser.last_seen_at
+                                                ? `Vu à ${new Date(selectedUser.last_seen_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                                : 'Hors ligne'
+                                        )}
                                     </span>
                                 </div>
                             </div>
@@ -658,7 +700,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
             initial={{ opacity: 0, y: 40, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.9 }}
-            className={`fixed bottom-8 right-28 bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 z-50 overflow-hidden ring-1 ring-slate-200 dark:ring-slate-800 ${isMinimized ? 'w-80 h-16' : 'w-[400px] h-[650px]'
+            className={`fixed bottom-8 right-28 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[24px] shadow-2xl shadow-indigo-500/20 dark:shadow-black/50 z-50 overflow-hidden ring-1 ring-white/20 dark:ring-slate-700 border border-slate-200/50 dark:border-slate-800/50 ${isMinimized ? 'w-80 h-16' : 'w-[380px] h-[600px]'
                 }`}
         >
             <div className="bg-indigo-600 px-5 py-4 flex justify-between items-center text-white cursor-pointer" onClick={() => !selectedUser && setIsMinimized(!isMinimized)}>

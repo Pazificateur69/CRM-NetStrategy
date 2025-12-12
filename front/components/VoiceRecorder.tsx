@@ -38,6 +38,19 @@ export default function VoiceRecorder({ onRecordingComplete, onCancel }: VoiceRe
 
     const startRecording = async () => {
         try {
+            // Security Check
+            if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !window.isSecureContext) {
+                toast.error("L'enregistrement vocal requiert une connexion sécurisée (HTTPS) ou localhost.");
+                onCancel();
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                toast.error("Votre navigateur ne supporte pas l'accès au microphone.");
+                onCancel();
+                return;
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             const mimeType = getSupportedMimeType();

@@ -28,6 +28,32 @@ export const updateClient = async (
 };
 
 // ===============================
+// 🔹 IMPORT / EXPORT (EXCEL)
+// ===============================
+export const importClients = async (file: File): Promise<{ message: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/clients/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const downloadClientTemplate = async (): Promise<void> => {
+  // Axios needs responseType: 'blob' to handle file downloads correctly
+  const response = await api.get('/clients/template', { responseType: 'blob' });
+
+  // Create a link to download the blob
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'clients_template.xlsx');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
+
+// ===============================
 // 🔹 COMMENTAIRES / JOURNAL
 // ===============================
 export const addComment = async (clientId: number, texte: string): Promise<ContenuFiche> => {

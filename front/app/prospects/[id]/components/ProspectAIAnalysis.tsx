@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import { Sparkles, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import api from '@/services/api';
 
@@ -17,6 +18,7 @@ interface ProspectAIAnalysisProps {
 
 export default function ProspectAIAnalysis({ analysis, loading, onAnalyze }: ProspectAIAnalysisProps) {
     // 1. Hooks (Always at the top)
+    const params = useParams();
     const [chatInput, setChatInput] = useState("");
     const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
     const [chatLoading, setChatLoading] = useState(false);
@@ -48,7 +50,7 @@ export default function ProspectAIAnalysis({ analysis, loading, onAnalyze }: Pro
         setChatLoading(true);
 
         try {
-            const prospectId = window.location.pathname.split('/').pop();
+            const prospectId = params.id;
             // Use api service instead of fetch to avoid potential cache/headers issues and ensuring consistency
             const res = await api.post('/ai/chat', {
                 prospect_id: prospectId,

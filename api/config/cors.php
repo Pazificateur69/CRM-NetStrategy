@@ -26,9 +26,7 @@ return [
     | - En DEV : utiliser '*' ou définir FRONTEND_URL dans .env
     |
     */
-    'allowed_origins' => env('APP_ENV') === 'production'
-        ? array_filter(explode(',', env('FRONTEND_URL', '')))
-        : ['*'], // ✅ Autorise tout le monde en local (y compris Wi-Fi)
+    'allowed_origins' => explode(',', env('FRONTEND_URL', 'http://localhost:3000')),
 
 
 

@@ -57,13 +57,13 @@ class OllamaService
             if (env('APP_ENV') === 'local') {
                 if ($jsonMode || str_contains($prompt, 'JSON')) {
                     return json_encode([
-                        'summary' => "Mode Démo: Ollama n'est pas connecté sur le port 11434. Veuillez lancer l'application pour avoir une vraie analyse.",
+                        'summary' => "⚠️ L'IA est installée mais pas lancée.",
                         'sentiment' => "Neutre",
-                        'next_steps' => ["Lancer Ollama", "Vérifier la connexion", "Réessayer l'analyse"],
-                        'talking_points' => ["Ceci est une simulation", "L'IA est hors ligne", "Les données sont fictives"]
+                        'next_steps' => ["Ouvrez un terminal", "Tapez 'ollama serve'", "L'IA sera alors active"],
+                        'talking_points' => ["Service hors ligne", "Nécessite 'ollama serve'", "Port 11434 injoignable"]
                     ]);
                 }
-                return "Mode Démo: Je ne peux pas répondre car Ollama n'est pas connecté (port 11434). Veuillez lancer l'application.";
+                return "⚠️ L'IA est désactivée. Pour l'activer, lancez 'ollama serve' dans un terminal.";
             }
 
             return "Erreur de connexion à Ollama (vérifiez qu'il tourne sur le port 11434).";

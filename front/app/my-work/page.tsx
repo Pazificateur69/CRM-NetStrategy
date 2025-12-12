@@ -35,7 +35,20 @@ export default function MyWorkPage() {
     const fetchBoard = async () => {
         try {
             const res = await api.get('/todos/my-work');
-            setBoard(res.data);
+
+            // ✅ Filter options: hide completed tasks older than 24h
+            const oneDay = 24 * 60 * 60 * 1000;
+            const isRecent = (t: any) => {
+                if (!t.updated_at) return true;
+                return new Date(t.updated_at).getTime() > Date.now() - oneDay;
+            };
+
+            const data = res.data;
+            if (data.termine) {
+                data.termine = data.termine.filter(isRecent);
+            }
+
+            setBoard(data);
         } catch (error) {
             console.error(error);
             toast.error('Erreur chargement');

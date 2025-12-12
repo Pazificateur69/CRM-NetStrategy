@@ -34,8 +34,20 @@ class SecurityHeaders
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        // Permissions Policy (disable unnecessary features)
-        $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+        // Permissions Policy (allow microphone for self)
+        $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(self), camera=()');
+
+        // Content Security Policy
+        // Adapting for Vite/React (unsafe-inline/eval) and external services (Reverb, Ollama)
+        $csp = "default-src 'self'; " .
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " .
+            "style-src 'self' 'unsafe-inline'; " .
+            "img-src 'self' data: https: blob:; " .
+            "media-src 'self' blob:; " .
+            "font-src 'self' data:; " .
+            "connect-src 'self' http://localhost:11434 ws://localhost:8080 wss://localhost:8080 http://localhost:8080;";
+
+        $response->headers->set('Content-Security-Policy', $csp);
 
         return $response;
     }
