@@ -142,24 +142,24 @@ export default function ClientPoleTab({
   return (
     <section className="space-y-8 animate-fade-in">
       {/* === Header du Pôle === */}
-      <div className={`bg-white p-8 rounded-2xl shadow-xl border ${tab.accent?.border ?? 'border-slate-200'} relative overflow-hidden`}>
+      <div className={`bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border ${tab.accent?.border ?? 'border-slate-200'} dark:border-slate-700 relative overflow-hidden transition-colors duration-300`}>
         {/* Background Decoration */}
-        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${tab.accent?.bgGradient || 'from-slate-50 to-slate-100'} opacity-50 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none`} />
+        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${tab.accent?.bgGradient || 'from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900'} opacity-50 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none`} />
 
         <div className="relative z-10">
           <div className="flex items-center gap-4 mb-4">
-            <div className={`p-3 rounded-xl bg-white shadow-sm border ${tab.accent?.border ?? 'border-slate-200'}`}>
-              <IconComponent className={`w-8 h-8 ${tab.accent?.title ?? 'text-slate-700'}`} />
+            <div className={`p-3 rounded-xl bg-white dark:bg-slate-700 shadow-sm border ${tab.accent?.border ?? 'border-slate-200'} dark:border-slate-600`}>
+              <IconComponent className={`w-8 h-8 ${tab.accent?.title ?? 'text-slate-700 dark:text-slate-200'}`} />
             </div>
             <div>
-              <h3 className={`text-2xl font-bold ${tab.accent?.title ?? 'text-slate-900'}`}>
+              <h3 className={`text-2xl font-bold ${tab.accent?.title ?? 'text-slate-900 dark:text-white'}`}>
                 {tab.label}
               </h3>
-              <p className="text-slate-500 font-medium">Espace de travail dédié</p>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">Espace de travail dédié</p>
             </div>
           </div>
 
-          <p className="text-slate-600 max-w-3xl leading-relaxed">
+          <p className="text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
             {tab.description}
           </p>
         </div>
@@ -174,13 +174,13 @@ export default function ClientPoleTab({
       />
 
       {/* === Dossier numérique === */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors duration-300">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+          <h4 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-500" />
             Documents & Fichiers
           </h4>
-          <span className="text-xs font-semibold bg-slate-200 text-slate-600 px-2.5 py-1 rounded-full">
+          <span className="text-xs font-semibold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full">
             {poleDocs.length} fichier{poleDocs.length > 1 ? 's' : ''}
           </span>
         </div>
@@ -191,23 +191,23 @@ export default function ClientPoleTab({
               {poleDocs.map((doc: any) => (
                 <div
                   key={doc.id}
-                  className="group relative bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-md transition-all duration-300 flex flex-col"
+                  className="group relative bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-4 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md transition-all duration-300 flex flex-col"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                    <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
                       <FileText className="w-6 h-6" />
                     </div>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handlePreview(doc)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
                         title="Prévisualiser"
                       >
                         <Eye className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => handleDownload(doc)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
                         title="Télécharger"
                       >
                         <Download className="w-5 h-5" />
@@ -215,28 +215,28 @@ export default function ClientPoleTab({
                     </div>
                   </div>
 
-                  <h5 className="font-semibold text-slate-800 text-sm truncate mb-1" title={doc.nom_original_fichier}>
+                  <h5 className="font-semibold text-slate-800 dark:text-slate-200 text-sm truncate mb-1" title={doc.nom_original_fichier}>
                     {doc.nom_original_fichier}
                   </h5>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Ajouté le {new Date(doc.created_at).toLocaleDateString()}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-sm mb-4">
-                <File className="w-8 h-8 text-slate-300" />
+            <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white dark:bg-slate-700 rounded-full shadow-sm mb-4">
+                <File className="w-8 h-8 text-slate-300 dark:text-slate-500" />
               </div>
-              <p className="text-slate-500 font-medium">Aucun document dans ce dossier</p>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">Aucun document dans ce dossier</p>
             </div>
           )}
 
           {/* === Upload Area === */}
           {canEdit && (
-            <div className="mt-8 pt-6 border-t border-slate-100">
-              <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700">
+              <h4 className="font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                 <UploadCloud className="w-5 h-5 text-indigo-500" />
                 Ajouter un document
               </h4>
@@ -252,26 +252,26 @@ export default function ClientPoleTab({
                 {!file ? (
                   <button
                     onClick={triggerFileInput}
-                    className="flex-1 flex flex-col items-center justify-center py-8 px-4 border-2 border-dashed border-indigo-200 rounded-xl bg-indigo-50/30 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 transition-all cursor-pointer group"
+                    className="flex-1 flex flex-col items-center justify-center py-8 px-4 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-xl bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-300 dark:hover:border-indigo-600 transition-all cursor-pointer group"
                   >
                     <UploadCloud className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
                     <span className="font-medium">Cliquez pour sélectionner un fichier</span>
-                    <span className="text-xs text-indigo-400 mt-1">PDF, Images, Docs...</span>
+                    <span className="text-xs text-indigo-400 dark:text-indigo-300 mt-1">PDF, Images, Docs...</span>
                   </button>
                 ) : (
-                  <div className="flex-1 flex items-center justify-between p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                  <div className="flex-1 flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-xl">
                     <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="p-2 bg-white rounded-lg shadow-sm text-indigo-600">
+                      <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm text-indigo-600 dark:text-indigo-400">
                         <File className="w-6 h-6" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-indigo-900 truncate">{file.name}</p>
-                        <p className="text-xs text-indigo-600">{(file.size / 1024).toFixed(1)} KB</p>
+                        <p className="font-semibold text-indigo-900 dark:text-indigo-200 truncate">{file.name}</p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400">{(file.size / 1024).toFixed(1)} KB</p>
                       </div>
                     </div>
                     <button
                       onClick={clearFile}
-                      className="p-2 text-indigo-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-indigo-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -283,7 +283,7 @@ export default function ClientPoleTab({
                   disabled={!file}
                   className={`md:w-48 flex items-center justify-center gap-2 font-bold rounded-xl transition-all duration-300 shadow-lg ${file
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-0.5 shadow-indigo-500/30'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                     }`}
                 >
                   <PlusCircle className="w-5 h-5" />
@@ -296,12 +296,12 @@ export default function ClientPoleTab({
       </div>
 
       {/* === Tâches / Rappels === */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="text-xl font-bold text-slate-800">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors duration-300">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+          <h3 className="text-xl font-bold text-slate-800 dark:text-white">
             Activités du Pôle {tab.label}
           </h3>
-          <p className="text-slate-500 text-sm mt-1">Suivi des tâches et rappels spécifiques</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Suivi des tâches et rappels spécifiques</p>
         </div>
         <div className="p-8">
           <ClientActivityStream

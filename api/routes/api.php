@@ -216,23 +216,25 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ===================================================
-    // 👥 UTILISATEURS (ADMIN UNIQUEMENT)
+    // 👥 UTILISATEURS
     // ===================================================
     Route::get('/users/mentions', [UserController::class, 'listForMentions']); // ✅ Accessible à tous
 
+    // Allow index for all auth users (Controller handles scoping)
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/by-pole/{pole}', [UserController::class, 'getByPole']);
+
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/users/workload', [UserController::class, 'workload']); // 📊 Workload
-        Route::apiResource('users', UserController::class);
+        // Admin only for create/update/delete
+        Route::post('/users', [UserController::class, 'store']);
+        Route::put('/users/{user}', [UserController::class, 'update']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
 
         // 📄 EXPORT PDF
         Route::get('/clients/{id}/pdf', [PdfController::class, 'exportClient']);
     });
-
-    // ===================================================
-    // 🧩 NOUVELLE ROUTE : UTILISATEURS PAR PÔLE (ADMIN UNIQUEMENT)
-    // ===================================================
-    Route::get('/users/by-pole/{pole}', [UserController::class, 'getByPole'])
-        ->middleware('role:admin');
     // ===================================================
     // 💬 MESSAGERIE INTERNE
     // ===================================================

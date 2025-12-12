@@ -6,6 +6,27 @@ import api from '@/services/api';
 import { format, isPast } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import {
+    DndContext,
+    DragOverlay,
+    closestCorners,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragStartEvent,
+    DragOverEvent,
+    DragEndEvent,
+    useDroppable,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Task {
     id: number;
@@ -15,6 +36,7 @@ interface Task {
     statut: string;
     client?: { societe: string };
     project?: { name: string };
+    updated_at?: string;
 }
 
 interface BoardData {
@@ -27,6 +49,12 @@ interface BoardData {
 export default function MyWorkPage() {
     const [board, setBoard] = useState<BoardData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [activeId, setActiveId] = useState<number | null>(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
 
     useEffect(() => {
         fetchBoard();
@@ -35,8 +63,7 @@ export default function MyWorkPage() {
     const fetchBoard = async () => {
         try {
             const res = await api.get('/todos/my-work');
-
-            // ✅ Filter options: hide completed tasks older than 24h
+            // Filter options: hide completed tasks older than 24h
             const oneDay = 24 * 60 * 60 * 1000;
             const isRecent = (t: any) => {
                 if (!t.updated_at) return true;
@@ -47,7 +74,6 @@ export default function MyWorkPage() {
             if (data.termine) {
                 data.termine = data.termine.filter(isRecent);
             }
-
             setBoard(data);
         } catch (error) {
             console.error(error);
@@ -58,47 +84,112 @@ export default function MyWorkPage() {
     };
 
     const updateStatus = async (taskId: number, newStatus: string) => {
-        // Optimistic Update
-        if (!board) return;
-        const oldBoard = { ...board };
-
-        // Find task and remove from old column
-        let taskToMove: Task | undefined;
-        let oldStatusKey: keyof BoardData | undefined;
-
-        (Object.keys(board) as Array<keyof BoardData>).forEach(key => {
-            const found = board[key].find(t => t.id === taskId);
-            if (found) {
-                taskToMove = found;
-                oldStatusKey = key;
-            }
-        });
-
-        if (!taskToMove || !oldStatusKey) return;
-
-        // Determine new key
-        const newStatusKey = newStatus === 'retard' ? 'retard' : newStatus as keyof BoardData; // simple mapping
-
-        const newBoard = { ...board };
-        newBoard[oldStatusKey] = newBoard[oldStatusKey].filter(t => t.id !== taskId);
-        taskToMove.statut = newStatus;
-
-        // Insert into new column (at start)
-        if (newStatusKey === 'retard') newBoard.retard = [taskToMove, ...newBoard.retard];
-        else if (newStatusKey === 'planifie') newBoard.planifie = [taskToMove, ...newBoard.planifie];
-        else if (newStatusKey === 'en_cours') newBoard.en_cours = [taskToMove, ...newBoard.en_cours];
-        else if (newStatusKey === 'termine') newBoard.termine = [taskToMove, ...newBoard.termine];
-
-        setBoard(newBoard);
-
         try {
             await api.put(`/todos/${taskId}`, { statut: newStatus });
-            toast.success('Statut mis à jour');
+            // toast.success('Statut mis à jour');
         } catch (e) {
             console.error(e);
             toast.error('Erreur mise à jour');
-            setBoard(oldBoard); // Revert
+            fetchBoard(); // Revert on error
         }
+    };
+
+    const findContainer = (id: number): keyof BoardData | undefined => {
+        if (!board) return undefined;
+        if (board.retard.find((t) => t.id === id)) return 'retard';
+        if (board.planifie.find((t) => t.id === id)) return 'planifie';
+        if (board.en_cours.find((t) => t.id === id)) return 'en_cours';
+        if (board.termine.find((t) => t.id === id)) return 'termine';
+        return undefined;
+    };
+
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as number);
+    };
+
+    const handleDragOver = (event: DragOverEvent) => {
+        const { active, over } = event;
+        const overId = over?.id;
+
+        if (!overId || !board) return;
+
+        const activeContainer = findContainer(active.id as number);
+        // Over container could be a task ID or a container key (if mapped to container)
+        // We need to handle checking if 'over' is a container or a task
+        let overContainer: keyof BoardData | undefined = findContainer(overId as number);
+
+        if (!overContainer) {
+            // Check if it matches one of our column keys directly
+            if (['retard', 'planifie', 'en_cours', 'termine'].includes(overId as string)) {
+                overContainer = overId as keyof BoardData;
+            }
+        }
+
+        if (!activeContainer || !overContainer || activeContainer === overContainer) {
+            return;
+        }
+
+        setBoard((prev) => {
+            if (!prev) return null;
+            const activeItems = prev[activeContainer];
+            const overItems = prev[overContainer!];
+            const activeIndex = activeItems.findIndex((t) => t.id === active.id);
+            const overIndex = typeof overId === 'number'
+                ? overItems.findIndex((t) => t.id === overId)
+                : overItems.length + 1;
+
+            let newIndex;
+            if (typeof overId === 'number') {
+                const isBelowOverItem =
+                    over &&
+                    active.rect.current.translated &&
+                    active.rect.current.translated.top > over.rect.top + over.rect.height;
+
+                const modifier = isBelowOverItem ? 1 : 0;
+                newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
+            } else {
+                newIndex = overItems.length + 1;
+            }
+
+            return {
+                ...prev,
+                [activeContainer]: [
+                    ...prev[activeContainer].filter((item) => item.id !== active.id),
+                ],
+                [overContainer!]: [
+                    ...prev[overContainer!].slice(0, newIndex),
+                    activeItems[activeIndex],
+                    ...prev[overContainer!].slice(newIndex, prev[overContainer!].length),
+                ],
+            };
+        });
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        const activeContainer = findContainer(active.id as number);
+        const overContainer = over ? (findContainer(over.id as number) || (['retard', 'planifie', 'en_cours', 'termine'].includes(over.id as string) ? over.id as keyof BoardData : undefined)) : undefined;
+
+        if (
+            activeContainer &&
+            overContainer &&
+            activeContainer !== overContainer
+        ) {
+            // Update Backend with new status
+            updateStatus(active.id as number, overContainer);
+        }
+
+        setActiveId(null);
+    };
+
+    // Derived Active Task for Overlay
+    const getActiveTask = () => {
+        if (!activeId || !board) return null;
+        for (const key of Object.keys(board) as Array<keyof BoardData>) {
+            const task = board[key].find(t => t.id === activeId);
+            if (task) return task;
+        }
+        return null;
     };
 
     if (loading) return (
@@ -124,67 +215,80 @@ export default function MyWorkPage() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
-                <div className="flex gap-6 h-full min-w-[1000px]">
-                    {/* RETARD */}
-                    <Column
-                        title="En Retard"
-                        tasks={board.retard}
-                        icon={<AlertCircle className="w-5 h-5" />}
-                        color="text-rose-600 bg-rose-50 border-rose-100"
-                        onMove={(id) => updateStatus(id, 'en_cours')}
-                        nextLabel="Commencer"
-                        isOverdue
-                    />
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="flex-1 overflow-x-auto overflow-y-hidden">
+                    <div className="flex gap-6 h-full min-w-[1000px]">
+                        {/* RETARD */}
+                        <Column
+                            id="retard"
+                            title="En Retard"
+                            tasks={board.retard}
+                            icon={<AlertCircle className="w-5 h-5" />}
+                            color="text-rose-600 bg-rose-50 border-rose-100"
+                            isOverdue
+                        />
 
-                    {/* PLANIFIE */}
-                    <Column
-                        title="À Faire"
-                        tasks={board.planifie}
-                        icon={<Clock className="w-5 h-5" />}
-                        color="text-slate-600 bg-slate-50 border-slate-200"
-                        onMove={(id) => updateStatus(id, 'en_cours')}
-                        nextLabel="Démarrer"
-                    />
+                        {/* PLANIFIE */}
+                        <Column
+                            id="planifie"
+                            title="À Faire"
+                            tasks={board.planifie}
+                            icon={<Clock className="w-5 h-5" />}
+                            color="text-slate-600 bg-slate-50 border-slate-200"
+                        />
 
-                    {/* EN COURS */}
-                    <Column
-                        title="En Cours"
-                        tasks={board.en_cours}
-                        icon={<PlayCircle className="w-5 h-5" />}
-                        color="text-amber-600 bg-amber-50 border-amber-100"
-                        onMove={(id) => updateStatus(id, 'termine')}
-                        nextLabel="Terminer"
-                    />
+                        {/* EN COURS */}
+                        <Column
+                            id="en_cours"
+                            title="En Cours"
+                            tasks={board.en_cours}
+                            icon={<PlayCircle className="w-5 h-5" />}
+                            color="text-amber-600 bg-amber-50 border-amber-100"
+                        />
 
-                    {/* TERMINE */}
-                    <Column
-                        title="Terminé"
-                        tasks={board.termine}
-                        icon={<CheckCircle2 className="w-5 h-5" />}
-                        color="text-emerald-600 bg-emerald-50 border-emerald-100"
-                        onMove={(id) => updateStatus(id, 'planifie')} // Reopen
-                        nextLabel="Rouvrir"
-                        isDone
-                    />
+                        {/* TERMINE */}
+                        <Column
+                            id="termine"
+                            title="Terminé"
+                            tasks={board.termine}
+                            icon={<CheckCircle2 className="w-5 h-5" />}
+                            color="text-emerald-600 bg-emerald-50 border-emerald-100"
+                            isDone
+                        />
+                    </div>
                 </div>
-            </div>
+
+                <DragOverlay>
+                    {activeId ? <TaskCard task={getActiveTask()!} isOverlay /> : null}
+                </DragOverlay>
+            </DndContext>
         </div>
     );
 }
 
-function Column({ title, tasks, icon, color, onMove, nextLabel, isOverdue, isDone }: {
+// ----------------------------------------------------------------------
+// COMPONENTS
+// ----------------------------------------------------------------------
+
+function Column({ id, title, tasks, icon, color, isOverdue, isDone }: {
+    id: string,
     title: string,
     tasks: Task[],
     icon: React.ReactNode,
-    color: string,
-    onMove: (id: number) => void,
-    nextLabel: string,
+    color: string, // Keep for header styling if needed, or unused
     isOverdue?: boolean,
     isDone?: boolean
 }) {
+    const { setNodeRef } = useDroppable({ id });
+
     return (
-        <div className="w-1/4 flex flex-col bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/50 dark:border-slate-800 h-full">
+        <div ref={setNodeRef} className="w-1/4 flex flex-col bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/50 dark:border-slate-800 h-full">
             <div className={`p-4 border-b border-slate-200/50 dark:border-slate-800 flex items-center justify-between ${isOverdue ? 'bg-rose-50/30' : ''}`}>
                 <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-200">
                     {icon}
@@ -195,54 +299,79 @@ function Column({ title, tasks, icon, color, onMove, nextLabel, isOverdue, isDon
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
-                {tasks.map(task => (
-                    <div key={task.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all group">
+            <SortableContext
+                id={id}
+                items={tasks.map(t => t.id)}
+                strategy={verticalListSortingStrategy}
+            >
+                <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+                    {tasks.map(task => (
+                        <SortableTaskItem key={task.id} task={task} isDone={isDone} />
+                    ))}
+                </div>
+            </SortableContext>
+        </div>
+    );
+}
 
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-2 mb-2">
-                            {task.priorite === 'haute' && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-700">
-                                    Urgent
-                                </span>
-                            )}
-                            {task.project && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 flex items-center gap-1">
-                                    <FolderKanban className="w-3 h-3" /> {task.project.name}
-                                </span>
-                            )}
-                        </div>
+function SortableTaskItem({ task, isDone }: { task: Task, isDone?: boolean }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: task.id });
 
-                        <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm mb-2 leading-snug">
-                            {task.titre}
-                        </h3>
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+    };
 
-                        <div className="flex items-center justify-between text-xs text-slate-500">
-                            <div className="flex items-center gap-1.5 overflow-hidden">
-                                {task.client && (
-                                    <>
-                                        <Briefcase className="w-3 h-3 flex-shrink-0" />
-                                        <span className="truncate max-w-[100px]">{task.client.societe}</span>
-                                    </>
-                                )}
-                            </div>
-                            {task.date_echeance && (
-                                <span className={isPast(new Date(task.date_echeance)) && !isDone ? 'text-rose-500 font-bold' : ''}>
-                                    {format(new Date(task.date_echeance), 'd MMM', { locale: fr })}
-                                </span>
-                            )}
-                        </div>
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            <TaskCard task={task} isDone={isDone} />
+        </div>
+    );
+}
 
-                        <div className="mt-3 pt-3 border-t border-slate-50 dark:border-slate-700/50 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                                onClick={() => onMove(task.id)}
-                                className="text-xs font-medium text-indigo-600 hover:bg-indigo-50 px-2 py-1 rounded transition-colors"
-                            >
-                                {nextLabel} →
-                            </button>
-                        </div>
-                    </div>
-                ))}
+function TaskCard({ task, isDone, isOverlay }: { task: Task, isDone?: boolean, isOverlay?: boolean }) {
+    return (
+        <div className={`bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all group ${isOverlay ? 'shadow-xl scale-105 cursor-grabbing' : 'hover:shadow-md cursor-grab'}`}>
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2 mb-2">
+                {task.priorite === 'haute' && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-700">
+                        Urgent
+                    </span>
+                )}
+                {task.project && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-600 flex items-center gap-1">
+                        <FolderKanban className="w-3 h-3" /> {task.project.name}
+                    </span>
+                )}
+            </div>
+
+            <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm mb-2 leading-snug">
+                {task.titre}
+            </h3>
+
+            <div className="flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center gap-1.5 overflow-hidden">
+                    {task.client && (
+                        <>
+                            <Briefcase className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate max-w-[100px]">{task.client.societe}</span>
+                        </>
+                    )}
+                </div>
+                {task.date_echeance && (
+                    <span className={isPast(new Date(task.date_echeance)) && !isDone ? 'text-rose-500 font-bold' : ''}>
+                        {format(new Date(task.date_echeance), 'd MMM', { locale: fr })}
+                    </span>
+                )}
             </div>
         </div>
     );

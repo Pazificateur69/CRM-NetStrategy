@@ -179,29 +179,25 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <DashboardSkeleton />
-      </DashboardLayout>
+      <DashboardSkeleton />
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-[80vh]">
-          <div className="w-20 h-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-6">
-            <AlertCircle className="w-10 h-10" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Une erreur est survenue</h2>
-          <p className="text-muted-foreground mb-8">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
-          >
-            Réessayer
-          </button>
+      <div className="flex flex-col items-center justify-center h-[80vh]">
+        <div className="w-20 h-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-6">
+          <AlertCircle className="w-10 h-10" />
         </div>
-      </DashboardLayout>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Une erreur est survenue</h2>
+        <p className="text-muted-foreground mb-8">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+        >
+          Réessayer
+        </button>
+      </div>
     );
   }
 
@@ -317,8 +313,8 @@ export default function DashboardPage() {
 
         {/* ACTIVITY & KANBAN GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ACTIVITY WIDGET */}
-          {widgets.activity && (
+          {/* ACTIVITY WIDGET - Admin Only */}
+          {isAdmin && widgets.activity && (
             <div className="lg:col-span-1">
               <RecentActivityWidget />
             </div>

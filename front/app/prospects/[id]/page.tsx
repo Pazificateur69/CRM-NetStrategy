@@ -49,7 +49,7 @@ import QuickActionCallModal from '@/components/QuickActionCallModal';
 import ProspectConversionModal from './components/ProspectConversionModal';
 import ProspectActivityStream from './components/ProspectActivityStream';
 import ProspectDocuments from './components/ProspectDocuments';
-import CommentSection from '@/components/CommentSection';
+import ProspectCommentSection from '@/components/ProspectCommentSection';
 import { TodoFormState, RappelFormState } from '@/app/clients/[id]/ClientUtils';
 
 // --- COMPOSANTS UI ---
@@ -563,7 +563,7 @@ export default function ProspectDetailPage() {
 
                 {/* Section Commentaires */}
                 <div className="mt-8">
-                    <CommentSection
+                    <ProspectCommentSection
                         comments={(prospect.contenu?.filter((c: any) => c.type === 'Commentaire') || []).map((c: any) => ({ ...c, texte: c.texte || '' }))}
                         canEdit={true}
                         onAdd={async (text) => {

@@ -29,6 +29,7 @@ import {
     deletePrestation,
     validatePrestation
 } from '@/services/crm';
+import api from '@/services/api';
 import { TabDefinition } from '@/components/FicheTabs';
 
 import {
@@ -162,7 +163,7 @@ export const tabDefinitions: TabDefinition[] = [
         id: 'pole-branding',
         label: 'Pôle Branding',
         icon: Megaphone,
-        allowedRoles: ['admin', 'branding'],
+        allowedRoles: ['admin', 'branding', 'com'], // Com includes branding
         prestationTypes: ['Branding'],
         accent: {
             border: 'border-amber-200',
@@ -174,7 +175,7 @@ export const tabDefinitions: TabDefinition[] = [
         id: 'pole-ads',
         label: 'Pôle Ads',
         icon: Megaphone,
-        allowedRoles: ['admin', 'ads'],
+        allowedRoles: ['admin', 'ads', 'com', 'reseaux'], // Com/Reseaux includes Ads
         prestationTypes: ['Ads'],
         accent: {
             border: 'border-orange-200',
@@ -186,7 +187,7 @@ export const tabDefinitions: TabDefinition[] = [
         id: 'pole-seo',
         label: 'Pôle SEO',
         icon: Search,
-        allowedRoles: ['admin', 'seo'],
+        allowedRoles: ['admin', 'seo', 'tech'], // Tech includes SEO
         prestationTypes: ['SEO'],
         accent: {
             border: 'border-emerald-200',
@@ -198,7 +199,7 @@ export const tabDefinitions: TabDefinition[] = [
         id: 'pole-dev',
         label: 'Pôle Dev',
         icon: Code,
-        allowedRoles: ['admin', 'dev'],
+        allowedRoles: ['admin', 'dev', 'tech'],
         prestationTypes: ['Dev'],
         accent: {
             border: 'border-blue-200',
@@ -210,7 +211,7 @@ export const tabDefinitions: TabDefinition[] = [
         id: 'pole-reseaux',
         label: 'Pôle Réseaux Sociaux',
         icon: Share2,
-        allowedRoles: ['admin', 'reseaux_sociaux'],
+        allowedRoles: ['admin', 'reseaux_sociaux', 'reseaux', 'com'],
         prestationTypes: ['Social Media'],
         accent: {
             border: 'border-fuchsia-200',
@@ -356,12 +357,30 @@ export function useClientLogic(): UseClientLogicReturn {
         const res = await getClientById(Number(id));
         setClient(res);
 
-        // Sync role if we have current user info (mocked or retrieved otherwise)
-        // Here we rely on global state or prop if available, but for now we assume 'admin'
-        // In a real app, you'd pull this from a useAuth hook.
-        // For now, let's just default to admin for dev purposes or keep existing logic.
-        const storedRole = localStorage.getItem('user_role') || 'admin';
-        setUserRole(storedRole);
+        // Fetch User Info for Role-based Access
+        try {
+            // Use the configured API instance to ensure Token is attached
+            const userRes = await api.get('/user');
+
+            if (userRes.data) {
+                const userData = userRes.data;
+                // Debug:
+                console.log("Current User Role/Pole:", userData.role, userData.pole);
+
+                // Admin check
+                if (userData.role === 'admin') {
+                    setUserRole('admin');
+                } else {
+                    // Fallback to pole or role or 'user'
+                    setUserRole(userData.pole || userData.role || 'user');
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch user role", e);
+            // Fallback to local storage if API fails
+            const storedRole = localStorage.getItem('user_role');
+            if (storedRole) setUserRole(storedRole);
+        }
 
         setLoading(false);
     }, [id]);
@@ -416,7 +435,19 @@ export function useClientLogic(): UseClientLogicReturn {
 
     const accessibleTabs = useMemo(() => {
         if (userRole === 'admin') return tabDefinitions;
-        return tabDefinitions.filter(t => !t.allowedRoles || t.allowedRoles.includes(userRole));
+
+        return tabDefinitions.filter(t => {
+            // General Info is always visible
+            if (t.id === 'informations') return true;
+
+            // Strict Role Check
+            // The Tab definitions use roles like 'branding', 'seo', 'dev'
+            // User role might be 'Dev' (capitalized) or same.
+            // Also user might use 'pole' as role substitute.
+            if (!t.allowedRoles) return true;
+
+            return t.allowedRoles.some(r => r.toLowerCase() === userRole.toLowerCase());
+        });
     }, [userRole]);
 
     const currentTabDefinition = tabDefinitions.find(t => t.id === activeTab);
@@ -466,11 +497,13 @@ export function useClientLogic(): UseClientLogicReturn {
     // Logic: Commentaires
     // -------------------------
 
-    const handleAddComment = async () => {
-        if (!newComment.trim() || !client?.id) return;
+    const handleAddComment = async (text?: string) => {
+        const commentText = text || newComment;
+        if (!commentText.trim() || !client?.id) return;
+
         setSavingComment(true);
         try {
-            await addComment(Number(client.id), newComment);
+            await addComment(Number(client.id), commentText);
 
             setNewComment('');
             await reloadClient();

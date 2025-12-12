@@ -18,8 +18,23 @@ export default function VideoConfModal({ isOpen, onClose }: VideoConfModalProps)
     const [link, setLink] = React.useState(generateJitsiLink());
 
     const copyToClipboard = () => {
-        navigator.clipboard.writeText(link);
-        toast.success('Lien copié dans le presse-papier !');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(link);
+            toast.success('Lien copié dans le presse-papier !');
+        } else {
+            // Fallback
+            const textArea = document.createElement("textarea");
+            textArea.value = link;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                toast.success('Lien copié !');
+            } catch (err) {
+                toast.error('Erreur lors de la copie');
+            }
+            document.body.removeChild(textArea);
+        }
     };
 
     return (

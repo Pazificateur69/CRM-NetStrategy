@@ -22,7 +22,8 @@ class ProspectController extends Controller
             throw UnauthorizedException::forPermissions(['view prospects']);
         }
 
-        // Optimize query with eager loading for potential resource usage
+        // Optimize query with eager loading, but filter relations if needed
+        // Since user wants global access to the list:
         $prospects = Prospect::with(['todos', 'rappels'])->orderBy('created_at', 'desc')->get();
 
         return ProspectResource::collection($prospects)->response();
@@ -61,7 +62,43 @@ class ProspectController extends Controller
             ->setStatusCode(201);
     }
 
-    // ... (show method remains unchanged) ...
+    /**
+     * Affiche les détails d'un prospect (avec ses relations).
+     */
+    /**
+     * Affiche les détails d'un prospect (avec ses relations).
+     */
+    public function show(Prospect $prospect): JsonResponse
+    {
+        if (!auth()->user()->can('view prospects')) {
+            throw UnauthorizedException::forPermissions(['view prospects']);
+        }
+
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('admin');
+
+        $taskFilter = function ($q) use ($user, $isAdmin) {
+            if ($isAdmin)
+                return;
+            $q->where('assigned_to', $user->id)
+                ->orWhere('user_id', $user->id);
+        };
+
+        $rappelFilter = function ($q) use ($user, $isAdmin) {
+            if ($isAdmin)
+                return;
+            $q->whereJsonContains('assigned_users', $user->id)
+                ->orWhere('user_id', $user->id);
+        };
+
+        $prospect->load([
+            'todos' => $taskFilter,
+            'rappels' => $rappelFilter,
+            'contenu'
+        ]);
+
+        return (new ProspectResource($prospect))->response();
+    }
 
     /**
      * Met à jour un prospect.

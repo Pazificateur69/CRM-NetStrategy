@@ -16,74 +16,80 @@ class ClientController extends Controller
     /**
      * Liste des clients
      */
+    /**
+     * Helper: Get allowed prestation types for user
+     */
+    private function getAllowedPrestationTypes($user)
+    {
+        $pole = strtolower($user->pole ?? '');
+        $poleMapping = [
+            'com' => ['Social Media', 'Ads', 'Branding'],
+            'reseaux' => ['Social Media', 'Ads'],
+            'tech' => ['Dev', 'SEO'],
+            'dev' => ['Dev'],
+            'seo' => ['SEO'],
+            'comptabilite' => ['Comptabilite'],
+            'direction' => ['*'],
+        ];
+        return $poleMapping[$pole] ?? [$pole];
+    }
+
+    /**
+     * Liste des clients
+     */
     public function index(): JsonResponse
     {
         $this->authorize('view clients');
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('admin');
+
+        // Préparer les filtres de relations
+        $allowedTypes = $isAdmin ? ['*'] : $this->getAllowedPrestationTypes($user);
+
+        // Fonction de filtre pour les prestations
+        $prestationFilter = function ($q) use ($allowedTypes, $isAdmin, $user) {
+            if ($isAdmin || in_array('*', $allowedTypes))
+                return;
+
+            $q->where(function ($sub) use ($allowedTypes, $user) {
+                foreach ($allowedTypes as $type) {
+                    $sub->orWhere('type', 'LIKE', "%{$type}%");
+                }
+                // Toujours voir ses assignations
+                $sub->orWhere('assigned_user_id', $user->id);
+            });
+        };
+
+        // Fonction de filtre pour les todos/rappels (assigné ou related)
+        $taskFilter = function ($q) use ($user, $isAdmin) {
+            if ($isAdmin)
+                return;
+            $q->where('assigned_to', $user->id)
+                ->orWhere('user_id', $user->id); // Créateur ou assigné
+        };
 
         $clients = Client::with([
-            'prestations.contenu.user',
+            'prestations' => $prestationFilter,
+            'prestations.contenu.user', // Contenu des prestations filtrées
             'prestations.responsable',
+            'todos' => $taskFilter,
             'todos.user',
             'todos.assignedUser',
+            'rappels' => function ($q) use ($user, $isAdmin) {
+                if ($isAdmin)
+                    return;
+                $q->whereJsonContains('assigned_users', $user->id)
+                    ->orWhere('user_id', $user->id);
+            },
             'rappels.user',
             'rappels.assignedUsers',
-            'contenu.user'
+            'contenu.user' // Contenu global du client (non filtré pour l'instant, ou à discuter)
         ])->orderBy('created_at', 'desc')->get();
 
         return ClientResource::collection($clients)->response();
     }
 
-    /**
-     * Création d'un nouveau client
-     */
-    public function store(Request $request): JsonResponse
-    {
-        $this->authorize('manage clients');
-
-        $validated = $request->validate([
-            'societe' => 'required|string|max:255',
-            'gerant' => 'required|string|max:255',
-            'siret' => 'nullable|string|max:14',
-            'site_web' => 'nullable|string|max:255',
-            'adresse' => 'nullable|string',
-            'ville' => 'nullable|string|max:255',
-            'code_postal' => 'nullable|string|max:20',
-            'emails' => 'required|array|min:1',
-            'emails.*' => 'email|max:255',
-            'telephones' => 'nullable|array',
-            'telephones.*' => 'string|max:50',
-            'contrat' => 'nullable|string',
-            'date_contrat' => 'nullable|date',
-            'date_echeance' => 'nullable|date',
-            'montant_mensuel_total' => 'nullable|numeric',
-            'frequence_facturation' => 'nullable|string',
-            'mode_paiement' => 'nullable|string',
-            'iban' => 'nullable|string',
-            'description_generale' => 'nullable|string',
-            'notes_comptables' => 'nullable|string',
-            'lien_externe' => 'nullable|string|url',
-            'liens_externes' => 'nullable|array',
-            'interlocuteurs' => 'nullable|array',
-            'couleur_statut' => 'nullable|string',
-        ]);
-
-        // ✅ Création du client
-        $client = Client::create($validated);
-
-        // ✅ Création automatique des prestations de base
-        $prestationTypes = ['Dev', 'SEO', 'Ads', 'Social Media', 'Branding', 'Comptabilite'];
-
-        foreach ($prestationTypes as $type) {
-            Prestation::create([
-                'client_id' => $client->id,
-                'type' => $type,
-                'notes' => null,
-                'assigned_user_id' => auth()->check() ? auth()->id() : null,
-            ]);
-        }
-
-        return (new ClientResource($client))->response()->setStatusCode(201);
-    }
+    // ... store ...
 
     /**
      * Affichage détaillé d'un client
@@ -91,13 +97,44 @@ class ClientController extends Controller
     public function show($id): JsonResponse
     {
         $this->authorize('view clients');
+        $user = auth()->user();
+        $isAdmin = $user->hasRole('admin');
+
+        $allowedTypes = $isAdmin ? ['*'] : $this->getAllowedPrestationTypes($user);
+
+        // Réutiliser la même logique de filtrage
+        $prestationFilter = function ($q) use ($allowedTypes, $isAdmin, $user) {
+            if ($isAdmin || in_array('*', $allowedTypes))
+                return;
+            $q->where(function ($sub) use ($allowedTypes, $user) {
+                foreach ($allowedTypes as $type) {
+                    $sub->orWhere('type', 'LIKE', "%{$type}%");
+                }
+                $sub->orWhere('assigned_user_id', $user->id);
+            });
+        };
+
+        $taskFilter = function ($q) use ($user, $isAdmin) {
+            if ($isAdmin)
+                return;
+            $q->where('assigned_to', $user->id)
+                ->orWhere('user_id', $user->id);
+        };
 
         $client = Client::with([
+            'prestations' => $prestationFilter,
             'prestations.contenu.user',
             'prestations.responsable',
+            'todos' => $taskFilter,
             'todos.user',
             'todos.assignedUser',
             'todos.client:id,societe',
+            'rappels' => function ($q) use ($user, $isAdmin) {
+                if ($isAdmin)
+                    return;
+                $q->whereJsonContains('assigned_users', $user->id)
+                    ->orWhere('user_id', $user->id);
+            },
             'rappels.user',
             'rappels.assignedUsers',
             'contenu.user'

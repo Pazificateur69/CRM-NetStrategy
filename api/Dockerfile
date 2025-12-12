@@ -10,8 +10,6 @@ LABEL description="API Laravel pour CRM"
 
 # Installation des dépendances système
 RUN apk add --no-cache \
-    nginx \
-    supervisor \
     curl \
     sqlite \
     sqlite-dev \
@@ -21,6 +19,11 @@ RUN apk add --no-cache \
     freetype-dev \
     oniguruma-dev \
     bash \
+    autoconf \
+    make \
+    g++ \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo \
@@ -29,7 +32,8 @@ RUN apk add --no-cache \
         zip \
         bcmath \
         gd \
-        opcache
+        opcache \
+        pcntl
 
 # Installation de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -73,19 +77,7 @@ RUN chown -R www-data:www-data /var/www/html && \
     chmod -R 755 /var/www/html && \
     chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Configuration Nginx
-RUN rm -f /etc/nginx/http.d/default.conf
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+# Exposer le port 9000
+EXPOSE 9000
 
-# Configuration Supervisor
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Exposer le port
-EXPOSE 80
-
-# Script d'entrée
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["php-fpm"]

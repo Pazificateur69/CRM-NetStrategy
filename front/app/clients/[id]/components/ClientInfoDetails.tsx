@@ -46,16 +46,16 @@ interface ClientInfoDetailsProps {
 
 // Composant InfoCard moderne
 const ModernInfoCard = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-  <div className="group relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 overflow-hidden">
-    <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-50 rounded-full -mr-10 -mt-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  <div className="group relative bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-900 rounded-xl p-5 border border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-50 dark:bg-indigo-900/20 rounded-full -mr-10 -mt-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     <div className="relative">
       <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors duration-300">
-          <Icon className="w-4 h-4 text-indigo-600" />
+        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800 transition-colors duration-300">
+          <Icon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
         </div>
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{label}</span>
       </div>
-      <p className="text-base font-semibold text-gray-800 truncate group-hover:text-indigo-700 transition-colors duration-300">
+      <p className="text-base font-semibold text-gray-800 dark:text-slate-100 truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors duration-300">
         {value}
       </p>
     </div>
@@ -303,7 +303,7 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
   return (
     <div className="space-y-8">
       {/* Section Informations Générales */}
-      <section className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors duration-300">
         {/* Header avec gradient */}
         <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 p-6">
           <div className="flex items-center justify-between">
@@ -346,36 +346,36 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
 
         {/* AI Analysis Result */}
         {aiAnalysis && (
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100 p-6 animate-in slide-in-from-top-4 fade-in duration-500">
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 border-b border-indigo-100 dark:border-indigo-800 p-6 animate-in slide-in-from-top-4 fade-in duration-500">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-white rounded-xl shadow-sm border border-indigo-100">
-                <Sparkles className="w-6 h-6 text-indigo-600" />
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-indigo-100 dark:border-indigo-700">
+                <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-bold text-indigo-900">Analyse Stratégique</h3>
-                  <button onClick={() => setAiAnalysis(null)} className="text-gray-400 hover:text-gray-600">
+                  <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-200">Analyse Stratégique</h3>
+                  <button onClick={() => setAiAnalysis(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <p className="text-gray-700 mb-4 leading-relaxed">{aiAnalysis.summary}</p>
+                <p className="text-gray-700 dark:text-slate-300 mb-4 leading-relaxed">{aiAnalysis.summary}</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
-                    <h4 className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2">Sentiment</h4>
-                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${aiAnalysis.sentiment === 'Positif' ? 'bg-green-100 text-green-700' :
-                      aiAnalysis.sentiment === 'Risque' ? 'bg-red-100 text-red-700' :
-                        'bg-blue-100 text-blue-700'
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-indigo-100 dark:border-slate-700 shadow-sm">
+                    <h4 className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-2">Sentiment</h4>
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${aiAnalysis.sentiment === 'Positif' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
+                      aiAnalysis.sentiment === 'Risque' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
+                        'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
                       }`}>
                       {aiAnalysis.sentiment}
                     </span>
                   </div>
 
-                  <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm md:col-span-2">
-                    <h4 className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2">Opportunités & Actions</h4>
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-indigo-100 dark:border-slate-700 shadow-sm md:col-span-2">
+                    <h4 className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-2">Opportunités & Actions</h4>
                     <ul className="space-y-1">
                       {aiAnalysis.opportunities?.map((op: string, i: number) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                        <li key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
                           <CheckCircle className="w-4 h-4 text-green-500" />
                           {op}
                         </li>
@@ -431,9 +431,9 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
           {/* Profil Client Complet - Présentation & Prestations */}
           <div className="space-y-6">
             {/* Présentation du Client - ÉDITABLE */}
-            <div className="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 rounded-2xl p-6 border border-indigo-100 overflow-hidden group">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-200 rounded-full opacity-10 -mr-20 -mt-20" />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200 rounded-full opacity-10 -ml-16 -mb-16" />
+            <div className="relative bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 rounded-2xl p-6 border border-indigo-100 dark:border-slate-700 overflow-hidden group">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-200 dark:bg-indigo-900/20 rounded-full opacity-10 -mr-20 -mt-20" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200 dark:bg-purple-900/20 rounded-full opacity-10 -ml-16 -mb-16" />
 
               <div className="relative">
                 <div className="flex items-center justify-between mb-4">
@@ -441,7 +441,7 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                     <div className="p-2 bg-indigo-600 rounded-lg">
                       <FileText className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="text-lg font-bold text-indigo-900">
+                    <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-200">
                       Présentation du Client
                     </h3>
                   </div>
@@ -463,7 +463,7 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                     <textarea
                       value={presentationForm}
                       onChange={(e) => setPresentationForm(e.target.value)}
-                      className="w-full border-2 border-indigo-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white resize-none"
+                      className="w-full border-2 border-indigo-300 dark:border-indigo-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 dark:text-white resize-none"
                       rows={6}
                       placeholder="Décrivez votre client, son activité, ses besoins, etc."
                     />
@@ -482,7 +482,7 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                       </button>
                       <button
                         onClick={cancelEditPresentation}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-all duration-200 font-medium"
                       >
                         <X className="w-4 h-4" />
                         Annuler
@@ -493,10 +493,10 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                   // Mode affichage
                   <>
                     {client.description_generale ? (
-                      <p className="text-gray-700 leading-relaxed text-sm">{client.description_generale}</p>
+                      <p className="text-gray-700 dark:text-slate-300 leading-relaxed text-sm">{client.description_generale}</p>
                     ) : (
-                      <div className="flex items-center gap-3 text-gray-500 italic text-sm">
-                        <div className="w-1 h-12 bg-gray-300 rounded-full" />
+                      <div className="flex items-center gap-3 text-gray-500 dark:text-slate-400 italic text-sm">
+                        <div className="w-1 h-12 bg-gray-300 dark:bg-slate-600 rounded-full" />
                         <p>Aucune présentation n'a encore été renseignée pour ce client.</p>
                       </div>
                     )}
@@ -506,8 +506,8 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
             </div>
 
             {/* Prestations Validées - ÉDITABLE */}
-            <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-50 rounded-2xl p-6 border border-emerald-100 overflow-hidden group">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-200 rounded-full opacity-10 -mr-20 -mt-20" />
+            <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 rounded-2xl p-6 border border-emerald-100 dark:border-slate-700 overflow-hidden group">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-200 dark:bg-emerald-900/20 rounded-full opacity-10 -mr-20 -mt-20" />
 
               <div className="relative">
                 <div className="flex items-center justify-between mb-4">
@@ -515,7 +515,7 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                     <div className="p-2 bg-emerald-600 rounded-lg">
                       <CheckSquare className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="text-lg font-bold text-emerald-900">
+                    <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-200">
                       Prestations Validées
                     </h3>
                   </div>
@@ -537,52 +537,52 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
 
                 {/* Formulaire d'ajout/édition de prestation */}
                 {(isAddingPrestation || editingPrestationId) && (
-                  <div className="bg-white rounded-xl p-5 border-2 border-emerald-300 mb-4">
-                    <h4 className="font-semibold text-emerald-900 mb-4 flex items-center gap-2">
+                  <div className="bg-white dark:bg-slate-700 rounded-xl p-5 border-2 border-emerald-300 dark:border-emerald-600 mb-4">
+                    <h4 className="font-semibold text-emerald-900 dark:text-emerald-200 mb-4 flex items-center gap-2">
                       <CheckSquare className="w-4 h-4" />
                       {editingPrestationId ? 'Modifier la prestation' : 'Nouvelle prestation'}
                     </h4>
                     <div className="grid gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">
                           Type de prestation <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={prestationForm.type}
                           onChange={(e) => setPrestationForm({ ...prestationForm, type: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-slate-800 dark:text-white"
                           placeholder="ex: Développement web, SEO, Community Management..."
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Description</label>
                         <textarea
                           value={prestationForm.notes}
                           onChange={(e) => setPrestationForm({ ...prestationForm, notes: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none bg-white dark:bg-slate-800 dark:text-white"
                           rows={2}
                           placeholder="Détails de la prestation..."
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Montant (€)</label>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Montant (€)</label>
                           <input
                             type="number"
                             step="0.01"
                             value={prestationForm.tarif_ht}
                             onChange={(e) => setPrestationForm({ ...prestationForm, tarif_ht: e.target.value })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-slate-800 dark:text-white"
                             placeholder="0.00"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Fréquence</label>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Fréquence</label>
                           <select
                             value={prestationForm.frequence}
                             onChange={(e) => setPrestationForm({ ...prestationForm, frequence: e.target.value })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-slate-800 dark:text-white"
                           >
                             <option value="">Sélectionner</option>
                             <option value="Unique">Unique</option>
@@ -607,7 +607,7 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                         </button>
                         <button
                           onClick={resetPrestationForm}
-                          className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium"
+                          className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-slate-600 text-gray-700 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-slate-500 transition-all duration-200 font-medium"
                         >
                           <X className="w-4 h-4" />
                           Annuler
@@ -623,22 +623,22 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                     {client.prestations.map((prestation: any) => (
                       <div
                         key={prestation.id}
-                        className="group/item relative flex items-start gap-3 bg-gradient-to-br from-white to-emerald-50/30 rounded-xl p-4 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                        className="group/item relative flex items-start gap-3 bg-gradient-to-br from-white to-emerald-50/30 dark:from-slate-700 dark:to-slate-700/50 rounded-xl p-4 border border-emerald-100 dark:border-slate-600 hover:border-emerald-300 dark:hover:border-emerald-500 hover:shadow-md transition-all duration-200"
                       >
-                        <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                          <CheckSquare className="w-4 h-4 text-emerald-600" />
+                        <div className="flex-shrink-0 w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                          <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
                             {prestation.type}
                           </h4>
                           {prestation.notes && (
-                            <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+                            <p className="text-xs text-gray-600 dark:text-slate-300 line-clamp-2 mb-2">
                               {prestation.notes}
                             </p>
                           )}
                           {prestation.tarif_ht && (
-                            <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
                               {new Intl.NumberFormat('fr-FR', {
                                 style: 'currency',
@@ -652,14 +652,14 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                           <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
                             <button
                               onClick={() => startEditPrestation(prestation)}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-600 rounded-lg transition-colors"
                               title="Modifier"
                             >
                               <Edit className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeletePrestation(prestation.id)}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                               title="Supprimer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -670,8 +670,8 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 text-gray-500 italic text-sm">
-                    <div className="w-1 h-12 bg-gray-300 rounded-full" />
+                  <div className="flex items-center gap-3 text-gray-500 dark:text-slate-400 italic text-sm">
+                    <div className="w-1 h-12 bg-gray-300 dark:bg-slate-600 rounded-full" />
                     <p>Aucune prestation n'a encore été enregistrée pour ce client.</p>
                   </div>
                 )}
@@ -689,7 +689,7 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this st
       </section>
 
       {/* Section Tâches et Rappels */}
-      <section className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors duration-300">
         <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-6">
           <h3 className="text-2xl font-bold text-white flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">

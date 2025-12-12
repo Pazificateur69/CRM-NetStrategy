@@ -90,8 +90,8 @@ class ContenuFicheController extends Controller
     private function notifyMentions($text, $model, $sender)
     {
         // 1. Trouver les mentions potentielles (greedy)
-        // On capture large pour gérer les espaces, puis on affinera
-        preg_match_all('/@([a-zA-Z0-9_ ]+)/', $text, $matches);
+        // On capture large pour gérer les espaces, les accents et les traits d'union
+        preg_match_all('/@([a-zA-Z0-9_ \-\p{L}]+)/u', $text, $matches);
         $candidates = array_unique(array_map('trim', $matches[1]));
 
         $link = '';

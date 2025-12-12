@@ -169,11 +169,11 @@ export default function ClientDetailPage() {
   return (
     <DashboardLayout>
       {/* === HEADER CLIENT === */}
-      <div className="relative mb-8 rounded-3xl overflow-hidden bg-white shadow-xl border border-slate-100">
+      <div className="relative mb-8 rounded-3xl overflow-hidden bg-white dark:bg-slate-800 shadow-xl border border-slate-100 dark:border-slate-700 transition-colors duration-300">
         {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-10"></div>
-        <div className="absolute top-0 right-0 p-12 opacity-5">
-          <Building2 className="w-64 h-64" />
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-10 dark:opacity-20"></div>
+        <div className="absolute top-0 right-0 p-12 opacity-5 dark:opacity-10">
+          <Building2 className="w-64 h-64 text-slate-900 dark:text-white" />
         </div>
 
         <div className="relative p-8 lg:p-10">
@@ -181,37 +181,37 @@ export default function ClientDetailPage() {
             <div>
               <Link
                 href="/clients"
-                className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors mb-4 group"
+                className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium transition-colors mb-4 group"
               >
-                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-2 group-hover:bg-indigo-100 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mr-2 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
                   <ChevronLeft className="w-5 h-5" />
                 </div>
                 Retour à la liste
               </Link>
 
               <div className="flex items-center gap-4 mb-2">
-                <h1 className="text-4xl font-heading font-bold text-slate-900 tracking-tight">
+                <h1 className="text-4xl font-heading font-bold text-slate-900 dark:text-white tracking-tight">
                   {client.societe}
                 </h1>
-                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">
+                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
                   Client Actif
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-6 text-slate-500 mt-4">
+              <div className="flex flex-wrap items-center gap-6 text-slate-500 dark:text-slate-400 mt-4">
                 <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-indigo-500" />
-                  <span className="font-medium text-slate-700">{client.gerant}</span>
+                  <User className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                  <span className="font-medium text-slate-700 dark:text-slate-200">{client.gerant}</span>
                 </div>
                 {client.ville && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-indigo-500" />
+                    <MapPin className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                     <span>{client.ville}</span>
                   </div>
                 )}
                 {client.site_web && (
-                  <a href={client.site_web} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-indigo-600 transition-colors">
-                    <Globe className="w-4 h-4 text-indigo-500" />
+                  <a href={client.site_web} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                    <Globe className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                     <span>Site Web</span>
                   </a>
                 )}
@@ -221,9 +221,9 @@ export default function ClientDetailPage() {
             {canEdit && (
               <button
                 onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 bg-white text-slate-700 px-6 py-3 rounded-xl hover:bg-slate-50 transition-all shadow-sm border border-slate-200 font-semibold group"
+                className="flex items-center gap-2 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 px-6 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm border border-slate-200 dark:border-slate-600 font-semibold group"
               >
-                <Edit className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+                <Edit className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
                 <span>Modifier la fiche</span>
               </button>
             )}
@@ -298,10 +298,10 @@ export default function ClientDetailPage() {
         <div className="lg:col-span-1">
           <div className="sticky top-24 space-y-6">
             {/* Section Commentaires - Design moderne */}
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
-              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-indigo-500" />
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-[calc(100vh-8rem)] transition-colors duration-300">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
                   Commentaires
                 </h3>
               </div>
