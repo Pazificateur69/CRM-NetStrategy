@@ -87,8 +87,10 @@ class ProspectController extends Controller
         $rappelFilter = function ($q) use ($user, $isAdmin) {
             if ($isAdmin)
                 return;
-            $q->whereJsonContains('assigned_users', $user->id)
-                ->orWhere('user_id', $user->id);
+            $q->where(function ($sub) use ($user) {
+                $sub->whereHas('assignedUsers', fn($sq) => $sq->where('users.id', $user->id))
+                    ->orWhere('user_id', $user->id);
+            });
         };
 
         $prospect->load([
