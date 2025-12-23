@@ -70,5 +70,5 @@ return [
     | Si tu utilises Bearer token (ton cas) → FALSE
     |
     */
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 ];

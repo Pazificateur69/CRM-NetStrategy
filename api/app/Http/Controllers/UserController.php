@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -57,7 +58,7 @@ class UserController extends Controller
             // Reverting 403.
         }
 
-        return response()->json($query->get());
+        return UserResource::collection($query->get())->response();
     }
 
     /**
@@ -98,10 +99,9 @@ class UserController extends Controller
             'pole' => $pole,
         ]);
 
-        return response()->json([
-            'message' => 'Utilisateur créé avec succès',
-            'user' => $newUser->load('roles'),
-        ], 201);
+        return (new UserResource($newUser->load('roles', 'permissions')))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -144,10 +144,8 @@ class UserController extends Controller
             'pole' => $user->pole,
         ]);
 
-        return response()->json([
-            'message' => 'Utilisateur mis à jour avec succès',
-            'user' => $user->load('roles'),
-        ]);
+        return (new UserResource($user->load('roles', 'permissions')))
+            ->response();
     }
 
     /**
@@ -191,7 +189,7 @@ class UserController extends Controller
             ->orderBy('name')
             ->get();
 
-        return response()->json($users);
+        return UserResource::collection($users)->response();
     }
 
     /**
@@ -253,18 +251,8 @@ class UserController extends Controller
             }
         ])
             ->orderByDesc('active_tasks_count')
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'pole' => $user->pole,
-                    'avatar' => $user->avatar_url, // Assuming accessor exists or null
-                    'active' => $user->active_tasks_count,
-                    'completed' => $user->completed_tasks_count,
-                ];
-            });
+            ->get();
 
-        return response()->json($users);
+        return UserResource::collection($users)->response();
     }
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --turbopack -H 0.0.0.0",
     "build": "rm -rf .next out && NEXT_DISABLE_SOURCEMAPS=1 next build --no-lint",
-    "start": "next start"
+    "start": "next start -p $PORT"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

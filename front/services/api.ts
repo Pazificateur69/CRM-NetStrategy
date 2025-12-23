@@ -13,37 +13,27 @@ const api = axios.create({
   headers: {
     Accept: 'application/json',
   },
-  withCredentials: false, // Pas de cookies avec Sanctum Bearer
+  withCredentials: true, // ✅ Cookies HTTP-only via Sanctum
 });
 
 // 🔒 Intercepteur de requêtes : ajout automatique du token
+// 🔒 Intercepteur de requêtes : CSRF token auto-include (via cookie)
+// Le cookie XSRF-TOKEN est géré automatiquement par Axios si présent
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        // ✅ Compatible Axios v1.x
-        if (config.headers) {
-          (config.headers as any).Authorization = `Bearer ${token}`;
-        } else {
-          config.headers = { Authorization: `Bearer ${token}` } as any;
-        }
-      }
-    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
 // 🔒 Intercepteur de réponses : gestion des erreurs d'authentification
+// 🔒 Intercepteur de réponses : gestion des erreurs d'authentification
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Si 401 Unauthorized, le token est invalide ou expiré
+    // Si 401 Unauthorized
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('authToken');
-        // Rediriger vers login si pas déjà sur la page de login
         // Rediriger vers login si pas déjà sur la page de login
         if (window.location.pathname !== '/') {
           window.location.href = '/';

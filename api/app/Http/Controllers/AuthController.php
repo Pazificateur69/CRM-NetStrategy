@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use App\Models\User;
+use App\Http\Resources\UserResource;
 
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 
@@ -49,7 +50,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Utilisateur créé avec succès',
-            'user' => $user,
+            'user' => new UserResource($user),
         ], 201);
     }
 
@@ -93,13 +94,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'pole' => $user->pole,
-            ],
+            'user' => new UserResource($user->load('roles', 'permissions')),
         ]);
     }
 
@@ -148,13 +143,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'pole' => $user->pole,
-            ],
+            'user' => new UserResource($user->load('roles', 'permissions')),
         ]);
     }
 

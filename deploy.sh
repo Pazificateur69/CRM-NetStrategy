@@ -56,7 +56,7 @@ if [ -d "front" ]; then
     
     # Restart PM2 if available
     if command -v pm2 &> /dev/null; then
-        pm2 restart crm-frontend || pm2 start npm --name "crm-frontend" -- start
+        pm2 restart crm-frontend || pm2 start "npm run start" --name "crm-frontend" --env production
     fi
     
     cd ..

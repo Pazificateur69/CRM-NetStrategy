@@ -26,19 +26,17 @@ interface LoginResponse {
  * Connecte l'utilisateur et stocke les infos localement.
  */
 export const login = async (email: string, password: string) => {
+  // 1. Initialiser le cookie CSRF
+  await api.get('/sanctum/csrf-cookie');
+
+  // 2. Login (le cookie de session sera set automatiquement par le backend)
   const response = await api.post<LoginResponse>('/login', { email, password });
 
   if (response.data.two_factor) {
     return response.data;
   }
 
-  const { access_token: token, user } = response.data;
-
-  if (token && user && typeof window !== 'undefined') {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userRole', user.role);
-    localStorage.setItem('userPole', user.pole || 'non_defini');
-  }
+  const { user } = response.data;
 
   return user;
 };
@@ -48,13 +46,7 @@ export const verify2FA = async (code: string, temp_token: string) => {
     headers: { Authorization: `Bearer ${temp_token}` }
   });
 
-  const { access_token: token, user } = response.data;
-
-  if (token && user && typeof window !== 'undefined') {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userRole', user.role);
-    localStorage.setItem('userPole', user.pole || 'non_defini');
-  }
+  const { user } = response.data;
   return user;
 };
 
@@ -67,11 +59,7 @@ export const logout = async () => {
   } catch (error) {
     console.warn("Erreur de déconnexion côté serveur. Nettoyage local.");
   } finally {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userPole'); // ✅ nettoyage
-    }
+    // Si nous avions un state global de user, on le resetterait ici
   }
   return true;
 };

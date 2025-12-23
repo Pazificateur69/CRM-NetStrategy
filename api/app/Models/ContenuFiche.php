@@ -11,14 +11,16 @@ class ContenuFiche extends Model
     use HasFactory;
 
     protected $fillable = [
-    'type',
-    'pole', // ✅ ajouté ici
-    'texte',
-    'chemin_fichier',
-    'nom_original_fichier',
-    'prestation_id',
-    'user_id',
-];
+        'type',
+        'pole',
+        'texte',
+        'chemin_fichier',
+        'nom_original_fichier',
+        'prestation_id',
+        'user_id',
+        'contenuable_id',
+        'contenuable_type',
+    ];
 
 
     public function contenuable(): MorphTo
