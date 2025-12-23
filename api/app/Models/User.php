@@ -82,6 +82,16 @@ class User extends Authenticatable
         return $this->hasMany(LoginHistory::class);
     }
 
+    public function assignedTodos()
+    {
+        return $this->hasMany(Todo::class, 'assigned_to');
+    }
+
+    public function assignedRappels()
+    {
+        return $this->belongsToMany(Rappel::class, 'rappel_user');
+    }
+
     public function auditLogs()
     {
         return $this->hasMany(AuditLog::class);

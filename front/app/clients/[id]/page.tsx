@@ -1,8 +1,9 @@
-// app/clients/[id]/page.tsx
 'use client';
+export const dynamic = "force-static";
+
 
 import React, { useState } from 'react';
-import { ChevronLeft, Edit, Building2, User, MapPin, Globe, FileText, CreditCard, Calendar, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Edit, Building2, User, MapPin, Globe, FileText, CreditCard, Calendar, CheckCircle2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import FicheTabs, { type TabDefinition } from '@/components/FicheTabs';
@@ -49,6 +50,7 @@ export default function ClientDetailPage() {
     handleInterlocuteursChange,
     handleCloseModal,
     handleSaveClient,
+    handleDeleteClient,
     savingClient,
 
     // Comptabilité
@@ -218,15 +220,28 @@ export default function ClientDetailPage() {
               </div>
             </div>
 
-            {canEdit && (
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 px-6 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm border border-slate-200 dark:border-slate-600 font-semibold group"
-              >
-                <Edit className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
-                <span>Modifier la fiche</span>
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {canEdit && (
+                <button
+                  onClick={handleDeleteClient}
+                  className="flex items-center gap-2 bg-white dark:bg-slate-700 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shadow-sm border border-slate-200 dark:border-slate-600 font-semibold group"
+                  title="Supprimer le client"
+                >
+                  <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <span className="hidden sm:inline">Supprimer</span>
+                </button>
+              )}
+
+              {canEdit && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-2 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-100 px-6 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm border border-slate-200 dark:border-slate-600 font-semibold group"
+                >
+                  <Edit className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <span>Modifier la fiche</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

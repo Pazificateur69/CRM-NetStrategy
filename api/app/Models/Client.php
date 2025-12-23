@@ -12,6 +12,24 @@ class Client extends Model
 {
     use HasFactory, Auditable;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($client) {
+            // Supprimer les relations polymorphiques
+            $client->contenu()->delete();
+            // Supprimer les prestations (qui peuvent elles-mêmes avoir du contenu)
+            foreach ($client->prestations as $prestation) {
+                $prestation->delete();
+            }
+            // Les todos et rappels devraient être gérés par cascade SQL, 
+            // mais on peut les forcer si nécessaire.
+            $client->todos()->delete();
+            $client->rappels()->delete();
+        });
+    }
+
     protected $fillable = [
         'societe',
         'gerant',

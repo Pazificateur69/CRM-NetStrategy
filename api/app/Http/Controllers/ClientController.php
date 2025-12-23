@@ -78,8 +78,10 @@ class ClientController extends Controller
             'rappels' => function ($q) use ($user, $isAdmin) {
                 if ($isAdmin)
                     return;
-                $q->whereJsonContains('assigned_users', $user->id)
-                    ->orWhere('user_id', $user->id);
+                $q->where(function ($sub) use ($user) {
+                    $sub->whereHas('assignedUsers', fn($sq) => $sq->where('users.id', $user->id))
+                        ->orWhere('user_id', $user->id);
+                });
             },
             'rappels.user',
             'rappels.assignedUsers',
@@ -89,7 +91,44 @@ class ClientController extends Controller
         return ClientResource::collection($clients)->response();
     }
 
-    // ... store ...
+    /**
+     * Création d'un nouveau client
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $this->authorize('manage clients');
+
+        $validated = $request->validate([
+            'societe' => 'required|string|max:255',
+            'gerant' => 'required|string|max:255',
+            'siret' => 'nullable|string|max:14',
+            'site_web' => 'nullable|string|max:255',
+            'adresse' => 'nullable|string',
+            'ville' => 'nullable|string|max:255',
+            'code_postal' => 'nullable|string|max:20',
+            'emails' => 'required|array|min:1',
+            'emails.*' => 'email|max:255',
+            'telephones' => 'nullable|array',
+            'telephones.*' => 'string|max:50',
+            'contrat' => 'nullable|string',
+            'date_contrat' => 'nullable|date',
+            'date_echeance' => 'nullable|date',
+            'montant_mensuel_total' => 'nullable|numeric',
+            'frequence_facturation' => 'nullable|string',
+            'mode_paiement' => 'nullable|string',
+            'iban' => 'nullable|string',
+            'description_generale' => 'nullable|string',
+            'notes_comptables' => 'nullable|string',
+            'lien_externe' => 'nullable|string|url',
+            'liens_externes' => 'nullable|array',
+            'interlocuteurs' => 'nullable|array',
+            'couleur_statut' => 'nullable|string',
+        ]);
+
+        $client = Client::create($validated);
+
+        return (new ClientResource($client))->response()->setStatusCode(201);
+    }
 
     /**
      * Affichage détaillé d'un client
@@ -132,8 +171,10 @@ class ClientController extends Controller
             'rappels' => function ($q) use ($user, $isAdmin) {
                 if ($isAdmin)
                     return;
-                $q->whereJsonContains('assigned_users', $user->id)
-                    ->orWhere('user_id', $user->id);
+                $q->where(function ($sub) use ($user) {
+                    $sub->whereHas('assignedUsers', fn($sq) => $sq->where('users.id', $user->id))
+                        ->orWhere('user_id', $user->id);
+                });
             },
             'rappels.user',
             'rappels.assignedUsers',

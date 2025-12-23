@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack -H 0.0.0.0",
-    "build": "next build --turbopack",
+    "build": "rm -rf .next out && NEXT_DISABLE_SOURCEMAPS=1 next build --no-lint",
     "start": "next start"
   },
   "dependencies": {

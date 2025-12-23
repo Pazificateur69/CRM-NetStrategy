@@ -27,6 +27,10 @@ export const updateClient = async (
   return response.data.data;
 };
 
+export const deleteClient = async (id: number): Promise<void> => {
+  await api.delete(`/clients/${id}`);
+};
+
 // ===============================
 // 🔹 IMPORT / EXPORT (EXCEL)
 // ===============================

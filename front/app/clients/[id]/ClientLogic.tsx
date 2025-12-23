@@ -24,6 +24,7 @@ import {
     deleteRappel,
     uploadDocument,
     updateClient,
+    deleteClient,
     addPrestation,
     updatePrestation,
     deletePrestation,
@@ -140,6 +141,7 @@ export interface UseClientLogicReturn {
 
     handleCloseModal: () => void;
     handleSaveClient: () => Promise<void>;
+    handleDeleteClient: () => Promise<void>;
     savingClient: boolean;
 }
 
@@ -799,6 +801,23 @@ export function useClientLogic(): UseClientLogicReturn {
         }
     };
 
+    const handleDeleteClient = async () => {
+        if (!client?.id) return;
+        if (!window.confirm(`Êtes-vous sûr de vouloir supprimer définitivement le client "${client.societe}" ? Cette action est irréversible.`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await deleteClient(Number(client.id));
+            router.push('/clients');
+        } catch (error) {
+            console.error("Erreur lors de la suppression du client", error);
+            alert("Erreur lors de la suppression du client.");
+            setLoading(false);
+        }
+    };
+
     // -----------------------------------------------------
     // RETURN
     // -----------------------------------------------------
@@ -882,6 +901,7 @@ export function useClientLogic(): UseClientLogicReturn {
         handleInterlocuteursChange,
         handleCloseModal,
         handleSaveClient,
+        handleDeleteClient,
         savingClient
     };
 }
