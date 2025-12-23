@@ -245,7 +245,7 @@ export async function updateTaskStatus(
       : { statut: backendStatus, fait: newStatus === 'done' };
 
   try {
-    console.log(`🔄 updateTaskStatus → ${endpoint}/${cleanId}`, payload);
+
 
     const response = await api.put(`${endpoint}/${cleanId}`, payload);
     const t = response.data.data || response.data;

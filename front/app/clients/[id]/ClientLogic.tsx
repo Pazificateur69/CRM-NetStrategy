@@ -367,7 +367,7 @@ export function useClientLogic(): UseClientLogicReturn {
             if (userRes.data) {
                 const userData = userRes.data;
                 // Debug:
-                console.log("Current User Role/Pole:", userData.role, userData.pole);
+
 
                 // Admin check
                 if (userData.role === 'admin') {
