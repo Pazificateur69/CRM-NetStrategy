@@ -19,12 +19,16 @@ export default function ProspectConversionModal({
     isConverting
 }: ProspectConversionModalProps) {
     const handleConfirm = async () => {
-        await onConfirm();
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
+        try {
+            await onConfirm();
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        } catch (error) {
+            // Don't fire confetti on error
+        }
     };
 
     if (!open) return null;

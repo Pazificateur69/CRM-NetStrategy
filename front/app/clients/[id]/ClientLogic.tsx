@@ -380,7 +380,7 @@ export function useClientLogic(): UseClientLogicReturn {
         } catch (e) {
             console.error("Failed to fetch user role", e);
             // Fallback to local storage if API fails
-            const storedRole = localStorage.getItem('user_role');
+            const storedRole = localStorage.getItem('userRole');
             if (storedRole) setUserRole(storedRole);
         }
 

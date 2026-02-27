@@ -1,5 +1,4 @@
 'use client';
-export const dynamic = "force-static";
 
 
 import React, { useState, useEffect } from 'react';
@@ -396,66 +395,107 @@ export default function ProspectDetailPage() {
     ];
 
     const getStatusBadge = (statut: string) => {
-        switch (statut) {
-            case 'converti': return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-green-100 text-green-700 border border-green-200 uppercase tracking-wide">Converti</span>;
-            case 'relance': return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-yellow-100 text-yellow-700 border border-yellow-200 uppercase tracking-wide">Relance</span>;
-            case 'en_attente': return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-wide">En attente</span>;
-            case 'perdu': return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-red-100 text-red-700 border border-red-200 uppercase tracking-wide">Perdu</span>;
-            default: return <span className="px-4 py-1.5 rounded-full text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 uppercase tracking-wide">{statut}</span>;
-        }
+        const styles: Record<string, string> = {
+            converti: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+            relance: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+            en_attente: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+            perdu: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
+        };
+        const dots: Record<string, string> = {
+            converti: 'bg-emerald-500',
+            relance: 'bg-amber-500',
+            en_attente: 'bg-blue-500',
+            perdu: 'bg-red-500',
+        };
+        const labels: Record<string, string> = {
+            converti: 'Converti',
+            relance: 'Relance',
+            en_attente: 'En attente',
+            perdu: 'Perdu',
+        };
+        const s = styles[statut] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700';
+        const d = dots[statut] || 'bg-gray-500';
+        const l = labels[statut] || statut;
+
+        return (
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${s}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${d}`} />
+                {l}
+            </span>
+        );
     };
 
     return (
         <DashboardLayout>
             {/* === HEADER PROSPECT === */}
-            <div className="relative mb-8 rounded-3xl overflow-hidden bg-card shadow-xl border border-border">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-10"></div>
-                <div className="absolute top-0 right-0 p-12 opacity-5">
+            <div className="relative mb-8 rounded-3xl overflow-hidden bg-card shadow-xl border border-border transition-colors duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 via-indigo-600/5 to-transparent dark:from-purple-600/10 dark:via-indigo-600/10" />
+                <div className="absolute top-0 right-0 p-12 opacity-[0.03] dark:opacity-[0.06]">
                     <Building2 className="w-64 h-64" />
                 </div>
 
                 <div className="relative p-8 lg:p-10">
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                         <div>
-                            <Link href="/prospects" className="inline-flex items-center text-purple-600 hover:text-purple-800 font-medium transition-colors mb-4 group">
-                                <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center mr-2 group-hover:bg-purple-100 transition-colors">
-                                    <ChevronLeft className="w-5 h-5" />
+                            <Link href="/prospects" className="inline-flex items-center text-muted-foreground hover:text-primary font-medium transition-colors mb-4 group text-sm">
+                                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center mr-2 group-hover:bg-primary/10 transition-colors">
+                                    <ChevronLeft className="w-4 h-4" />
                                 </div>
-                                Retour à la liste
+                                Retour
                             </Link>
 
                             <div className="flex items-center gap-4 mb-2">
-                                <h1 className="text-4xl font-heading font-bold text-foreground tracking-tight">{prospect.societe}</h1>
-                                {getStatusBadge(prospect.statut)}
-
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/20">
+                                    {prospect.societe.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl lg:text-4xl font-heading font-bold text-foreground tracking-tight">{prospect.societe}</h1>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {getStatusBadge(prospect.statut)}
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-6 text-muted-foreground mt-4">
-                                <div className="flex items-center gap-2">
-                                    <User className="w-4 h-4 text-purple-500" />
-                                    <span className="font-medium text-foreground">{prospect.contact}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-purple-500" />
-                                    <span>Créé le {new Date(prospect.created_at || Date.now()).toLocaleDateString()}</span>
+                            <div className="flex flex-wrap items-center gap-4 text-muted-foreground mt-4 text-sm">
+                                {prospect.contact && (
+                                    <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg">
+                                        <User className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
+                                        <span className="font-medium text-foreground">{prospect.contact}</span>
+                                    </div>
+                                )}
+                                {prospect.emails?.[0] && (
+                                    <a href={`mailto:${prospect.emails[0]}`} className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors">
+                                        <Mail className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
+                                        <span>{prospect.emails[0]}</span>
+                                    </a>
+                                )}
+                                {prospect.telephones?.[0] && (
+                                    <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg">
+                                        <Phone className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
+                                        <span>{prospect.telephones[0]}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg">
+                                    <Calendar className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
+                                    <span>{new Date(prospect.created_at || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                            <button onClick={handleConvertClick} disabled={isConverting || prospect.statut === 'converti'} className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 rounded-xl transition-all shadow-lg shadow-green-500/20 font-semibold group">
-                                {isConverting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                                <span>{prospect.statut === 'converti' ? 'Déjà Converti' : 'Convertir en Client'}</span>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <button onClick={handleConvertClick} disabled={isConverting || prospect.statut === 'converti'} className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 font-medium text-sm group">
+                                {isConverting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+                                <span>{prospect.statut === 'converti' ? 'Converti' : 'Convertir'}</span>
                             </button>
 
-                            <button onClick={handleAnalyzeAI} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20 font-semibold group">
-                                <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                <span className="hidden sm:inline">Analyse AI</span>
+                            <button onClick={handleAnalyzeAI} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 font-medium text-sm group">
+                                <Sparkles className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                <span>IA</span>
                             </button>
 
-                            <button onClick={() => setShowEditModal(true)} className="flex items-center justify-center gap-2 bg-card text-foreground px-4 py-3 rounded-xl hover:bg-accent transition-all shadow-sm border border-border font-semibold group">
-                                <Edit className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
-                                <span className="hidden sm:inline">Modifier</span>
+                            <button onClick={() => setShowEditModal(true)} className="flex items-center justify-center gap-2 bg-card text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-all shadow-sm border border-border font-medium text-sm group">
+                                <Edit className="w-4 h-4 text-purple-500 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+                                <span>Modifier</span>
                             </button>
                         </div>
                     </div>

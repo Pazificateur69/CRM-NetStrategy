@@ -1,19 +1,13 @@
 // services/api.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-if (!API_URL) {
-  throw new Error('NEXT_PUBLIC_API_URL must be defined in environment variables');
-}
-
+const API_URL = '/api';
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     Accept: 'application/json',
   },
-  withCredentials: true, // ✅ Cookies HTTP-only via Sanctum
 });
 
 // 🔒 Intercepteur de requêtes : ajout automatique du token
@@ -21,6 +15,12 @@ const api = axios.create({
 // Le cookie XSRF-TOKEN est géré automatiquement par Axios si présent
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
     return config;
   },
   (error) => Promise.reject(error)

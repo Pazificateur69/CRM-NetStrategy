@@ -43,11 +43,9 @@ export default function AdminMoodPage() {
 
     if (loading) {
         return (
-            <DashboardLayout>
-                <div className="flex items-center justify-center h-96">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
-            </DashboardLayout>
+            <div className="flex items-center justify-center h-96">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
         );
     }
 
@@ -63,7 +61,6 @@ export default function AdminMoodPage() {
     });
 
     return (
-        <DashboardLayout>
             <div className="space-y-8 animate-fade-in">
                 <div className="flex items-center justify-between">
                     <div>
@@ -136,6 +133,5 @@ export default function AdminMoodPage() {
                     </div>
                 </section>
             </div>
-        </DashboardLayout>
     );
 }

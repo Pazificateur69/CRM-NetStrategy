@@ -26,14 +26,15 @@ interface LoginResponse {
  * Connecte l'utilisateur et stocke les infos localement.
  */
 export const login = async (email: string, password: string) => {
-  // 1. Initialiser le cookie CSRF
-  await api.get('/sanctum/csrf-cookie');
-
-  // 2. Login (le cookie de session sera set automatiquement par le backend)
   const response = await api.post<LoginResponse>('/login', { email, password });
 
   if (response.data.two_factor) {
     return response.data;
+  }
+
+  // Store token for auth
+  if (response.data.access_token) {
+    localStorage.setItem('authToken', response.data.access_token);
   }
 
   const { user } = response.data;
@@ -45,6 +46,10 @@ export const verify2FA = async (code: string, temp_token: string) => {
   const response = await api.post('/2fa/verify-login', { code }, {
     headers: { Authorization: `Bearer ${temp_token}` }
   });
+
+  if (response.data.access_token) {
+    localStorage.setItem('authToken', response.data.access_token);
+  }
 
   const { user } = response.data;
   return user;
@@ -59,7 +64,9 @@ export const logout = async () => {
   } catch (error) {
     console.warn("Erreur de déconnexion côté serveur. Nettoyage local.");
   } finally {
-    // Si nous avions un state global de user, on le resetterait ici
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userPole');
   }
   return true;
 };

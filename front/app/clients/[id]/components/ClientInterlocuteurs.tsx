@@ -113,7 +113,7 @@ export default function ClientInterlocuteurs({ interlocuteurs, onUpdate, canEdit
                       Contact #{index + 1}
                     </h4>
                     <button
-                      onClick={() => handleRemove(interlocuteur.id!)}
+                      onClick={() => { if (interlocuteur.id) handleRemove(interlocuteur.id); }}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                       title="Supprimer"
                     >

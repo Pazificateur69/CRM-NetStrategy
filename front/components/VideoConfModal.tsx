@@ -7,15 +7,15 @@ interface VideoConfModalProps {
     onClose: () => void;
 }
 
+const generateJitsiLink = () => {
+    const roomName = `NetStrategy-${Math.random().toString(36).substring(7)}`;
+    return `https://meet.jit.si/${roomName}`;
+};
+
 export default function VideoConfModal({ isOpen, onClose }: VideoConfModalProps) {
-    if (!isOpen) return null;
-
-    const generateJitsiLink = () => {
-        const roomName = `NetStrategy-${Math.random().toString(36).substring(7)}`;
-        return `https://meet.jit.si/${roomName}`;
-    };
-
     const [link, setLink] = React.useState(generateJitsiLink());
+
+    if (!isOpen) return null;
 
     const copyToClipboard = () => {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -89,7 +89,7 @@ export default function VideoConfModal({ isOpen, onClose }: VideoConfModalProps)
                     </div>
 
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-sm text-blue-700 dark:text-blue-300">
-                        <p className="font-semibold mb-1">💡 Astuce</p>
+                        <p className="font-semibold mb-1">Astuce</p>
                         Ce lien est temporaire et gratuit via Jitsi Meet. Aucune installation requise pour vos clients.
                     </div>
                 </div>

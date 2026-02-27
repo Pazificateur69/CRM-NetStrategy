@@ -11,6 +11,11 @@
 /front/.env.local
 /front/.env
 
+# === DEPLOY ===
+.deploy-config
+.deploy.log
+.env.docker
+
 # === COMMUN ===
 .DS_Store
 npm-debug.log*

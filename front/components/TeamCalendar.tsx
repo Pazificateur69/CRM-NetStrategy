@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { User as UserType, Todo } from '@/services/types/crm';
 
 interface TeamCalendarProps {
@@ -63,7 +63,7 @@ export default function TeamCalendar({ users, tasks }: TeamCalendarProps) {
                     {/* Header Row (Days) */}
                     <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
                         <div className="w-48 flex-shrink-0 p-3 text-xs font-semibold text-slate-500 border-r border-slate-200 dark:border-slate-800">
-                            Membre de l'équipe
+                            Membre de l&apos;equipe
                         </div>
                         {days.map((day, i) => (
                             <div key={i} className={`flex-1 p-3 text-center border-r border-slate-200 dark:border-slate-800 last:border-r-0 ${isSameDay(day, new Date()) ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}>
@@ -144,5 +144,3 @@ export default function TeamCalendar({ users, tasks }: TeamCalendarProps) {
         </div>
     );
 }
-
-import { Plus } from 'lucide-react';

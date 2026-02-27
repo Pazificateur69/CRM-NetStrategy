@@ -55,7 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Prevent hydration mismatch and handle mobile sidebar
   useEffect(() => {
     setMounted(true);
-    if (window.innerWidth < 1024) {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       setSidebarOpen(false);
     }
   }, []);
@@ -67,7 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setUserName(profile.name);
         setUserEmail(profile.email);
         setUserId(profile.id);
-        if (profile.roles?.includes('admin')) {
+        if (profile.role === 'admin' || profile.roles?.includes('admin')) {
           setIsAdmin(true);
         }
       } catch (error) {
@@ -117,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen bg-transparent font-sans text-foreground transition-colors duration-300">
       {/* --- SIDEBAR --- */}
       <AnimatePresence mode="wait">
-        {(sidebarOpen || !mounted || window.innerWidth >= 1024) && (
+        {(sidebarOpen || !mounted || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
           <motion.aside
             initial={{ x: -300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -273,7 +273,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      <Toaster />
       <CommandPalette />
       <AiAssistant />
       {/* Communication Suite */}

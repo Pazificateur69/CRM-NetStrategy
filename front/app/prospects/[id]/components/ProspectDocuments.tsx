@@ -20,8 +20,6 @@ export default function ProspectDocuments({
     setFile,
     handleUpload,
 }: ProspectDocumentsProps) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
     const fichiers = prospect.contenu?.filter((c: any) => c.type === 'Fichier') || [];
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,8 +60,8 @@ export default function ProspectDocuments({
     };
 
     return (
-        <section className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-            <h3 className="text-2xl font-bold text-indigo-700 border-b-2 border-indigo-100 pb-3 mb-6 flex items-center">
+        <section className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800">
+            <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-100 dark:border-indigo-900 pb-3 mb-6 flex items-center">
                 <FileText className="w-6 h-6 mr-3 text-indigo-500" />
                 Dossier Numérique - Documents Prospect
             </h3>
@@ -90,16 +88,16 @@ export default function ProspectDocuments({
 
             {/* === Liste des fichiers === */}
             {fichiers.length > 0 ? (
-                <ul className="divide-y divide-gray-200">
+                <ul className="divide-y divide-gray-200 dark:divide-slate-700">
                     {fichiers.map((doc: any) => (
                         <li
                             key={doc.id}
-                            className="flex items-center justify-between py-4 hover:bg-gray-50 px-3 rounded-lg transition"
+                            className="flex items-center justify-between py-4 hover:bg-gray-50 dark:hover:bg-slate-800 px-3 rounded-lg transition"
                         >
                             <div className="flex items-center space-x-4">
                                 <FileText className="w-5 h-5 text-indigo-500" />
                                 <div>
-                                    <p className="font-medium text-gray-800">
+                                    <p className="font-medium text-gray-800 dark:text-white">
                                         {doc.nom_original_fichier || `Fichier #${doc.id}`}
                                     </p>
                                     <p className="text-sm text-gray-500">
@@ -134,7 +132,7 @@ export default function ProspectDocuments({
                     ))}
                 </ul>
             ) : (
-                <p className="text-gray-500 italic">Aucun fichier pour ce prospect pour le moment.</p>
+                <p className="text-gray-500 dark:text-gray-400 italic">Aucun fichier pour ce prospect pour le moment.</p>
             )}
         </section>
     );

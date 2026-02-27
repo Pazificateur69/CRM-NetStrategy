@@ -9,7 +9,7 @@ import {
   Link as LinkIcon
 } from 'lucide-react';
 
-interface ExternalLink {
+interface ExternalLinkItem {
   type: string;
   label: string;
   url: string;
@@ -17,9 +17,9 @@ interface ExternalLink {
 }
 
 interface ClientExternalLinksProps {
-  liens: ExternalLink[];
+  liens: ExternalLinkItem[];
   pole: string;
-  onUpdate: (liens: ExternalLink[]) => Promise<void>;
+  onUpdate: (liens: ExternalLinkItem[]) => Promise<void>;
   canEdit: boolean;
 }
 
@@ -102,7 +102,7 @@ const LIENS_PAR_POLE: Record<string, { type: string; label: string; icon: string
 
 export default function ClientExternalLinks({ liens, pole, onUpdate, canEdit }: ClientExternalLinksProps) {
   const [editing, setEditing] = useState(false);
-  const [localLiens, setLocalLiens] = useState<ExternalLink[]>(liens || []);
+  const [localLiens, setLocalLiens] = useState<ExternalLinkItem[]>(liens || []);
   const [saving, setSaving] = useState(false);
 
   // Récupérer les liens disponibles pour ce pôle

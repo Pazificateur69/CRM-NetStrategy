@@ -225,7 +225,7 @@ export default function ProspectEditModal({
                                     >
                                         <option value="en_attente">En attente</option>
                                         <option value="relance">Relance</option>
-                                        <option value="signé">Signé</option>
+                                        <option value="converti">Converti</option>
                                         <option value="converti">Converti</option>
                                         <option value="perdu">Perdu</option>
                                     </select>

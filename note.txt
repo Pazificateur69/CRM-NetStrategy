@@ -1,6 +1,0 @@
-a faire :
-
-creer des notifs
-pouvoir @ les users ou les poles dans les commentaires et qu ils recoivent une notif et que tout les users puissent a&voir acces au journal des commentaires et que les commentaires ou ils sont taguer dedans soit en surbrillance et que otut le monde puisse mettre des commentaires 
-
-liens :  faut que ca renvoie vers la vraie page de l url

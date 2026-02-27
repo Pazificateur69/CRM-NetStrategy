@@ -9,6 +9,7 @@ import {
     parseNumberField,
     normaliseDate
 } from '../ClientUtils';
+import QuoteGeneratorModal from './QuoteGeneratorModal';
 
 // Définition d'un type simple pour la ligne de prestation
 type Prestation = {
@@ -255,9 +256,6 @@ const AddPrestationForm = ({ handleAddPrestation, setShowAddForm, client }: AddP
         </div>
     );
 };
-
-
-import QuoteGeneratorModal from './QuoteGeneratorModal';
 
 export default function ClientComptabilite({
     client,

@@ -23,7 +23,7 @@ const actions = [
     },
     {
         label: 'Nouveau Projet',
-        href: '/projects/create',
+        href: '/projects',
         icon: FolderPlus,
         color: 'text-orange-600 dark:text-orange-400',
         bg: 'bg-orange-50 dark:bg-orange-900/20',

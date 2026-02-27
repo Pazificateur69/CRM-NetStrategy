@@ -88,13 +88,13 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (activeTab === 'security') {
-            getLoginHistory().then(res => setLoginHistory(res.data));
-            getActiveSessions().then(res => setSessions(res.data));
+            getLoginHistory().then(res => setLoginHistory(res.data)).catch(err => console.error(err));
+            getActiveSessions().then(res => setSessions(res.data)).catch(err => console.error(err));
             if (user?.role === 'admin') {
-                getAuditLogs().then(res => setAuditLogs(res.data.data));
+                getAuditLogs().then(res => setAuditLogs(res.data.data)).catch(err => console.error(err));
             }
         } else if (activeTab === 'organization') {
-            getOrganizationSettings().then(res => setOrgSettings(res.data));
+            getOrganizationSettings().then(res => setOrgSettings(res.data)).catch(err => console.error(err));
         }
     }, [activeTab]);
 
@@ -582,7 +582,7 @@ export default function SettingsPage() {
                                                     className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm"
                                                     onChange={(e) => {
                                                         const filters = { action: e.target.value };
-                                                        getAuditLogs(1, filters).then(res => setAuditLogs(res.data.data));
+                                                        getAuditLogs(1, filters).then(res => setAuditLogs(res.data.data)).catch(err => console.error(err));
                                                     }}
                                                 >
                                                     <option value="">Toutes les actions</option>

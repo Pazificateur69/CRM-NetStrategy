@@ -1,0 +1,374 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      Int       @id @default(autoincrement())
+  supabaseId              String    @unique @map("supabase_id")
+  name                    String
+  email                   String    @unique
+  role                    String    @default("com")
+  pole                    String?
+  notificationPreferences Json?     @map("notification_preferences")
+  dashboardPreferences    Json?     @map("dashboard_preferences")
+  googleCalendarToken     Json?     @map("google_calendar_token")
+  twoFactorSecret         String?   @map("two_factor_secret")
+  twoFactorConfirmedAt    DateTime? @map("two_factor_confirmed_at")
+  twoFactorRecoveryCodes  String?   @map("two_factor_recovery_codes")
+  lastSeenAt              DateTime? @map("last_seen_at")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  todos           Todo[]          @relation("TodoCreator")
+  assignedTodos   Todo[]          @relation("TodoAssignee")
+  approvedTodos   Todo[]          @relation("TodoApprover")
+  rappels         Rappel[]        @relation("RappelCreator")
+  assignedRappels RappelUser[]
+  contenu         ContenuFiche[]
+  prestations     Prestation[]    @relation("PrestationResponsable")
+  projects        Project[]       @relation("ProjectManager")
+  events          Event[]
+  sentMessages    Message[]       @relation("MessageSender")
+  receivedMessages Message[]      @relation("MessageReceiver")
+  notifications   Notification[]
+  dailyMoods      DailyMood[]
+  loginHistory    LoginHistory[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model Client {
+  id                   Int       @id @default(autoincrement())
+  societe              String
+  gerant               String?
+  siret                String?
+  siteWeb              String?   @map("site_web")
+  adresse              String?
+  ville                String?
+  codePostal           String?   @map("code_postal")
+  emails               Json      @default("[]")
+  telephones           Json      @default("[]")
+  contrat              String?
+  dateContrat          DateTime? @map("date_contrat")
+  dateEcheance         DateTime? @map("date_echeance")
+  montantMensuelTotal  Decimal?  @map("montant_mensuel_total") @db.Decimal(10, 2)
+  frequenceFacturation String?   @map("frequence_facturation")
+  modePaiement         String?   @map("mode_paiement")
+  iban                 String?
+  descriptionGenerale  String?   @map("description_generale") @db.Text
+  notesComptables      String?   @map("notes_comptables") @db.Text
+  lienExterne          String?   @map("lien_externe")
+  liensExternes        Json?     @map("liens_externes")
+  interlocuteurs       Json?
+  couleurStatut        String?   @map("couleur_statut") @default("vert")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  todos       Todo[]
+  rappels     Rappel[]
+  contenu     ContenuFiche[]
+  prestations Prestation[]
+  projects    Project[]
+  events      Event[]
+
+  @@map("clients")
+}
+
+model Prospect {
+  id             Int       @id @default(autoincrement())
+  societe        String
+  contact        String?
+  emails         Json      @default("[]")
+  telephones     Json      @default("[]")
+  statut         String    @default("en_attente")
+  score          Int?      @default(0)
+  scoreDetails   Json?     @map("score_details")
+  couleurStatut  String?   @map("couleur_statut") @default("vert")
+  adresse        String?
+  ville          String?
+  codePostal     String?   @map("code_postal")
+  siteWeb        String?   @map("site_web")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  todos    Todo[]
+  rappels  Rappel[]
+  contenu  ContenuFiche[]
+  events   Event[]
+
+  @@map("prospects")
+}
+
+model Todo {
+  id            Int       @id @default(autoincrement())
+  titre         String
+  description   String?   @db.Text
+  dateEcheance  DateTime? @map("date_echeance")
+  statut        String    @default("planifie")
+  ordre         Int       @default(0)
+  priorite      String    @default("moyenne")
+  pole          String?
+  reviewStatus  String?   @map("review_status") @default("none")
+  reviewComment String?   @map("review_comment") @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  userId     Int?  @map("user_id")
+  user       User? @relation("TodoCreator", fields: [userId], references: [id])
+
+  assignedTo   Int?  @map("assigned_to")
+  assignedUser User? @relation("TodoAssignee", fields: [assignedTo], references: [id])
+
+  approverId Int?  @map("approver_id")
+  approver   User? @relation("TodoApprover", fields: [approverId], references: [id])
+
+  clientId   Int?     @map("client_id")
+  client     Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  prospectId Int?      @map("prospect_id")
+  prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  projectId  Int?     @map("project_id")
+  project    Project? @relation(fields: [projectId], references: [id])
+
+  @@index([userId])
+  @@index([assignedTo])
+  @@index([clientId])
+  @@index([prospectId])
+  @@index([projectId])
+  @@index([statut])
+  @@map("todos")
+}
+
+model Rappel {
+  id           Int       @id @default(autoincrement())
+  titre        String
+  description  String?   @db.Text
+  dateRappel   DateTime? @map("date_rappel")
+  fait         Boolean   @default(false)
+  statut       String    @default("planifie")
+  ordre        Int       @default(0)
+  priorite     String    @default("moyenne")
+  pole         String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  userId     Int?  @map("user_id")
+  user       User? @relation("RappelCreator", fields: [userId], references: [id])
+
+  clientId   Int?     @map("client_id")
+  client     Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  prospectId Int?      @map("prospect_id")
+  prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  assignedUsers RappelUser[]
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([prospectId])
+  @@index([pole])
+  @@map("rappels")
+}
+
+model RappelUser {
+  rappelId Int @map("rappel_id")
+  userId   Int @map("user_id")
+
+  rappel Rappel @relation(fields: [rappelId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([rappelId, userId])
+  @@map("rappel_user")
+}
+
+model ContenuFiche {
+  id                 Int       @id @default(autoincrement())
+  type               String    @default("Commentaire")
+  pole               String?
+  texte              String?   @db.Text
+  cheminFichier      String?   @map("chemin_fichier")
+  nomOriginalFichier String?   @map("nom_original_fichier")
+  prestationId       Int?      @map("prestation_id")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  userId     Int  @map("user_id")
+  user       User @relation(fields: [userId], references: [id])
+
+  clientId   Int?     @map("client_id")
+  client     Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  prospectId Int?      @map("prospect_id")
+  prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([prospectId])
+  @@map("contenu_fiches")
+}
+
+model Prestation {
+  id              Int       @id @default(autoincrement())
+  type            String
+  tarifHt         Decimal?  @map("tarif_ht") @db.Decimal(10, 2)
+  frequence       String?
+  engagementMois  Int?      @map("engagement_mois")
+  dateDebut       DateTime? @map("date_debut")
+  dateFin         DateTime? @map("date_fin")
+  notes           String?   @db.Text
+  statut          String    @default("en_attente")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  clientId       Int  @map("client_id")
+  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  assignedUserId Int?  @map("assigned_user_id")
+  responsable    User? @relation("PrestationResponsable", fields: [assignedUserId], references: [id])
+
+  @@map("prestations")
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?   @db.Text
+  status      String    @default("not_started")
+  startDate   DateTime? @map("start_date")
+  dueDate     DateTime? @map("due_date")
+  budget      Decimal?  @db.Decimal(10, 2)
+  progress    Int       @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  clientId Int?    @map("client_id")
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  userId   Int?  @map("user_id")
+  manager  User? @relation("ProjectManager", fields: [userId], references: [id])
+
+  tasks Todo[]
+
+  @@map("projects")
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  title       String
+  start       DateTime
+  end         DateTime?
+  description String?   @db.Text
+  type        String    @default("rdv")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  userId     Int  @map("user_id")
+  user       User @relation(fields: [userId], references: [id])
+
+  clientId   Int?     @map("client_id")
+  client     Client?  @relation(fields: [clientId], references: [id])
+
+  prospectId Int?      @map("prospect_id")
+  prospect   Prospect? @relation(fields: [prospectId], references: [id])
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([prospectId])
+  @@map("events")
+}
+
+model Message {
+  id         Int       @id @default(autoincrement())
+  content    String?   @db.Text
+  imageUrl   String?   @map("image_url")
+  audioUrl   String?   @map("audio_url")
+  readAt     DateTime? @map("read_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  senderId   Int @map("sender_id")
+  sender     User @relation("MessageSender", fields: [senderId], references: [id])
+
+  receiverId Int @map("receiver_id")
+  receiver   User @relation("MessageReceiver", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([readAt])
+  @@map("messages")
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  type      String
+  data      Json?
+  link      String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([readAt])
+  @@map("notifications")
+}
+
+model DailyMood {
+  id        Int      @id @default(autoincrement())
+  mood      String
+  comment   String?
+  date      DateTime @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("daily_moods")
+}
+
+model LoginHistory {
+  id        Int      @id @default(autoincrement())
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  status    String   @default("success")
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("login_histories")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  model     String
+  modelId   Int?     @map("model_id")
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId Int?  @map("user_id")
+  user   User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model OrganizationSetting {
+  key   String @id
+  value String @db.Text
+
+  @@map("organization_settings")
+}

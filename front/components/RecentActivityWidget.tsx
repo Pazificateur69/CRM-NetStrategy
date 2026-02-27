@@ -8,7 +8,9 @@ export default function RecentActivityWidget() {
 
     useEffect(() => {
         getAuditLogs(1).then(res => {
-            setLogs(res.data.data.slice(0, 20)); // Get top 20
+            setLogs(res.data.data.slice(0, 20));
+            setLoading(false);
+        }).catch(() => {
             setLoading(false);
         });
     }, []);

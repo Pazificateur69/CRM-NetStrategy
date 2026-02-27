@@ -27,11 +27,17 @@ export default function Home() {
 
   // 4. Rendu Conditionnel
   if (loading) {
-    // Bloque l'affichage du LoginForm tant que la vérification n'est pas faite
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="p-8 text-xl text-indigo-600">
-                Vérification de la session...
+        <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 animate-pulse">
+                    <span className="font-bold text-white text-xl">N</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
             </div>
         </div>
     );

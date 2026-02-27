@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import TextareaAutosize from 'react-textarea-autosize';
-import createEcho from '@/services/echo';
+import { subscribeToChatChannel, subscribeToPresence, trackPresence } from '@/services/realtime';
 import VoiceRecorder from '@/components/VoiceRecorder';
 
 interface User {
@@ -102,34 +102,26 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         fetchContacts();
         const interval = setInterval(fetchContacts, 10000);
 
-        const echo = createEcho();
-
-        // Global Channel Listener (Handles Notifications, Status, and Active Chat Updates)
-        echo.private(`chat.${currentUserId}`)
-            .listen('MessageSent', (e: any) => {
-                const msg = e.message;
+        // Supabase Realtime - Chat channel
+        const chatSub = subscribeToChatChannel(
+            currentUserId,
+            // onMessage
+            (msg: any) => {
                 const currentSelected = selectedUserRef.current;
                 const isOpenState = isOpenRef.current;
 
-                // 1. Refresh Contacts (Sidebar)
                 fetchContacts();
 
-                // 2. Active Chat Update
-                // If we are looking at this conversation, append the message
                 if (currentSelected && (msg.sender_id === currentSelected.id || msg.receiver_id === currentSelected.id)) {
                     setMessages(prev => {
-                        // Avoid duplicates
                         if (prev.some(m => m.id === msg.id)) return prev;
                         const updated = [...prev, msg];
                         messagesRef.current = updated;
                         return updated;
                     });
-                    // Scroll to bottom
                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
                 }
 
-                // 3. Notification (Toast)
-                // If the message is NOT from me AND (Chat is closed OR We are looking at someone else)
                 const isFromMe = msg.sender_id === currentUserId;
                 const isChattingWithSender = isOpenState && currentSelected?.id === msg.sender_id;
 
@@ -140,16 +132,13 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                         position: 'bottom-right',
                         action: {
                             label: 'Répondre',
-                            onClick: () => {
-                                setIsOpen(true);
-                                // Here we would ideally set the user, but we'd need the full User object.
-                                // fetchContacts will update the sidebar, user can click there.
-                            }
+                            onClick: () => { setIsOpen(true); }
                         }
                     });
                 }
-            })
-            .listen('MessageRead', (e: any) => {
+            },
+            // onRead
+            (e: any) => {
                 if (selectedUserRef.current && e.receiver_id === selectedUserRef.current.id) {
                     setMessages(prev => {
                         const updated = prev.map(msg => {
@@ -162,27 +151,21 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                         return updated;
                     });
                 }
-            })
-            .listen('UserTyping', (e: any) => {
-                // Check if the typing user is the one we are talking to? 
-                // Actually we want to show typing indicators in the sidebar too potentially, but for now just active chat.
-                // We add to typingUsers list.
+            },
+            // onTyping
+            (e: any) => {
                 setTypingUsers(prev => {
                     if (!prev.includes(e.sender_id)) return [...prev, e.sender_id];
                     return prev;
                 });
-
-                // Remove typing status after 3 seconds
-                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                // Note: This logic for timeout is a bit flawed with multiple users, separate timeouts needed.
-                // But for simplicity of this Refactor:
                 setTimeout(() => {
                     setTypingUsers(prev => prev.filter(id => id !== e.sender_id));
                 }, 3000);
-            });
+            }
+        );
 
         return () => {
-            echo.leave(`chat.${currentUserId}`);
+            chatSub.unsubscribe();
             clearInterval(interval);
         };
     }, [currentUserId]);
@@ -203,22 +186,16 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         setIsLoadingMessages(true);
         fetchMessages();
 
-        const echo = createEcho();
-        // Online Presence
-        echo.join('online')
-            .here((users: any[]) => {
-                setOnlineUsers(users.map(u => u.id));
-            })
-            .joining((user: any) => {
-                setOnlineUsers(prev => [...prev, user.id]);
-                // Optionally toast "User came online"
-            })
-            .leaving((user: any) => {
-                setOnlineUsers(prev => prev.filter(id => id !== user.id));
-            });
+        // Supabase Realtime - Online Presence
+        const presenceSub = subscribeToPresence(
+            (userIds: number[]) => setOnlineUsers(userIds),
+            (userId: number) => setOnlineUsers(prev => [...prev, userId]),
+            (userId: number) => setOnlineUsers(prev => prev.filter(id => id !== userId))
+        );
+        trackPresence(presenceSub.channel, currentUserId);
 
         return () => {
-            echo.leave('online');
+            presenceSub.unsubscribe();
         };
     }, [selectedUser]); // Only runs on user switch
 
@@ -364,7 +341,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
         <div className="flex h-full overflow-hidden bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 relative">
             {/* Contacts Sidebar */}
             <AnimatePresence mode="popLayout" initial={false}>
-                {(!selectedUser || window.innerWidth >= 768) && (
+                {(!selectedUser || (typeof window !== 'undefined' && window.innerWidth >= 768)) && (
                     <motion.div
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -380,7 +357,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                     placeholder="Rechercher..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border-none rounded-xl text-sm shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border-none rounded-xl text-sm text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
                                 />
                             </div>
                         </div>
@@ -512,7 +489,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                                     {msg.image_url && (
                                                         <div className="mb-3 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
                                                             <img
-                                                                src={msg.image_url.startsWith('data:') ? msg.image_url : `${process.env.NEXT_PUBLIC_API_URL}/${msg.image_url}`}
+                                                                src={msg.image_url.startsWith('data:') ? msg.image_url : `${msg.image_url}`}
                                                                 alt="Shared"
                                                                 className="max-w-full h-auto object-cover hover:scale-105 transition-transform duration-500 cursor-zoom-in"
                                                             />
@@ -522,7 +499,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                                         <div className="flex items-center gap-2 min-w-[200px]">
                                                             <audio
                                                                 controls
-                                                                src={msg.audio_url.startsWith('blob:') ? msg.audio_url : `${process.env.NEXT_PUBLIC_API_URL}/${msg.audio_url}`}
+                                                                src={msg.audio_url.startsWith('blob:') ? msg.audio_url : `${msg.audio_url}`}
                                                                 className={`h-8 w-full ${isMe ? 'invert sepia saturate-0 hue-rotate-180 brightness-200 contrast-100' : 'accent-indigo-600'}`}
                                                             />
                                                         </div>
@@ -634,7 +611,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                                                 }
                                             }}
                                             placeholder="Écrivez votre message..."
-                                            className="w-full bg-transparent text-slate-900 dark:text-white rounded-xl px-2 py-3 resize-none focus:outline-none transition-all max-h-32 min-h-[48px]"
+                                            className="flex-1 bg-transparent text-slate-900 dark:text-white rounded-xl px-3 py-3 resize-none focus:outline-none transition-all max-h-32 min-h-[52px] text-base"
                                         />
                                         <div className="pb-1 pr-1">
                                             <button
@@ -683,7 +660,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-8 right-28 p-4 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-500/40 hover:shadow-indigo-500/60 transition-all z-50 group"
+                className="fixed bottom-8 right-28 p-4 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-500/40 hover:shadow-indigo-500/60 transition-all z-[9998] group"
             >
                 <MessageSquare className="w-7 h-7 group-hover:rotate-12 transition-transform" />
                 {totalUnread > 0 && (
@@ -700,7 +677,7 @@ export default function ChatSystem({ currentUserId, variant = 'widget' }: { curr
             initial={{ opacity: 0, y: 40, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.9 }}
-            className={`fixed bottom-8 right-28 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[24px] shadow-2xl shadow-indigo-500/20 dark:shadow-black/50 z-50 overflow-hidden ring-1 ring-white/20 dark:ring-slate-700 border border-slate-200/50 dark:border-slate-800/50 ${isMinimized ? 'w-80 h-16' : 'w-[380px] h-[600px]'
+            className={`fixed bottom-8 right-28 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[24px] shadow-2xl shadow-indigo-500/20 dark:shadow-black/50 z-[9998] overflow-hidden ring-1 ring-white/20 dark:ring-slate-700 border border-slate-200/50 dark:border-slate-800/50 ${isMinimized ? 'w-80 h-16' : 'w-[380px] h-[600px]'
                 }`}
         >
             <div className="bg-indigo-600 px-5 py-4 flex justify-between items-center text-white cursor-pointer" onClick={() => !selectedUser && setIsMinimized(!isMinimized)}>

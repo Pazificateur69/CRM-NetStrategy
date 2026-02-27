@@ -1,7 +1,7 @@
 // app/dashboard/page.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { getDashboardOverview } from '@/services/data';
 import { getUsers, updateUser, deleteUser, updateUserRole } from '@/services/users';
 import { getAdminTasksByPole, getMyTasks, getAllAdminTasks, Task } from '@/services/tasks';
@@ -23,15 +23,40 @@ import {
   Edit3,
   Trash2,
   Search,
-  MoreHorizontal,
   ArrowUpRight,
-  Activity
+  Activity,
+  Zap
 } from 'lucide-react';
 import { TaskKanbanBoard } from '@/components/TaskKanbanBoard';
 import WelcomeWidget from '@/components/WelcomeWidget';
 import RecentActivityWidget from '@/components/RecentActivityWidget';
 import WeeklyStatsWidget from '@/components/WeeklyStatsWidget';
 import MoodSelector from '@/components/MoodSelector';
+
+/** Hook for animated counter */
+function useAnimatedCounter(end: number, duration = 1200) {
+  const [count, setCount] = useState(0);
+  const prevEnd = useRef(0);
+
+  useEffect(() => {
+    if (end === prevEnd.current) return;
+    prevEnd.current = end;
+    const startVal = 0;
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(startVal + (end - startVal) * eased));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }, [end, duration]);
+
+  return count;
+}
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -62,12 +87,6 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      router.replace('/');
-      return;
-    }
-
     const fetchDashboardData = async () => {
       try {
         setError(null);
@@ -126,12 +145,11 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [router]);
 
-  // --- ÉTATS DE RENDU ---
-
   // --- GESTION UTILISATEURS (INLINE EDIT) ---
   const [editingUser, setEditingUser] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [overviewSearch, setOverviewSearch] = useState('');
 
   const handleRoleChange = async (id: number, newRole: string) => {
     try {
@@ -204,6 +222,13 @@ export default function DashboardPage() {
   if (!data) return null;
 
   const allEntities = [...data.clients, ...data.prospects] as DashboardEntity[];
+  const filteredEntities = overviewSearch
+    ? allEntities.filter(e => e.societe?.toLowerCase().includes(overviewSearch.toLowerCase()))
+    : allEntities;
+
+  const tasksDone = [...tasks, ...myTasks].filter(t => t.statut === 'termine' || t.status === 'termine').length;
+  const tasksTotal = [...tasks, ...myTasks].length;
+  const lateCount = allEntities.reduce((sum, e) => sum + (e.todos_en_retard || 0), 0);
 
   return (
     <>
@@ -219,21 +244,23 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => window.location.reload()}
-            className="group flex items-center gap-2 bg-card hover:bg-accent text-foreground border border-border font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md"
-          >
-            <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-            Actualiser
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="group flex items-center gap-2 bg-card hover:bg-accent text-foreground border border-border font-semibold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow-md"
+            >
+              <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+              Actualiser
+            </button>
 
-          <button
-            onClick={() => setShowCustomize(!showCustomize)}
-            className="group flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
-          >
-            <Edit3 className="w-4 h-4" />
-            Personnaliser
-          </button>
+            <button
+              onClick={() => setShowCustomize(!showCustomize)}
+              className="group flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+            >
+              <Edit3 className="w-4 h-4" />
+              Personnaliser
+            </button>
+          </div>
         </div>
 
         {/* CUSTOMIZATION PANEL */}
@@ -285,29 +312,29 @@ export default function DashboardPage() {
               value={data.clients.length}
               icon={<UserCheck className="w-6 h-6 text-white" />}
               gradient="from-emerald-500 to-teal-500"
-              trend="+12% ce mois"
+              subtitle={`${data.clients.length} total`}
             />
             <StatCard
               title="Prospects en cours"
               value={data.prospects.length}
               icon={<TrendingUp className="w-6 h-6 text-white" />}
               gradient="from-amber-500 to-orange-500"
-              trend="+5 nouveaux"
+              subtitle="a convertir"
             />
             <StatCard
-              title="Total fiches"
-              value={allEntities.length}
-              icon={<FileText className="w-6 h-6 text-white" />}
+              title="Taches completees"
+              value={tasksDone}
+              icon={<Zap className="w-6 h-6 text-white" />}
               gradient="from-indigo-500 to-purple-500"
+              subtitle={tasksTotal > 0 ? `${Math.round((tasksDone / tasksTotal) * 100)}% du total` : undefined}
             />
             <StatCard
-              title="Tâches en retard"
-              value={allEntities.reduce((sum, e) => sum + (e.todos_en_retard || 0), 0)}
+              title="Taches en retard"
+              value={lateCount}
               icon={<AlertCircle className="w-6 h-6 text-white" />}
               gradient="from-rose-500 to-pink-500"
-              isAlert={true}
+              isAlert={lateCount > 0}
             />
-
           </section>
         )}
 
@@ -519,6 +546,8 @@ export default function DashboardPage() {
                 <input
                   type="text"
                   placeholder="Rechercher une fiche..."
+                  value={overviewSearch}
+                  onChange={(e) => setOverviewSearch(e.target.value)}
                   className="text-sm outline-none text-foreground placeholder-muted-foreground w-56 bg-transparent"
                 />
               </div>
@@ -534,7 +563,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {allEntities.map((entity) => (
+                {filteredEntities.map((entity) => (
                   <DashboardVignette key={`${entity.type}-${entity.id}`} entity={entity} />
                 ))}
               </div>
@@ -552,34 +581,38 @@ interface StatCardProps {
   value: number;
   icon: React.ReactNode;
   gradient: string;
-  trend?: string;
+  subtitle?: string;
   isAlert?: boolean;
 }
 
-function StatCard({ title, value, icon, gradient, trend, isAlert }: StatCardProps) {
+function StatCard({ title, value, icon, gradient, subtitle, isAlert }: StatCardProps) {
+  const animatedValue = useAnimatedCounter(value);
+
   return (
-    <div className="relative overflow-hidden bg-card p-6 rounded-3xl border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+    <div className={`relative overflow-hidden bg-card p-6 rounded-3xl border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group ${isAlert && value > 0 ? 'border-rose-200 dark:border-rose-800/50' : 'border-border'}`}>
       <div className="flex items-start justify-between mb-4 relative z-10">
-        <div className={`p-3 rounded-2xl bg-gradient-to-br ${gradient} shadow-lg shadow-primary/20`}>
+        <div className={`p-3 rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`}>
           {icon}
         </div>
-        {trend && (
-          <div className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <ArrowUpRight className="w-3 h-3" />
-            {trend}
-          </div>
+        {subtitle && (
+          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
+            {subtitle}
+          </span>
         )}
       </div>
 
       <div className="relative z-10">
         <p className="text-muted-foreground text-sm font-medium mb-1">{title}</p>
-        <h3 className="text-3xl font-bold text-foreground tracking-tight">
-          {value}
+        <h3 className={`text-3xl font-bold tracking-tight tabular-nums ${isAlert && value > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}`}>
+          {animatedValue}
         </h3>
       </div>
 
       {/* Decorative Background Blob */}
       <div className={`absolute -bottom-4 -right-4 w-24 h-24 bg-gradient-to-br ${gradient} opacity-5 rounded-full blur-2xl group-hover:opacity-10 transition-opacity`} />
+      {isAlert && value > 0 && (
+        <div className="absolute top-3 right-3 w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+      )}
     </div>
   );
 }
