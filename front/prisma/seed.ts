@@ -29,7 +29,8 @@ async function main() {
       continue;
     }
 
-    // Create in Supabase Auth
+    // Create in Supabase Auth (or find existing)
+    let supabaseId: string;
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: userData.email,
       password: userData.password,
@@ -37,14 +38,23 @@ async function main() {
     });
 
     if (authError) {
-      console.error(`Error creating Supabase user ${userData.email}:`, authError.message);
-      continue;
+      // User already exists in Supabase Auth — find their ID
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const existingUser = listData?.users?.find((u) => u.email === userData.email);
+      if (!existingUser) {
+        console.error(`Cannot find Supabase user ${userData.email}, skipping.`);
+        continue;
+      }
+      supabaseId = existingUser.id;
+      console.log(`Found existing Supabase user: ${userData.email}`);
+    } else {
+      supabaseId = authData.user.id;
     }
 
     // Create in Prisma
     await prisma.user.create({
       data: {
-        supabaseId: authData.user.id,
+        supabaseId,
         name: userData.name,
         email: userData.email,
         role: userData.role,

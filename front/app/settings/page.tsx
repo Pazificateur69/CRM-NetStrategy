@@ -88,7 +88,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (activeTab === 'security') {
-            getLoginHistory().then(res => setLoginHistory(res.data)).catch(err => console.error(err));
+            getLoginHistory().then(res => setLoginHistory(res.data.data || res.data || [])).catch(err => console.error(err));
             getActiveSessions().then(res => setSessions(res.data)).catch(err => console.error(err));
             if (user?.role === 'admin') {
                 getAuditLogs().then(res => setAuditLogs(res.data.data)).catch(err => console.error(err));
@@ -191,7 +191,7 @@ export default function SettingsPage() {
 
             // Fetch recovery codes immediately
             const codesResponse = await getRecoveryCodes();
-            setRecoveryCodes(codesResponse.data.recovery_codes);
+            setRecoveryCodes(codesResponse.data.recovery_codes || codesResponse.data);
             setShowRecoveryCodes(true);
         } catch (error) {
             toast.error("Code incorrect. Veuillez réessayer.");
@@ -222,7 +222,7 @@ export default function SettingsPage() {
         setLoading(true);
         try {
             const response = await getRecoveryCodes();
-            setRecoveryCodes(response.data.recovery_codes);
+            setRecoveryCodes(response.data.recovery_codes || response.data);
             setShowRecoveryCodes(true);
         } catch (error) {
             toast.error("Impossible de récupérer les codes.");
@@ -236,7 +236,7 @@ export default function SettingsPage() {
         setLoading(true);
         try {
             const response = await regenerateRecoveryCodes();
-            setRecoveryCodes(response.data.recovery_codes);
+            setRecoveryCodes(response.data.recovery_codes || response.data);
             toast.success("Nouveaux codes générés.");
         } catch (error) {
             toast.error("Erreur lors de la régénération.");

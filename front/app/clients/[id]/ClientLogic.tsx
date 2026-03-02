@@ -635,7 +635,7 @@ export function useClientLogic(): UseClientLogicReturn {
             description: r.description || '',
             date_rappel: normaliseDateTime(r.date_rappel),
             fait: r.fait || false,
-            assigned_users: r.assignedUsers?.map((u: any) => u.id) ?? undefined,
+            assigned_users: (r.assigned_users || r.assignedUsers)?.map((u: any) => u.id) ?? undefined,
             pole: r.pole ?? undefined,
             priorite: r.priorite || 'moyenne'
         });

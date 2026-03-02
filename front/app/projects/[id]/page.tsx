@@ -33,33 +33,14 @@ export default function ProjectDetailsPage() {
 
     const fetchProjectDetails = async () => {
         try {
-            const [projectRes, tasksRes] = await Promise.all([
-                api.get(`/projects/${projectId}`),
-                api.get(`/projects/${projectId}/tasks`) // Assuming this endpoint exists or we filter todos
-            ]);
-
-            // Fallback for tasks if specific endpoint doesn't exist yet, we might need to fetch all todos and filter client-side or use a different endpoint
-            // For now, let's assume standard REST pattern or I'll fix it if it fails.
-            // Actually, looking at routes, we have `Route::apiResource('projects', ProjectController::class);`
-            // and `public function tasks() { return $this->hasMany(Todo::class); }` in Model.
-            // But usually we need a controller method to expose relation. ProjectController might not have it.
-            // I'll check ProjectController content in a moment, for now I'll use the project data if it includes tasks, or separate call.
-
-            setProject(projectRes.data);
-            if (tasksRes.data) setTasks(tasksRes.data);
-        } catch (error) {
-            console.error("Failed to fetch project details", error);
-            // Handling if tasks endpoint fails (likely)
-            try {
-                // If specific route fails, maybe it is included in project?
-                const res = await api.get(`/projects/${projectId}`);
-                setProject(res.data);
-                // If tasks are included in response
-                if (res.data.tasks) setTasks(res.data.tasks);
-            } catch (e) {
-                toast.error("Projet introuvable");
-                router.push('/projects');
-            }
+            const res = await api.get(`/projects/${projectId}`);
+            const project = res.data.data || res.data;
+            setProject(project);
+            if (project.todos) setTasks(project.todos);
+        } catch (e) {
+            console.error("Failed to fetch project details", e);
+            toast.error("Projet introuvable");
+            router.push('/projects');
         } finally {
             setLoading(false);
         }

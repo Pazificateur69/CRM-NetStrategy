@@ -6,14 +6,25 @@ import { useRouter } from 'next/navigation';
 interface Notification {
     id: number;
     type: string;
-    data: {
-        message: string;
-        sender: string;
-        preview?: string;
-    };
+    data: Record<string, any>;
     link?: string;
     read_at: string | null;
     created_at: string;
+}
+
+function getNotificationMessage(n: Notification): string {
+    const d = n.data || {};
+    if (d.message) return d.message;
+    if (n.type === 'mention') return `${d.mentioned_by || d.mentionedBy || 'Quelqu\'un'} vous a mentionné`;
+    if (n.type === 'todo_overdue') return `Tâche en retard : ${d.titre || 'Sans titre'}`;
+    if (n.type === 'daily_digest') return `Résumé quotidien : ${d.today_todos || 0} tâches aujourd'hui`;
+    if (d.text) return d.text;
+    return 'Nouvelle notification';
+}
+
+function getNotificationPreview(n: Notification): string | null {
+    const d = n.data || {};
+    return d.preview || d.text || null;
 }
 
 export default function NotificationCenter() {
@@ -26,8 +37,9 @@ export default function NotificationCenter() {
     const fetchNotifications = async () => {
         try {
             const response = await api.get('/notifications');
-            setNotifications(response.data);
-            setUnreadCount(response.data.filter((n: Notification) => !n.read_at).length);
+            const notifs = response.data?.data || response.data || [];
+            setNotifications(Array.isArray(notifs) ? notifs : []);
+            setUnreadCount(Array.isArray(notifs) ? notifs.filter((n: Notification) => !n.read_at).length : 0);
         } catch (error) {
             console.error("Erreur chargement notifications", error);
         }
@@ -120,11 +132,11 @@ export default function NotificationCenter() {
                                             <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${!notification.read_at ? 'bg-indigo-500' : 'bg-transparent'}`} />
                                             <div className="flex-1">
                                                 <p className="text-sm text-gray-800 font-medium mb-1">
-                                                    {notification.data.message}
+                                                    {getNotificationMessage(notification)}
                                                 </p>
-                                                {notification.data.preview && (
+                                                {getNotificationPreview(notification) && (
                                                     <p className="text-xs text-gray-500 italic line-clamp-2 mb-2">
-                                                        "{notification.data.preview}"
+                                                        "{getNotificationPreview(notification)}"
                                                     </p>
                                                 )}
                                                 <p className="text-[10px] text-gray-400 uppercase tracking-wider">

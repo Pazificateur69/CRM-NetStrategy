@@ -28,41 +28,46 @@ export async function GET(req: NextRequest) {
     // End of last week = start of this week
     const lastWeekEnd = new Date(thisWeekStart);
 
-    const thisWeekCompleted = await prisma.todo.count({
-      where: {
-        assignedTo: user.id,
-        statut: 'termine',
-        updatedAt: {
-          gte: thisWeekStart,
-          lt: thisWeekEnd,
+    const [thisWeekCreated, lastWeekCreated, thisWeekCompleted, lastWeekCompleted] = await Promise.all([
+      prisma.todo.count({
+        where: {
+          assignedTo: user.id,
+          createdAt: { gte: thisWeekStart, lt: thisWeekEnd },
         },
-      },
-    });
-
-    const lastWeekCompleted = await prisma.todo.count({
-      where: {
-        assignedTo: user.id,
-        statut: 'termine',
-        updatedAt: {
-          gte: lastWeekStart,
-          lt: lastWeekEnd,
+      }),
+      prisma.todo.count({
+        where: {
+          assignedTo: user.id,
+          createdAt: { gte: lastWeekStart, lt: lastWeekEnd },
         },
-      },
-    });
-
-    let trend: 'up' | 'down' | 'stable';
-    if (thisWeekCompleted > lastWeekCompleted) {
-      trend = 'up';
-    } else if (thisWeekCompleted < lastWeekCompleted) {
-      trend = 'down';
-    } else {
-      trend = 'stable';
-    }
+      }),
+      prisma.todo.count({
+        where: {
+          assignedTo: user.id,
+          statut: 'termine',
+          updatedAt: { gte: thisWeekStart, lt: thisWeekEnd },
+        },
+      }),
+      prisma.todo.count({
+        where: {
+          assignedTo: user.id,
+          statut: 'termine',
+          updatedAt: { gte: lastWeekStart, lt: lastWeekEnd },
+        },
+      }),
+    ]);
 
     return Response.json({
-      this_week: thisWeekCompleted,
-      last_week: lastWeekCompleted,
-      trend,
+      created: {
+        current: thisWeekCreated,
+        last: lastWeekCreated,
+        diff: thisWeekCreated - lastWeekCreated,
+      },
+      completed: {
+        current: thisWeekCompleted,
+        last: lastWeekCompleted,
+        diff: thisWeekCompleted - lastWeekCompleted,
+      },
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthenticated') {

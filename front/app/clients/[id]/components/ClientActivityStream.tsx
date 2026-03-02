@@ -378,10 +378,10 @@ export default function ClientActivityStream({
                               </span>
                             )}
 
-                            {t.assignedUser?.name && (
+                            {(t.assigned_user?.name || t.assignedUser?.name) && (
                               <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
                                 <User className="w-3 h-3 mr-1.5" />
-                                {t.assignedUser.name}
+                                {t.assigned_user?.name || t.assignedUser?.name}
                               </span>
                             )}
                           </div>

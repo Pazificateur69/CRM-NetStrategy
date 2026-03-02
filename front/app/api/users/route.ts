@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return Response.json(users.map(formatRecord));
+    return Response.json({ data: users.map(formatRecord) });
   } catch (e: any) {
     if (e.message === 'Unauthenticated') return authError();
     console.error('GET /api/users error:', e);

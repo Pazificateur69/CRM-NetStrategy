@@ -1,0 +1,62 @@
+# ═══════════════════════════════════════════════════════════════
+# Docker Compose - CRM NetStrategy pour Plesk
+# Supabase self-hosted tourne séparément dans /opt/supabase/docker
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────────────────────
+  # Frontend Next.js (API Routes incluses)
+  # ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: crm_front
+    restart: unless-stopped
+    env_file:
+      - .env.plesk
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crm_network
+      - supabase_default  # Pour communiquer avec Supabase
+
+  # ─────────────────────────────────────────────────────────────
+  # Nginx Reverse Proxy
+  # ─────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: crm_nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - ./docker/nginx/plesk.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - crm_network
+
+# ═══════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════
+networks:
+  crm_network:
+    driver: bridge
+  supabase_default:
+    external: true
+    name: supabase_docker_default  # Réseau Docker de Supabase

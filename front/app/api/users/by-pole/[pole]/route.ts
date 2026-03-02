@@ -25,7 +25,7 @@ export async function GET(
       orderBy: { name: 'asc' },
     });
 
-    return Response.json(users.map(formatRecord));
+    return Response.json({ data: users.map(formatRecord) });
   } catch (e: any) {
     if (e.message === 'Unauthenticated') return authError();
     if (e.message === 'Forbidden') return forbiddenError();

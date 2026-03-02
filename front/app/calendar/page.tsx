@@ -204,7 +204,8 @@ export default function CalendarPage() {
                 api.get('/rappels')
             ]);
 
-            const dbEvents = eventsRes.data.map((ev: any) => ({
+            const eventsArray = eventsRes.data.data || eventsRes.data || [];
+            const dbEvents = eventsArray.map((ev: any) => ({
                 ...ev,
                 start: new Date(ev.start),
                 end: new Date(ev.end),
@@ -249,7 +250,7 @@ export default function CalendarPage() {
             ]);
             setClients(clientsRes.data.data || []);
             setProspects(prospectsRes.data.data || []);
-            setUsers(usersRes.data || []);
+            setUsers(usersRes.data.data || usersRes.data || []);
         } catch (err) {
             console.error(err);
         }

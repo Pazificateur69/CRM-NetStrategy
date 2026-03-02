@@ -1,0 +1,62 @@
+# ═══════════════════════════════════════════════════════════════
+# .dockerignore pour API Laravel
+# ═══════════════════════════════════════════════════════════════
+
+# Vendor et dépendances (seront installés dans le conteneur)
+vendor/
+node_modules/
+
+# Tests
+tests/
+*.Test.php
+.phpunit.result.cache
+phpunit.xml
+
+# Cache et fichiers temporaires
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+
+# Fichiers de développement
+.env.local
+.env.*.local
+*.log
+*.bak
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+*.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Autres
+.editorconfig
+.php-cs-fixer.php
+pint.json
+phpstan.neon

@@ -91,7 +91,7 @@ export default function DashboardPage() {
       try {
         setError(null);
 
-        // 🔹 Étape 1 : récupérer l'utilisateur connecté
+        // 🔹 Étape 1 : récupérer l'utilisateur (nécessaire avant les autres appels)
         const userProfile = await getUserProfile();
         if (userProfile) {
           setUserName(userProfile.name);
@@ -102,31 +102,35 @@ export default function DashboardPage() {
           }
         }
 
-        // 🔹 Étape 2 : charger les données du tableau de bord
-        const overviewData = await getDashboardOverview();
-        setData(overviewData);
-
+        // 🔹 Étape 2 : charger tout en parallèle
         const userPole = userProfile?.pole || 'non_defini';
-        if (userProfile?.role === 'admin') {
-          // Admin voit tout
-          const tasksData = await getAllAdminTasks();
-          setTasks([...tasksData]);
+        const isAdminUser = userProfile?.role === 'admin';
+
+        const promises: Promise<any>[] = [
+          getDashboardOverview(),
+          getMyTasks(),
+        ];
+
+        if (isAdminUser) {
+          promises.push(getAllAdminTasks());
+          promises.push(getUsers());
         } else if (userPole && userPole !== 'non_defini') {
-          const tasksData = await getAdminTasksByPole(userPole);
-          setTasks([...tasksData]);
-        } else {
-          setTasks([]);
+          promises.push(getAdminTasksByPole(userPole));
         }
 
-        // 🔹 Étape 2.5 : Charger "Mes Tâches" (pour tout le monde, y compris Admin)
-        const myTasksData = await getMyTasks();
-        setMyTasks(myTasksData);
+        const results = await Promise.all(promises);
 
-        // 🔹 Étape 3 : si admin → charger les utilisateurs
-        if (userProfile?.role === 'admin') {
-          const usersData = await getUsers();
-          setUsers(usersData);
+        setData(results[0]);
+        setMyTasks(results[1]);
+
+        if (isAdminUser) {
+          setTasks([...results[2]]);
+          setUsers(results[3]);
           setIsAdmin(true);
+        } else if (results[2]) {
+          setTasks([...results[2]]);
+        } else {
+          setTasks([]);
         }
       } catch (error: any) {
         console.error('Erreur de chargement du dashboard:', error);

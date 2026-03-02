@@ -53,8 +53,9 @@ export default function UserSelector({
             response = await api.get('/users');
 
             // ✅ Filtrer côté client si nécessaire
-            if (response.data && Array.isArray(response.data)) {
-              const filteredUsers = response.data.filter((u: UserOption) =>
+            const allUsers = response.data?.data || response.data || [];
+            if (Array.isArray(allUsers)) {
+              const filteredUsers = allUsers.filter((u: UserOption) =>
                 !pole || u.pole?.toLowerCase() === pole.toLowerCase()
               );
               setUsers(filteredUsers);
@@ -65,7 +66,8 @@ export default function UserSelector({
           response = await api.get('/users');
         }
 
-        setUsers(response.data || []);
+        const users = response.data?.data || response.data || [];
+        setUsers(Array.isArray(users) ? users : []);
       } catch (error: any) {
         console.error('Erreur lors du chargement des utilisateurs:', error);
         setError('Impossible de charger les utilisateurs');

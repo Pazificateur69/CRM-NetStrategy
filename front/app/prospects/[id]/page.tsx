@@ -336,7 +336,7 @@ export default function ProspectDetailPage() {
             description: rappel.description || '',
             date_rappel: rappel.date_rappel ? rappel.date_rappel.slice(0, 16) : '',
             fait: rappel.fait,
-            assigned_users: rappel.assignedUsers?.map((u: any) => u.id),
+            assigned_users: (rappel.assigned_users || rappel.assignedUsers)?.map((u: any) => u.id),
             pole: rappel.pole,
             priorite: rappel.priorite || 'moyenne'
         });
